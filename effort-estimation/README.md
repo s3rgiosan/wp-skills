@@ -23,14 +23,14 @@ cd wp-skills/effort-estimation
 bash install.sh
 
 # Custom Claude config dir (override via env var)
-CLAUDE_HOME=~/.some-other-dir bash install.sh
+CLAUDE_CONFIG_DIR=~/.some-other-dir bash install.sh
 ```
 
 Uninstall:
 
 ```bash
 bash uninstall.sh                              # → ~/.claude
-CLAUDE_HOME=~/.some-other-dir bash uninstall.sh # → custom dir
+CLAUDE_CONFIG_DIR=~/.some-other-dir bash uninstall.sh # → custom dir
 ```
 
 ---

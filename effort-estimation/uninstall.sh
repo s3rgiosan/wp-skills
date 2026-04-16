@@ -3,19 +3,19 @@
 #
 # Usage:
 #   bash uninstall.sh                              # → ~/.claude (default)
-#   CLAUDE_HOME=~/.some-other-dir bash uninstall.sh # → custom config dir
+#   CLAUDE_CONFIG_DIR=~/.some-other-dir bash uninstall.sh # → custom config dir
 
 set -euo pipefail
 
 SKILL_NAME="effort-estimation"
-CLAUDE_HOME="${CLAUDE_HOME:-$HOME/.claude}"
+CLAUDE_CONFIG_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 
 echo ""
 echo "Uninstalling $SKILL_NAME..."
 echo ""
 
-rm -rf "$CLAUDE_HOME/skills/$SKILL_NAME"
-echo "  ✓ Removed → $CLAUDE_HOME/skills/$SKILL_NAME"
+rm -rf "$CLAUDE_CONFIG_DIR/skills/$SKILL_NAME"
+echo "  ✓ Removed → $CLAUDE_CONFIG_DIR/skills/$SKILL_NAME"
 
 echo ""
 echo "Done."
