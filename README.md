@@ -1,6 +1,6 @@
 # wp-skills
 
-> Claude Code skills for WordPress developers — including the React work that lives inside the WP ecosystem (Gutenberg blocks, the Interactivity API, block themes, headless WP frontends).
+> Claude Code skills for WordPress developers.
 
 A collection of Claude Code skills that bring reusable, stack-aware expertise
 into your development sessions — sizing tickets, triaging plugins, reviewing
