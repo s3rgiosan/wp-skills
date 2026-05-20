@@ -1,16 +1,14 @@
 ---
 name: effort-estimation
 description: >
-  Estimate development effort for WordPress tasks — and the React work that lives
-  inside the WordPress ecosystem (Gutenberg blocks, Interactivity API, block themes,
-  headless WP frontends like Next.js / Faust). Use this skill whenever the user asks
-  how long something will take, wants a time estimate, mentions sprint planning,
-  ticket sizing, or asks "how complex is this?" — even if they don't say "estimate"
-  explicitly. Also trigger for questions like "can we do this in a day?", "is this a
-  big task?", "how should I scope this?", "break this down for me", or any mention
-  of story points, t-shirt sizing, or project planning involving WordPress or
-  React-in-WP work. Always use this skill for any effort/complexity question related
-  to WordPress development. Do NOT use for generic standalone-React projects with no
+  Use when asked how long WordPress work will take, when sizing or scoping a
+  ticket, or when planning a sprint — covering pure WordPress (PHP/theme/plugin)
+  and the React surfaces of WordPress (Gutenberg blocks, Interactivity API,
+  block themes, headless WP like Next.js / Faust). Triggers: "how long",
+  "estimate", "how complex is this", "can we do this in a day", "is this a big
+  task", "how should I scope this", "break this down", sprint planning, ticket
+  sizing, story points, t-shirt sizing, project planning for WordPress or
+  React-in-WP work. Do NOT use for generic standalone-React projects with no
   WordPress involvement.
 ---
 
