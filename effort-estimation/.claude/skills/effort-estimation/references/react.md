@@ -38,8 +38,8 @@
 ### Gutenberg — Block Editor Customisation
 | Task | S | M | L | XL |
 |------|---|---|---|-----|
-| Lock/restrict core blocks (block.json, allowed blocks) | 1–2 hrs | — | — | — |
-| Custom block category + icon set | 1–3 hrs | — | — | — |
+| Lock/restrict core blocks (block.json, allowed blocks) | 1 hr | — | — | — |
+| Custom block category + icon set | 1 hr | — | — | — |
 | SlotFill — add UI into existing editor panels | — | 4–8 hrs | — | — |
 | Custom sidebar plugin (PluginSidebar) | — | 6–12 hrs | — | — |
 | Custom document panel (PluginDocumentSettingPanel) | — | 4–8 hrs | — | — |
@@ -79,7 +79,7 @@
 ### WooCommerce Blocks (React)
 | Task | S | M | L | XL |
 |------|---|---|---|-----|
-| Cart/Checkout Blocks customisation (custom block, slot fill, or filter) | — | — | TBD | — |
+| Cart/Checkout Blocks customisation (custom block, slot fill, or filter) | — | — | 2–4 days | — |
 
 ### Headless WordPress Frontends
 | Task | S | M | L | XL |
@@ -126,7 +126,7 @@
 - **Headless preview mode** — WP preview links don't work natively in headless. Preview support is consistently underestimated; treat as its own M ticket.
 - **wp-admin React UI + nonce/REST auth** — Admin UIs hitting the WP REST API need correct nonce handling, capability checks, and sanitisation. Add +2–4 hrs for security review on any admin UI.
 - **Block deprecations** — Updating an existing block's `save()` function requires a `deprecated` entry. Missing this breaks existing post content. Add +1–3 hrs per deprecation cycle.
-- **`blocks.getSaveContent.extraProps` deprecation cost** — Modifying saved block markup via this filter forces deprecation entries to keep existing post content valid. Add TBD% (or +TBD hrs) per task that uses this filter, on top of the block deprecation cost above.
+- **`blocks.getSaveContent.extraProps` deprecation cost** — Modifying saved block markup via this filter forces deprecation entries to keep existing post content valid. Add +1–3 hrs per affected block that uses this filter (one deprecation entry per save-shape change), on top of the block deprecation cost above.
 - **Multisite** — Add ×1.5 on all block, theme, and admin UI work for multisite installs.
 
 ---

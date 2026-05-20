@@ -19,7 +19,7 @@
 | Dynamic block (server-rendered) | — | 6–12 hrs | — | — |
 | Block with complex controls + inner blocks | — | — | 2–4 days | — |
 | Custom block pattern library | — | — | 2–3 days | 3–6 days |
-| Block Hooks (`block_hooks`, WP 6.4+ — auto-insert blocks) | TBD | — | — | — |
+| Block Hooks (`block_hooks`, WP 6.4+ — auto-insert blocks) | 2–4 hrs | — | — | — |
 
 ### Plugin Development
 | Task | S | M | L | XL |
@@ -29,10 +29,10 @@
 | WooCommerce extension | — | — | 4–8 days | 8–15 days |
 | REST API endpoint (custom) | — | 4–8 hrs | — | — |
 | Webhook handler | — | 3–6 hrs | — | — |
-| WP-CLI script (data backfill / ad-hoc migration) | — | TBD | — | — |
-| Cron / Action Scheduler job (scheduled task or queue) | — | TBD | — | — |
-| i18n setup (textdomain + .pot generation + GlotPress integration) | — | TBD | — | — |
-| Privacy exporter / eraser callbacks (GDPR-mandated) | — | TBD | — | — |
+| WP-CLI script (data backfill / ad-hoc migration) | — | 8–16 hrs | — | — |
+| Cron / Action Scheduler job (scheduled task or queue) | — | 4–8 hrs | — | — |
+| i18n setup (textdomain + .pot generation) | 1 hr | — | — | — |
+| Privacy exporter / eraser callbacks (GDPR-mandated) | — | 8–16 hrs | — | — |
 
 ### WooCommerce
 | Task | S | M | L | XL |
