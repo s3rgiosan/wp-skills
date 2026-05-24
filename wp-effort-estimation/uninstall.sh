@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# uninstall.sh — removes effort-estimation skill from a Claude config dir
+# uninstall.sh — removes wp-effort-estimation skill from a Claude config dir
 #
 # Usage:
 #   bash uninstall.sh                              # → ~/.claude (default)
@@ -7,7 +7,7 @@
 
 set -euo pipefail
 
-SKILL_NAME="effort-estimation"
+SKILL_NAME="wp-effort-estimation"
 CLAUDE_CONFIG_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 
 echo ""

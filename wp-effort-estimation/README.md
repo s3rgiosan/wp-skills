@@ -1,4 +1,4 @@
-# effort-estimation
+# wp-effort-estimation
 
 Part of [wp-skills](../README.md) — Claude Code skills for WordPress developers (including the React surfaces of the WP ecosystem).
 
@@ -13,11 +13,11 @@ a client proposal.
 
 ## Installation
 
-Clone the repo and run the install script from the `effort-estimation` directory:
+Clone the repo and run the install script from the `wp-effort-estimation` directory:
 
 ```bash
 git clone https://github.com/your-username/wp-skills.git
-cd wp-skills/effort-estimation
+cd wp-skills/wp-effort-estimation
 
 # Default → ~/.claude
 bash install.sh
@@ -95,13 +95,13 @@ integrations, accessibility, tests, and i18n.
 
 ```
 wp-skills/
-└── effort-estimation/
+└── wp-effort-estimation/
     ├── install.sh
     ├── uninstall.sh
     ├── README.md                        ← you are here
     └── .claude/
         └── skills/
-            └── effort-estimation/
+            └── wp-effort-estimation/
                 ├── SKILL.md             ← estimation process + output template
                 └── references/
                     ├── wordpress.md     ← WP task taxonomy + risks

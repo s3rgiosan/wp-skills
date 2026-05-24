@@ -16,7 +16,7 @@ that don't require agent memory.
 
 ## Skills
 
-### [effort-estimation](./effort-estimation)
+### [wp-effort-estimation](./wp-effort-estimation)
 
 Structured development-effort estimates for WordPress tasks (and React work inside the WP context — Gutenberg, Interactivity API, headless). Outputs
 complexity tier, hours/days midpoint, confidence range, subtask breakdown,
@@ -25,7 +25,7 @@ assumptions, and risks — ready for Jira, Linear, or a client proposal.
 **Triggers on:** "how long", "estimate", "size this", "story points",
 "t-shirt size", "is this a day?", "scope this", "break this down".
 
-**[→ Install effort-estimation](./effort-estimation/README.md)**
+**[→ Install wp-effort-estimation](./wp-effort-estimation/README.md)**
 
 ### [wp-migration-playbook](./wp-migration-playbook)
 

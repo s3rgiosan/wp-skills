@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# install.sh — installs effort-estimation skill into a Claude config dir
+# install.sh — installs wp-effort-estimation skill into a Claude config dir
 #
 # Usage:
 #   bash install.sh                              # → ~/.claude (default)
@@ -8,7 +8,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SKILL_NAME="effort-estimation"
+SKILL_NAME="wp-effort-estimation"
 SKILL_SRC="$SCRIPT_DIR/.claude/skills/$SKILL_NAME"
 CLAUDE_CONFIG_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 

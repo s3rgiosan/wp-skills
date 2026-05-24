@@ -1,5 +1,5 @@
 ---
-name: effort-estimation
+name: wp-effort-estimation
 description: >
   Use when asked how long WordPress work will take, when sizing or scoping a
   ticket, or when planning a sprint — covering pure WordPress (PHP/theme/plugin)
