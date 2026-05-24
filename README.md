@@ -27,6 +27,14 @@ assumptions, and risks — ready for Jira, Linear, or a client proposal.
 
 **[→ Install effort-estimation](./effort-estimation/README.md)**
 
+### [wp-migration-playbook](./wp-migration-playbook)
+
+Opinionated, production-tested playbook for WordPress content migrations — WP→WP and other-system→WP. Covers inventory + disposition, custom migration plugin architecture (Tier 1–3 + idempotent gating), content type and taxonomy migration, user migration, the hard parts of media migration (ID preservation, intersect-before-delete, REST-based recovery, manifest-based registration), redirects (host-level, Yoast storage shape), operational gotchas, and recovery patterns.
+
+**Triggers on:** "WP migration", "WordPress migration", "content migration", "migrate to WordPress", "Laravel to WordPress", "Drupal to WordPress", "import posts", "migrate attachments", "media migration", "redirect map", "migration runbook".
+
+**[→ Install wp-migration-playbook](./wp-migration-playbook/README.md)**
+
 ---
 
 ## Requirements
