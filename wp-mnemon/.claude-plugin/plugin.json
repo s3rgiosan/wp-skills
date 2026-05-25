@@ -1,0 +1,13 @@
+{
+  "name": "wp-mnemon",
+  "version": "1.0.0",
+  "description": "Deep architectural analysis of WordPress plugins — what the plugin does, how it works, what triggers what, and how data flows. 12-phase workflow with structured output.",
+  "author": {
+    "name": "Sérgio Santos",
+    "url": "https://github.com/s3rgiosan"
+  },
+  "homepage": "https://github.com/s3rgiosan/wp-skills/tree/main/wp-mnemon",
+  "repository": "https://github.com/s3rgiosan/wp-skills",
+  "license": "MIT",
+  "keywords": ["wordpress", "plugin-analysis", "documentation", "hooks", "gutenberg"]
+}

@@ -1,0 +1,13 @@
+{
+  "name": "wp-migration-playbook",
+  "version": "1.0.0",
+  "description": "Opinionated, production-tested playbook for WordPress content migrations — WP→WP and other-system→WP.",
+  "author": {
+    "name": "Sérgio Santos",
+    "url": "https://github.com/s3rgiosan"
+  },
+  "homepage": "https://github.com/s3rgiosan/wp-skills/tree/main/wp-migration-playbook",
+  "repository": "https://github.com/s3rgiosan/wp-skills",
+  "license": "MIT",
+  "keywords": ["wordpress", "migration", "wp-cli", "import", "redirects", "multisite"]
+}

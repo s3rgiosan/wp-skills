@@ -9,7 +9,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SKILL_NAME="wp-migration-playbook"
-SKILL_SRC="$SCRIPT_DIR/.claude/skills/$SKILL_NAME"
+SKILL_SRC="$SCRIPT_DIR/skills/$SKILL_NAME"
 CLAUDE_CONFIG_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 
 echo ""

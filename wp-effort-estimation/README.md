@@ -13,6 +13,17 @@ a client proposal.
 
 ## Installation
 
+### Via Claude Code plugin marketplace (recommended)
+
+```
+/plugin marketplace add s3rgiosan/wp-skills
+/plugin install wp-effort-estimation@wp-skills
+```
+
+Or wire `wp-effort-estimation@wp-skills` into `settings.json` under `enabledPlugins` (see the [root README](../README.md#install-via-claude-code-plugin-marketplace-recommended) for the full snippet).
+
+### Via shell script (fallback)
+
 Clone the repo and run the install script from the `wp-effort-estimation` directory:
 
 ```bash

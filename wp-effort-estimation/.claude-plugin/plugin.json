@@ -1,0 +1,13 @@
+{
+  "name": "wp-effort-estimation",
+  "version": "1.0.0",
+  "description": "Structured development-effort estimates for WordPress tasks (and React surfaces of WordPress — Gutenberg, Interactivity API, headless WP).",
+  "author": {
+    "name": "Sérgio Santos",
+    "url": "https://github.com/s3rgiosan"
+  },
+  "homepage": "https://github.com/s3rgiosan/wp-skills/tree/main/wp-effort-estimation",
+  "repository": "https://github.com/s3rgiosan/wp-skills",
+  "license": "MIT",
+  "keywords": ["wordpress", "estimation", "planning", "story-points", "gutenberg"]
+}

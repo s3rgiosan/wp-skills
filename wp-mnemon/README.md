@@ -12,6 +12,17 @@ Paired with the [wp-mnemon subagent](https://github.com/s3rgiosan/wp-agents/tree
 
 ## Installation
 
+### Via Claude Code plugin marketplace (recommended)
+
+```
+/plugin marketplace add s3rgiosan/wp-skills
+/plugin install wp-mnemon@wp-skills
+```
+
+Or wire `wp-mnemon@wp-skills` into `settings.json` under `enabledPlugins` (see the [root README](../README.md#install-via-claude-code-plugin-marketplace-recommended) for the full snippet).
+
+### Via shell script (fallback)
+
 ```bash
 git clone https://github.com/s3rgiosan/wp-skills.git
 cd wp-skills/wp-mnemon

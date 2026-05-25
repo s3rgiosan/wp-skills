@@ -1,0 +1,33 @@
+{
+  "name": "wp-skills",
+  "owner": {
+    "name": "Sérgio Santos"
+  },
+  "metadata": {
+    "description": "Claude Code skills for WordPress developers",
+    "version": "1.0.0"
+  },
+  "allowCrossMarketplaceDependenciesOn": ["wp-agents"],
+  "plugins": [
+    {
+      "name": "wp-effort-estimation",
+      "source": "./wp-effort-estimation",
+      "description": "Structured development-effort estimates for WordPress tasks (and React surfaces of WordPress — Gutenberg, Interactivity API, headless)."
+    },
+    {
+      "name": "wp-migration-playbook",
+      "source": "./wp-migration-playbook",
+      "description": "Opinionated, production-tested playbook for WordPress content migrations — WP→WP and other-system→WP."
+    },
+    {
+      "name": "wp-plugin-code-audit",
+      "source": "./wp-plugin-code-audit",
+      "description": "Verification-first code audit for WordPress plugins: security, performance, standards, wp.org guidelines. Produces a markdown report with severity-sorted findings + GO / NO-GO / GO WITH FIXES verdict."
+    },
+    {
+      "name": "wp-mnemon",
+      "source": "./wp-mnemon",
+      "description": "Deep architectural analysis of WordPress plugins — what the plugin does, how it works, what triggers what, and how data flows. 12-phase workflow with structured output."
+    }
+  ]
+}

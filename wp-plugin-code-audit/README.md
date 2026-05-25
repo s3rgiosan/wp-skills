@@ -10,6 +10,17 @@ Covers security, performance, WordPress coding standards, and WordPress.org Plug
 
 ## Installation
 
+### Via Claude Code plugin marketplace (recommended)
+
+```
+/plugin marketplace add s3rgiosan/wp-skills
+/plugin install wp-plugin-code-audit@wp-skills
+```
+
+Or wire `wp-plugin-code-audit@wp-skills` into `settings.json` under `enabledPlugins` (see the [root README](../README.md#install-via-claude-code-plugin-marketplace-recommended) for the full snippet).
+
+### Via shell script (fallback)
+
 ```bash
 git clone https://github.com/s3rgiosan/wp-skills.git
 cd wp-skills/wp-plugin-code-audit

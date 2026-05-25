@@ -53,10 +53,55 @@ Deep architectural analysis of WordPress plugins — what the plugin does, how i
 
 ---
 
+## Install via Claude Code plugin marketplace (recommended)
+
+`wp-skills` is a Claude Code plugin marketplace. Add it once, then install plugins individually:
+
+```
+/plugin marketplace add s3rgiosan/wp-skills
+/plugin install wp-plugin-code-audit@wp-skills
+/plugin install wp-mnemon@wp-skills
+```
+
+Or wire it directly via `settings.json`:
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "wp-skills": {
+      "source": { "source": "github", "repo": "s3rgiosan/wp-skills" }
+    }
+  },
+  "enabledPlugins": {
+    "wp-plugin-code-audit@wp-skills": true,
+    "wp-mnemon@wp-skills": true
+  }
+}
+```
+
+Plugins live in the same Claude Code session as your own `.claude/` configs — no conflict with prior `install.sh` installs.
+
+> Heads-up on namespaces. Skills installed via plugins are invoked with the `<plugin>:<skill>` form (e.g. `wp-skills:wp-plugin-code-audit`). Skills installed via `install.sh` keep the bare name (e.g. `wp-plugin-code-audit`). Pick one source per skill to avoid duplicates.
+
+---
+
+## Install via shell script (fallback)
+
+If you can't use the plugin marketplace (older Claude Code build, scripted environment, etc.) each skill ships an `install.sh`. See the individual skill README under each subdir.
+
+```bash
+git clone https://github.com/s3rgiosan/wp-skills.git
+cd wp-skills/<skill-name>
+bash install.sh                                       # → ~/.claude
+CLAUDE_CONFIG_DIR=~/.some-other-dir bash install.sh   # → custom dir
+```
+
+---
+
 ## Requirements
 
-- [Claude Code](https://claude.ai/code)
-- Bash (macOS, Linux, or WSL on Windows)
+- [Claude Code](https://claude.ai/code) — v2.1.110+ for plugin marketplace support.
+- Bash (macOS, Linux, or WSL on Windows) for fallback `install.sh`.
 
 ---
 
