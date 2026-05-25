@@ -16,10 +16,10 @@ Paired with the [wp-mnemon subagent](https://github.com/s3rgiosan/wp-agents/tree
 
 ```
 /plugin marketplace add s3rgiosan/wp-skills
-/plugin install wp-mnemon@wp-skills
+/plugin install wp-mnemon@s3rgiosan-wp-skills
 ```
 
-Or wire `wp-mnemon@wp-skills` into `settings.json` under `enabledPlugins` (see the [root README](../README.md#install-via-claude-code-plugin-marketplace-recommended) for the full snippet).
+Or wire `wp-mnemon@s3rgiosan-wp-skills` into `settings.json` under `enabledPlugins` (see the [root README](../README.md#install-via-claude-code-plugin-marketplace-recommended) for the full snippet).
 
 ### Via shell script (fallback)
 

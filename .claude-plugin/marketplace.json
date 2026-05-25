@@ -1,5 +1,5 @@
 {
-  "name": "wp-skills",
+  "name": "s3rgiosan-wp-skills",
   "owner": {
     "name": "Sérgio Santos"
   },
@@ -7,7 +7,7 @@
     "description": "Claude Code skills for WordPress developers",
     "version": "1.0.0"
   },
-  "allowCrossMarketplaceDependenciesOn": ["wp-agents"],
+  "allowCrossMarketplaceDependenciesOn": ["s3rgiosan-wp-agents"],
   "plugins": [
     {
       "name": "wp-effort-estimation",

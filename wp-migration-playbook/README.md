@@ -12,10 +12,10 @@ A Claude Code skill that brings an opinionated, production-tested playbook for W
 
 ```
 /plugin marketplace add s3rgiosan/wp-skills
-/plugin install wp-migration-playbook@wp-skills
+/plugin install wp-migration-playbook@s3rgiosan-wp-skills
 ```
 
-Or wire `wp-migration-playbook@wp-skills` into `settings.json` under `enabledPlugins` (see the [root README](../README.md#install-via-claude-code-plugin-marketplace-recommended) for the full snippet).
+Or wire `wp-migration-playbook@s3rgiosan-wp-skills` into `settings.json` under `enabledPlugins` (see the [root README](../README.md#install-via-claude-code-plugin-marketplace-recommended) for the full snippet).
 
 ### Via shell script (fallback)
 

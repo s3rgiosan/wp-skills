@@ -17,10 +17,10 @@ a client proposal.
 
 ```
 /plugin marketplace add s3rgiosan/wp-skills
-/plugin install wp-effort-estimation@wp-skills
+/plugin install wp-effort-estimation@s3rgiosan-wp-skills
 ```
 
-Or wire `wp-effort-estimation@wp-skills` into `settings.json` under `enabledPlugins` (see the [root README](../README.md#install-via-claude-code-plugin-marketplace-recommended) for the full snippet).
+Or wire `wp-effort-estimation@s3rgiosan-wp-skills` into `settings.json` under `enabledPlugins` (see the [root README](../README.md#install-via-claude-code-plugin-marketplace-recommended) for the full snippet).
 
 ### Via shell script (fallback)
 

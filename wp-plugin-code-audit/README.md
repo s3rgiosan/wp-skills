@@ -14,10 +14,10 @@ Covers security, performance, WordPress coding standards, and WordPress.org Plug
 
 ```
 /plugin marketplace add s3rgiosan/wp-skills
-/plugin install wp-plugin-code-audit@wp-skills
+/plugin install wp-plugin-code-audit@s3rgiosan-wp-skills
 ```
 
-Or wire `wp-plugin-code-audit@wp-skills` into `settings.json` under `enabledPlugins` (see the [root README](../README.md#install-via-claude-code-plugin-marketplace-recommended) for the full snippet).
+Or wire `wp-plugin-code-audit@s3rgiosan-wp-skills` into `settings.json` under `enabledPlugins` (see the [root README](../README.md#install-via-claude-code-plugin-marketplace-recommended) for the full snippet).
 
 ### Via shell script (fallback)
 

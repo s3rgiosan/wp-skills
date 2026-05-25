@@ -59,8 +59,8 @@ Deep architectural analysis of WordPress plugins — what the plugin does, how i
 
 ```
 /plugin marketplace add s3rgiosan/wp-skills
-/plugin install wp-plugin-code-audit@wp-skills
-/plugin install wp-mnemon@wp-skills
+/plugin install wp-plugin-code-audit@s3rgiosan-wp-skills
+/plugin install wp-mnemon@s3rgiosan-wp-skills
 ```
 
 Or wire it directly via `settings.json`:
@@ -68,20 +68,20 @@ Or wire it directly via `settings.json`:
 ```json
 {
   "extraKnownMarketplaces": {
-    "wp-skills": {
+    "s3rgiosan-wp-skills": {
       "source": { "source": "github", "repo": "s3rgiosan/wp-skills" }
     }
   },
   "enabledPlugins": {
-    "wp-plugin-code-audit@wp-skills": true,
-    "wp-mnemon@wp-skills": true
+    "wp-plugin-code-audit@s3rgiosan-wp-skills": true,
+    "wp-mnemon@s3rgiosan-wp-skills": true
   }
 }
 ```
 
 Plugins live in the same Claude Code session as your own `.claude/` configs — no conflict with prior `install.sh` installs.
 
-> Heads-up on namespaces. Skills installed via plugins are invoked with the `<plugin>:<skill>` form (e.g. `wp-skills:wp-plugin-code-audit`). Skills installed via `install.sh` keep the bare name (e.g. `wp-plugin-code-audit`). Pick one source per skill to avoid duplicates.
+> Heads-up on namespaces. Skills installed via plugins are invoked with the `<plugin>:<skill>` form (e.g. `wp-plugin-code-audit:wp-plugin-code-audit`). Skills installed via `install.sh` keep the bare name (e.g. `wp-plugin-code-audit`). Pick one source per skill to avoid duplicates.
 
 ---
 
@@ -126,15 +126,16 @@ Each skill lives in its own directory and follows the same structure:
 
 ```
 skill-name/
-├── install.sh
+├── .claude-plugin/
+│   └── plugin.json              ← plugin manifest (marketplace install)
+├── skills/
+│   └── skill-name/
+│       ├── SKILL.md
+│       └── references/          ← optional
+│       └── scripts/             ← optional
+├── install.sh                   ← fallback installer
 ├── uninstall.sh
-├── README.md
-└── .claude/
-    └── skills/
-        └── skill-name/
-            ├── SKILL.md
-            └── references/        ← optional
-            └── scripts/           ← optional
+└── README.md
 ```
 
 ---
