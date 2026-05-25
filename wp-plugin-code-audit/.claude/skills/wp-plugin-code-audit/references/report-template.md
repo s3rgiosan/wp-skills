@@ -14,11 +14,11 @@ If the user wants it elsewhere, ask. For multi-plugin audits, prefix with the sl
 
 ## Skeleton
 
-```markdown
+````markdown
 # Audit: <Plugin Name> <Version>
 
 **Verdict:** GO WITH FIXES
-**Counts:** 0 critical, 2 high, 4 medium, 3 low, 2 info
+**Counts:** 🔴 0 critical · 🟠 2 high · 🟡 4 medium · 🟢 3 low · ⚪ 2 info
 **Top 3 to fix first:**
 1. `<file>:<line>` — short title (the most consequential High).
 2. `<file>:<line>` — short title.
@@ -31,6 +31,10 @@ If the user wants it elsewhere, ask. For multi-plugin audits, prefix with the sl
 - **Source:** local path / wp.org slug / GitHub URL (commit SHA if available)
 - **Plugin version:** X.Y.Z
 - **Requires:** WP >= A.B, PHP >= X.Y
+- **Distribution:** wp.org / GitHub / private / commercial marketplace
+- **Update channel:** wp.org auto-updates / custom updater (`Update URI`) / manual upload only
+- **Author / contact:** Name / email / repo URL (for disclosure path on private plugins)
+- **Audience:** internal staff only / multi-tenant public / SaaS / e-commerce customers
 - **LOC:** N PHP, N JS, N CSS (excluding vendor / node_modules)
 - **Surface:**
   - REST endpoints: N (`/my-plugin/v1/...`)
@@ -48,29 +52,29 @@ If the user wants it elsewhere, ask. For multi-plugin audits, prefix with the sl
   - Plugin Check: yes — N issues — `/tmp/audit-<slug>/plugin-check.txt`
   - Composer audit: yes — N vulnerable packages
   - npm audit: skipped (no source for `dist/`)
+- **Sections audited:** auth/authz ✓ · nonces ✓ · IDOR ✓ · sanitize/escape ✓ · SQLi ✓ · file-ops ✓ · SSRF ✓ · deserialization ✓ · secrets ✓ · error-disclosure ✓ · ABSPATH ✓ · perf ✓ · standards ✓ · FP-traps ✓
 
 ---
 
-## Critical
+## Findings
 
-(Use H-1 / C-1 numbering for in-document cross-reference.)
+(Numbering convention: severity letter + index — C1, C2, H1, H2, M1, L1, I1. Reference findings by ID in the Top-3 list and Verdict section.)
 
-<!-- If none: -->
+<!-- If a section is empty: -->
+### 🔴 Critical
 None.
 
 ---
 
-## High
+### 🟠 HIGH — H1: `<file.php>:<line>` — Short title
 
-### H-1. `<file.php>:<line>` — Short title
-
-**Severity rationale:** why this is High and not Medium / Critical.
+**Severity rationale.** Why this is High and not Medium / Critical. If reachable by Subscriber and destructive, escalate to Critical per the rubric.
 
 **Description.**
 Trace through source. What the attacker / triggering scenario looks like.
 What breaks. Why the current code doesn't protect against it.
 
-**Verified:** how you confirmed (which file:line you read; what call chain you followed; what input the verification used).
+**Verified.** How you confirmed (which file:line you read; what call chain you followed; what input the verification used).
 
 **Fix.**
 Concrete change. Often a code snippet:
@@ -94,25 +98,19 @@ if ( isset( $_POST['save'] ) ) {
 
 ---
 
-## Medium
-
-### M-1. `<file>:<line>` — Short title
+### 🟡 MEDIUM — M1: `<file>:<line>` — Short title
 
 (Same format, less depth — Medium findings can be one paragraph + a `// suggested change` snippet.)
 
 ---
 
-## Low
-
-### L-1. `<file>:<line>` — Short title
+### 🟢 LOW — L1: `<file>:<line>` — Short title
 
 One sentence + one-line fix. Don't pad.
 
 ---
 
-## Info
-
-### I-1. Observation
+### ⚪ INFO — I1: Observation
 
 One sentence. No fix required (these are suggestions / context for the maintainer).
 
@@ -122,6 +120,20 @@ One sentence. No fix required (these are suggestions / context for the maintaine
 
 - `<file>:<line>` — pattern that looked like X but isn't because Y. Listed
   so the next auditor doesn't re-flag it.
+
+---
+
+## Recommendation
+
+Two-sentence verdict reasoning. State the verdict explicitly and which findings drive it.
+
+**If distribution is private / no auto-update channel:** name the author / vendor and the suggested disclosure path. Examples:
+
+- "Private plugin, no `Update URI` set. Report findings C1–C3 to the author (Acme Plugins / security@acme.example) before deploying."
+- "Source is private GitHub repo `acme/foo`; open an issue with severity tag or email the maintainer at security@acme.com."
+- "Plugin is on wp.org. Critical findings should be reported via wp.org's plugins@wordpress.org with a copy to the author through the plugin's support forum."
+
+If the site owner cannot wait for an upstream fix, list the safest interim mitigations (deactivate the plugin, block the affected endpoint via mu-plugin, restrict capability).
 
 ---
 
@@ -141,14 +153,14 @@ One sentence. No fix required (these are suggestions / context for the maintaine
 - Date: YYYY-MM-DD
 - Hours spent (approximate): N
 - Confidence: high / medium / low (low if source not fully available, or if scope was time-boxed)
-```
+````
 
 ---
 
 ## Worked example — one Critical finding
 
-```markdown
-### C-1. `includes/rest/Search.php:46` — Unauthenticated search returns private post titles + IDs
+````markdown
+### 🔴 CRITICAL — C1: `includes/rest/Search.php:46` — Unauthenticated search returns private post titles + IDs
 
 **Severity rationale:** Network-exploitable, no auth required. Discloses all
 post titles regardless of status (including `draft`, `private`, `pending`),
@@ -202,14 +214,14 @@ $query = new WP_Query( [
     // ...
 ] );
 ```
-```
+````
 
 ---
 
 ## Worked example — one High finding
 
-```markdown
-### H-1. `plugin.php:60` — No activation hook; tables created on `admin_init`
+````markdown
+### 🟠 HIGH — H1: `plugin.php:60` — No activation hook; tables created on `admin_init`
 
 **Severity rationale:** Data-loss risk. On a frontend-only site (e.g.,
 headless WP, REST-only consumer), or in a non-admin activation flow,
@@ -246,7 +258,7 @@ add_action( 'wpmu_new_blog', [ BaseTable::class, 'setup_for_new_site' ] );
 // Keep admin_init as a safety net for upgrades within an existing install:
 add_action( 'admin_init', [ BaseTable::class, 'upgrade' ] );
 ```
-```
+````
 
 ---
 
@@ -258,7 +270,7 @@ After writing `AUDIT.md`, also output a short summary in chat (not the whole fil
 **wp-plugin-code-audit complete.** Wrote `AUDIT.md`.
 
 - Verdict: **GO WITH FIXES**
-- 0 critical, 2 high, 4 medium, 3 low, 2 info
+- 🔴 0 critical · 🟠 2 high · 🟡 4 medium · 🟢 3 low · ⚪ 2 info
 - Top 3 to fix:
   1. `includes/rest/Search.php:46` — Unauthenticated search returns private titles
   2. `plugin.php:60` — No activation hook; tables never created on frontend-only sites
