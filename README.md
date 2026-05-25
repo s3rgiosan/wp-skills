@@ -94,6 +94,13 @@ skill-name/
 
 ---
 
+## Contributors
+
+- Sérgio Santos ([@s3rgiosan](https://github.com/s3rgiosan))
+- Marco Almeida ([@webdados](https://github.com/webdados))
+
+---
+
 ## License
 
 MIT
