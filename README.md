@@ -43,6 +43,14 @@ Verification-first code audit for WordPress plugins. Five-phase workflow (discov
 
 **[→ Install wp-plugin-code-audit](./wp-plugin-code-audit/README.md)**
 
+### [wp-mnemon](./wp-mnemon)
+
+Deep architectural analysis of WordPress plugins — what the plugin does, how it works, what triggers what, and how data flows through the system. 12-phase workflow produces structured documentation (overview, architecture, hooks, data, extending). Works against a local path or a GitHub URL (public or private). Paired with the [wp-mnemon subagent](https://github.com/s3rgiosan/wp-agents/tree/main/wp-mnemon) in `wp-agents` for persistent agent memory; usable standalone for one-shot analysis.
+
+**Triggers on:** "analyze this plugin", "understand how this plugin works", "map the plugin's hooks", "what does this plugin do", "trace the bootstrap flow", "document this plugin".
+
+**[→ Install wp-mnemon](./wp-mnemon/README.md)**
+
 ---
 
 ## Requirements
