@@ -39,6 +39,32 @@ For each callback, confirm:
 
 **Bad:** `update_option(...)` then `if ( ! current_user_can(...) ) return;`. Cap check must precede every side effect.
 
+### 1.5 IDOR — record-level authorization
+
+Capability check is necessary but not sufficient. An endpoint with the right cap can still be vulnerable if it acts on a record ID supplied by the caller without checking the caller has access to *that specific record*.
+
+**Detect:**
+```bash
+# Endpoints reading an ID from request and acting on it
+grep -RnE "\\\$_(GET|POST|REQUEST)\[['\"]?(id|post_id|user_id|order_id|customer_id|item_id)['\"]?\]" --include="*.php" .
+```
+
+For each callsite, trace the ID to its sink. Examples that need a record-level check:
+
+| Pattern | Risk |
+|---|---|
+| `wc_get_order( $_POST['id'] )` → mutate / export | Shop Manager can act on any order, including orders not in their scope (multistore / vendor plugins). |
+| `get_post( $_POST['id'] )` → update / publish / delete | Editor can act on posts they don't own when policy intends "own posts only". |
+| `get_user_meta( $_POST['user_id'] )` → return | Profile data leak across users. |
+| `wp_delete_attachment( $_POST['attachment_id'] )` | Attachment deletion across uploaders. |
+
+**Fix patterns:**
+- Check ownership explicitly: `if ( $order->get_customer_id() !== get_current_user_id() ) wp_die(403);`.
+- Use map-meta-cap with a per-record capability: `current_user_can( 'edit_post', $post_id )` (note the second arg — this is the correct way to call it for record-scoped caps).
+- For custom CPTs with per-record permissions, see [[wp-record-level-capability-scoping]] pattern (custom `capability_type` + `map_meta_cap` filter reading post meta).
+
+**Severity:** IDOR with destructive impact is at least **High**; if the record holds sensitive data (PII / financial / private), **Critical** when reachable by Subscriber.
+
 ---
 
 ## 2. Nonces (CSRF)
@@ -229,14 +255,41 @@ Prefer `json_decode()` for new code; document any new `unserialize()` callsite.
 
 ## 9. Cryptography & Secrets
 
+### 9.1 Hardcoded secrets in source
+
+```bash
+grep -RnE "(api[_-]?key|secret|password|token)\s*=\s*['\"][A-Za-z0-9]{16,}" --include="*.php" --include="*.js" .
+```
+
 - Hardcoded API keys / passwords / tokens in PHP / JS / config files.
 - Encryption with `mcrypt_*` (removed in PHP 7.2) or hand-rolled AES.
 - Token comparison with `==` / `===` instead of `hash_equals()` (timing attack).
 - `wp_generate_password()` for passwords (OK); `wp_generate_uuid4()` / `random_bytes()` for security tokens.
 
+### 9.2 Stored credentials — plaintext / autoloaded / form-visible
+
+Third-party API keys / OAuth secrets / SMTP passwords stored in `wp_options` or post meta. Every one of these checks is a separate finding:
+
+| Issue | Detect | Severity |
+|---|---|---|
+| Stored in plaintext (no encryption / signed-blob) | `grep -RnE "(update_option|add_option)\(\s*['\"](.*?(api[_-]?key\|secret\|password\|token).*?)['\"]" --include="*.php" .` | **High** (database backup / DB-read access / errant `get_option` exposure) |
+| Stored with autoload=yes (default for `update_option`) | `wp option list --autoload=yes --format=csv \| grep -iE "(api[_-]?key\|secret\|token\|password)"` (on a live install) | **Medium** (loaded into memory on every request, broader exposure surface) |
+| Form input rendered as `<input type="text">` instead of `type="password"` | Read settings page render code; look for `type="text"` near `api_key` / `secret` field IDs | **Medium** (shoulder-surfing, plain-text in clipboard / dev tools / screen sharing) |
+| Logged via `error_log` / `wp_send_json` on error | `grep -RnE "(error_log\|wp_send_json)" --include="*.php" .` then look for adjacent secret variables | **High** if log files are public-readable; **Medium** otherwise |
+| Returned in REST/AJAX response payloads (even partial) | Trace response shape — does it echo back the stored option? | **High** |
+
+**Fix patterns:**
+- Mark sensitive options `autoload=no`: `add_option( $key, $value, '', 'no' )` (note: changing autoload on an existing option requires `update_option` with explicit autoload param on WP 6.4+, or `wp_set_option_autoload` API on 6.6+).
+- For settings forms, use `type="password"` (mask) with a separate "reveal" button if the admin needs to verify the stored value. Better: don't echo the stored secret back to the form at all — show a masked placeholder; only update if the user types a new value.
+- Encrypted-at-rest: use a server-side secret (defined as a `wp-config.php` constant, e.g. `MY_PLUGIN_ENCRYPTION_KEY`) + `sodium_crypto_secretbox` for symmetric encryption. Avoid hand-rolled AES.
+
+### 9.3 Secrets in user-facing error messages
+
 ```bash
-grep -RnE "(api[_-]?key|secret|password|token)\s*=\s*['\"][A-Za-z0-9]{16,}" --include="*.php" --include="*.js" .
+grep -RnE "(echo|print|die|wp_die|wp_send_json_error)\(.*?\\\$.*?(api_key|secret|token|password)" --include="*.php" .
 ```
+
+Stack traces, debug strings, or "API returned X" messages that include the credential. Even partial leaks ("first 4 chars match") help an attacker.
 
 ---
 
@@ -249,14 +302,79 @@ grep -RnE "(api[_-]?key|secret|password|token)\s*=\s*['\"][A-Za-z0-9]{16,}" --in
 
 ---
 
-## 11. Misc
+## 11. Error Response & Information Disclosure
 
-- **`error_reporting()` / `ini_set('display_errors', ...)` in production code** — info disclosure.
-- **`phpinfo()` / `var_dump()` / `print_r()` left behind** in any execution path.
-- **Debug routes / endpoints** registered without conditional gate (`WP_DEBUG`, `defined('SCRIPT_DEBUG')`).
-- **Direct file access** to PHP files without `defined( 'ABSPATH' ) || exit;` at the top.
+How an endpoint fails matters as much as how it succeeds.
+
+### 11.1 Hard `die()` / `exit()` mid-AJAX or mid-REST
+
+```bash
+grep -RnE "\b(die|exit)\(" --include="*.php" . | grep -v "wp_die"
+```
+
+For each `die()` / `exit()` inside an AJAX or REST callback:
+
+| Pattern | Issue |
+|---|---|
+| `die("error, no order")` in `wp_ajax_*` callback | Returns `text/html` body instead of JSON. Breaks `wp_send_json_*` contract; downstream JS receives unparseable response. Plaintext content may leak internal state ("no order", "DB connection lost", path fragments). |
+| `exit;` after `wp_send_json_*` | Redundant (helpers call `wp_die` internally) and confuses readers. |
+| `die( $exception->getMessage() )` | Echoes exception text — may leak file paths, query fragments, DB errors. |
+
+**Fix:** use `wp_send_json_error( [ 'code' => 'no_order', 'message' => __('Order not found', 'plugin') ] )` and let WP handle status code + content-type.
+
+### 11.2 Verbose error responses
+
+| Issue | Detect |
+|---|---|
+| Exception messages echoed verbatim | `grep -RnE "(echo \|wp_send_json_error\()\\\$e->getMessage" --include="*.php" .` |
+| SQL errors surfaced (`$wpdb->last_error` returned to client) | `grep -RnE "\\\$wpdb->last_error" --include="*.php" .` |
+| Stack traces in production responses | `grep -RnE "(getTraceAsString\|debug_backtrace)" --include="*.php" .` |
+| File paths in error strings | Visual inspection of error messages |
+
+**Fix:** generic user-facing message + detailed log (`error_log` / Monolog) for developers.
+
+### 11.3 Debug / development leftovers
+
+- `error_reporting()` / `ini_set('display_errors', ...)` in production code — info disclosure.
+- `phpinfo()` / `var_dump()` / `print_r()` left behind in any execution path.
+- Debug routes / endpoints registered without conditional gate (`WP_DEBUG`, `defined('SCRIPT_DEBUG')`).
+- `console.log()` of sensitive data in shipped JS.
+
+---
+
+## 12. Direct File Access
+
+Every PHP file must guard against direct browser request. Without the guard, a misconfigured webserver, an exposed `wp-content/plugins/` index, or a directory traversal elsewhere can serve raw PHP for execution outside the WP context — leaking source, throwing fatals that disclose paths, or running code that assumes WP has booted.
+
+```bash
+# Files containing PHP code but no ABSPATH check
+for f in $(find . -name "*.php" -not -path "*/vendor/*" -not -path "*/node_modules/*"); do
+  if ! grep -q "ABSPATH\|WP_INC\|WP_USE_THEMES" "$f"; then
+    echo "$f"
+  fi
+done
+```
+
+**Required guard:**
+```php
+defined( 'ABSPATH' ) || exit;
+```
+
+**Severity:**
+- Templates (`templates/*.php`) and stand-alone callbacks: **Medium** — defense-in-depth; direct access typically harmless but the discipline matters.
+- Files containing destructive logic (queries, file ops) reachable without the guard: **High**.
+- Files with credentials / API calls hard-coded: **High** / **Critical** depending on what's exposed.
+
+**Exceptions:** pure class files in PSR-4 autoload aren't reachable directly because they have no executable top-level code — still good practice but lower priority.
+
+---
+
+## 13. Misc
+
 - **`extract()`** on user input → variable injection.
 - **`call_user_func()` / `call_user_func_array()`** with user-controlled callable → arbitrary function call.
+- **Misspelled filenames that WP relies on** — e.g. `unistall.php` instead of `uninstall.php` → uninstall hook never fires → orphaned options / tables (call out as **Low** if no destructive logic; **Medium** if cleanup code is in there but unreachable; **High** if uninstall is supposed to remove credentials and they remain).
+- **Misspelled constants** — e.g. `WP_UNISTALL_PLUGIN` vs `WP_UNINSTALL_PLUGIN` → guard never triggers. Same severity logic.
 
 ---
 
