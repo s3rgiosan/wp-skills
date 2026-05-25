@@ -16,7 +16,7 @@ a client proposal.
 Clone the repo and run the install script from the `wp-effort-estimation` directory:
 
 ```bash
-git clone https://github.com/your-username/wp-skills.git
+git clone https://github.com/s3rgiosan/wp-skills.git
 cd wp-skills/wp-effort-estimation
 
 # Default → ~/.claude

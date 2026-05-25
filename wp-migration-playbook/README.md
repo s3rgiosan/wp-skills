@@ -9,7 +9,7 @@ A Claude Code skill that brings an opinionated, production-tested playbook for W
 ## Installation
 
 ```bash
-git clone https://github.com/your-username/wp-skills.git
+git clone https://github.com/s3rgiosan/wp-skills.git
 cd wp-skills/wp-migration-playbook
 
 # Default → ~/.claude

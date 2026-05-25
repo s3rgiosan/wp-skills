@@ -11,7 +11,7 @@ Covers security, performance, WordPress coding standards, and WordPress.org Plug
 ## Installation
 
 ```bash
-git clone https://github.com/your-username/wp-skills.git
+git clone https://github.com/s3rgiosan/wp-skills.git
 cd wp-skills/wp-plugin-code-audit
 
 # Default → ~/.claude

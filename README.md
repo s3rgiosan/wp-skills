@@ -8,7 +8,7 @@ diffs, and more — without re-explaining context every time.
 
 > **Scope note:** When these skills mention "React", they mean React **in a WordPress context** — block editor / Gutenberg, Interactivity API, admin UIs, or headless WP (Next.js, Faust, etc.). Generic standalone-React projects are not the target.
 
-Companion to [wp-agents](https://github.com/your-username/wp-agents) (subagents
+Companion to [wp-agents](https://github.com/s3rgiosan/wp-agents) (subagents
 with persistent memory). Skills here focus on lightweight, on-demand workflows
 that don't require agent memory.
 
