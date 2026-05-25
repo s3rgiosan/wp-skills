@@ -51,7 +51,7 @@ Before reading code, scope the plugin. Write the scope inline at the top of the 
 ```bash
 # Plugin entry, version, requires
 head -40 plugin-name.php
-grep -RhE "^\s*\*?\s*(Plugin Name|Version|Requires at least|Requires PHP|License|Text Domain):" --include="*.php" .
+grep -RhE "^\s*\*?\s*(Plugin Name|Version|Requires at least|Requires PHP|License|Text Domain|Update URI):" --include="*.php" .
 
 # Surface area
 find . -type f -name "*.php" -not -path "*/vendor/*" -not -path "*/node_modules/*" | wc -l
@@ -70,6 +70,19 @@ test -f package.json && jq '.dependencies, .devDependencies' package.json
 test -d vendor && echo "vendor/ shipped (audit included)"
 test -d dist && echo "dist/ shipped (likely build output — audit source if available)"
 ```
+
+### Capture distribution + update channel
+
+Distribution shape affects severity weighting and the remediation path. Record in the report's Scope section:
+
+| Question | How to determine |
+|---|---|
+| **Distribution:** wp.org / GitHub / private / commercial marketplace | Check plugin header `Update URI`, presence of `readme.txt`, GitHub remote, vendor name; ask the user if unclear. |
+| **Update mechanism:** wp.org auto-updates / GitHub Updater / private updater / manual upload | wp.org slug → wp.org updates; `Update URI` set → custom updater; neither → manual. |
+| **Author contact** | Plugin header `Author` / `Author URI`. Record so the report can recommend disclosure path. |
+| **Audience** | Internal staff only? Multi-tenant public? Affects who the attacker realistically is. |
+
+A private plugin with no update mechanism amplifies severity — the site owner can't auto-patch when the author ships a fix. Note this in the Scope section AND in the verdict reasoning if it changes the call.
 
 For remote audits (wp.org slug, GitHub URL): `references/remote-fetch.md`.
 
@@ -112,12 +125,14 @@ Tools catch patterns; people catch intent. Read in this order:
 11. **i18n** — translation functions used? Text domain matches plugin slug? Late-init load (post `init`)?
 12. **Cron** — `wp_schedule_event` registrations. Cleared in deactivation? Hook callback registered before scheduling?
 
-Apply the four checklists:
+Apply the four checklists. **Traverse every section of every checklist; don't skim and assume coverage.** A common audit failure is forgetting to read a reference file end-to-end and missing entire categories (secrets storage, IDOR, ABSPATH guards, error-response disclosure).
 
-- `references/security-checklist.md` — auth, nonces, caps, sanitize, escape, SQLi, CSRF, SSRF, file ops, deserialization, secrets in code, allowlist patterns.
+- `references/security-checklist.md` — auth, nonces, caps, **IDOR**, sanitize, escape, SQLi, CSRF, SSRF, file ops, deserialization, secrets in code, **stored credentials**, **error response & info disclosure**, **direct file access**.
 - `references/performance-checklist.md` — autoloaded options, expensive queries, missing indexes, transients without TTL, cache-thrashing hooks, cron storms, enqueue scope, asset weight.
 - `references/standards-checklist.md` — WPCS rules, function/class prefixing, i18n, deprecated APIs, plugin header completeness, GPL compatibility.
 - `references/false-positive-traps.md` — verification procedures for SQLi / nonce / escape / sanitize before flagging.
+
+**Traversal checklist** — before moving to phase 4, confirm you ran each detection in every section of each file. If a section produced zero candidates, note that in the report's Scope section under "Sections audited" — it shows your work and tells the reader nothing was skipped.
 
 ---
 
@@ -150,7 +165,7 @@ Minimum report skeleton (full template + worked examples: `references/report-tem
 # Audit: <plugin-name> <version>
 
 **Verdict:** GO / NO-GO / GO WITH FIXES
-**Counts:** <C> critical, <H> high, <M> medium, <L> low, <I> info
+**Counts:** 🔴 <C> critical · 🟠 <H> high · 🟡 <M> medium · 🟢 <L> low · ⚪ <I> info
 **Top 3 to fix first:**
 1. ...
 2. ...
@@ -158,31 +173,34 @@ Minimum report skeleton (full template + worked examples: `references/report-tem
 
 ## Scope
 - Path / source: ...
+- Distribution: wp.org / GitHub / private / commercial · Update channel: ...
+- Author / contact: ...
 - LOC: ... PHP, ... JS
 - Surface: REST endpoints (N), AJAX handlers (N), admin pages (N), CLI commands (N), blocks (N)
 - Dependencies (PHP): ...
 - Dependencies (JS): ...
 - Tools run: PHPCS (yes/no), PHPStan (yes/no), Plugin Check (yes/no)
+- Sections audited: security ✓ performance ✓ standards ✓ FP-traps ✓
 
-## Critical
-- **`file.php:line` — short title.** Description with the trace through source.
-  Why it's exploitable / what breaks.
-  *Fix:* concrete change.
+## Findings
 
-## High
+### 🔴 CRITICAL — C1: `file.php:line` — short title
+Description with the trace through source. Why it's exploitable / what breaks.
+*Fix:* concrete change.
+
+### 🟠 HIGH — H1: `file.php:line` — short title
 ...same format...
 
-## Medium
-...same format...
-
-## Low
-...same format...
-
-## Info
-...same format...
+### 🟡 MEDIUM — M1: ...
+### 🟢 LOW — L1: ...
+### ⚪ INFO — I1: ...
 
 ## Verified false (appendix)
 - `file.php:line` — pattern that looked like X but isn't because Y.
+
+## Recommendation
+- Two-sentence verdict reasoning.
+- If distribution is private and findings require an author fix: who to contact + suggested disclosure path.
 
 ## Tooling output
 - PHPCS: `/tmp/audit-<slug>/phpcs.txt` (N errors, N warnings)
@@ -194,13 +212,25 @@ Minimum report skeleton (full template + worked examples: `references/report-tem
 
 ## Severity Rubric
 
-| Severity | Rule of thumb | Examples |
-|---|---|---|
-| **Critical** | Exploitable from the network with low / no privilege; remote code execution; auth bypass; data loss. | Unauthenticated SQLi; arbitrary file upload via REST; `eval()` on user input; auth bypass on admin action; arbitrary file read via path traversal. |
-| **High** | Exploitable with auth but below the privilege required for the impact; data integrity; CSRF on destructive admin actions; persistent XSS by editor+; sensitive info disclosure; missing activation hook (data loss). | Subscriber-readable user/post enumeration; capability check missing on settings save; deserialization on stored user-controlled meta; missing nonce on destructive admin-ajax. |
-| **Medium** | Reliability / fragility / hardening; functionally exploitable only in narrow scenarios. | Query builder counter desync; SQL builder fragile under refactor; transient with no TTL; option `autoload=yes` for large blob; reflected XSS only in admin-self context. |
-| **Low** | Code smell with no realistic exploit path; standards violations that don't change behavior; cosmetic. | Hardcoded table names; non-prefixed names that don't currently collide; missing `wp_set_script_translations` despite shipped `.pot`. |
-| **Info** | Observations / suggestions; not bugs. | "No PHPStan config"; "uninstall hook leaves tables — acceptable; document". |
+Each finding in the report gets a traffic-light emoji + severity tag in its heading (e.g. `### 🔴 CRITICAL — C1: …`). The emoji is for fast scanning; the tag is the canonical level.
+
+| Severity | Emoji | Rule of thumb | Examples |
+|---|---|---|---|
+| **Critical** | 🔴 | Exploitable from the network with low / no privilege; remote code execution; auth bypass; data loss; **OR** destructive / business-critical action reachable by the lowest-privilege authenticated role (Subscriber / Customer — roles auto-granted on registration or checkout on most WP sites). | Unauthenticated SQLi; arbitrary file upload via REST; `eval()` on user input; auth bypass on admin action; arbitrary file read via path traversal; **subscriber-exploitable AJAX that overwrites product catalog / generates billing documents / exports private data / sends emails on the site's behalf**; SSRF reachable by any authenticated user. |
+| **High** | 🟠 | Exploitable with auth but below the privilege required for the impact; data integrity; CSRF on destructive admin actions; persistent XSS by editor+; sensitive info disclosure; missing activation hook (data loss); plaintext credential storage. | Editor-exploitable destructive action (Editor cap doesn't include `manage_options` but the action requires it); capability check missing on settings save when only admins can reach the form; deserialization on stored editor-writable meta; API keys in plaintext in `wp_options` autoloaded; missing nonce on destructive admin-ajax that already has correct cap check. |
+| **Medium** | 🟡 | Reliability / fragility / hardening; functionally exploitable only in narrow scenarios. | Query builder counter desync; SQL builder fragile under refactor; transient with no TTL; option `autoload=yes` for large blob; reflected XSS only in admin-self context; hard `die()` returning plaintext from an AJAX endpoint (info disclosure + breakage). |
+| **Low** | 🟢 | Code smell with no realistic exploit path; standards violations that don't change behavior; cosmetic. | Hardcoded table names; non-prefixed names that don't currently collide; missing `wp_set_script_translations` despite shipped `.pot`; integer cast missing on `$_REQUEST['id']` that goes to a function that handles non-int gracefully. |
+| **Info** | ⚪ | Observations / suggestions; not bugs. | "No PHPStan config"; "uninstall hook leaves tables — acceptable; document"; "Plugin header missing optional fields". |
+
+### Subscriber-exploitable rule (critical)
+
+If you are tempted to call a finding **High** because it requires authentication, ask: **what role is required?**
+
+- Subscriber / Customer / any auto-granted role → treat as **Critical**. On most WordPress sites with WooCommerce, BuddyPress, bbPress, course / membership plugins, or open registration, getting a Subscriber account is trivially obtained (account creation at checkout, free signup, etc.). Treat Subscriber-reachable destructive actions the same as unauthenticated.
+- Editor / Shop Manager / similar elevated-but-not-admin → **High**.
+- Admin / `manage_options` → CSRF (missing nonce) is **High**; capability check alone makes destructive actions **not** Critical.
+
+Distribution amplifier: if the plugin has no update channel (private, no `Update URI`), bump anything Critical/High that requires an author fix by half a level in the verdict reasoning — the site owner can't auto-patch.
 
 ---
 
