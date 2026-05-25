@@ -58,7 +58,7 @@ Outputs an `AUDIT.md` file plus a short inline summary in chat (verdict + counts
 
 ## What the report looks like
 
-```markdown
+````markdown
 # Audit: my-plugin 1.2.3
 
 **Verdict:** GO WITH FIXES
@@ -88,7 +88,7 @@ Outputs an `AUDIT.md` file plus a short inline summary in chat (verdict + counts
 ## Verified false (appendix)
 - `Helpers/Query.php:67` — IN clause looked like SQLi; verified false (post_type_exists()
   guard + esc_sql()). Logged as Medium for fragility instead.
-```
+````
 
 ---
 
