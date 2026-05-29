@@ -38,7 +38,7 @@ If the goal is "is this safe / good enough / mergeable", this is the right refer
 2. **Tool scan** — run PHPCS+WPCS, PHPStan, Plugin Check if available; collect raw findings.
 3. **Manual read** — read entry file, hooks, REST routes, AJAX, admin pages, DB queries, file ops, CLI. Tools miss intent.
 4. **Verify** — every candidate finding traced through source. No unverified findings in the report.
-5. **Report** — write `AUDIT.md` with severity-sorted findings, fix per finding, verdict.
+5. **Report** — write `AUDIT-<yyyy-mm-dd>.md` to a non-public location with severity-sorted findings, fix per finding, verdict.
 
 Skipping phase 4 is how false positives ship and erode trust. Don't.
 
@@ -83,6 +83,19 @@ Distribution shape affects severity weighting and the remediation path. Record i
 | **Audience** | Internal staff only? Multi-tenant public? Affects who the attacker realistically is. |
 
 A private plugin with no update mechanism amplifies severity — the site owner can't auto-patch when the author ships a fix. Note this in the Scope section AND in the verdict reasoning if it changes the call.
+
+### Skip ignored paths and dependencies
+
+Read `.gitignore` and `.distignore` if present. **Skip their excluded paths during the scan** — auditing `tests/`, `*.md`, dev configs, or `.git/` wastes effort and adds noise.
+
+**Skip `vendor/` and `node_modules/` by default**, even when they ship in the release. Auditing third-party dependency code is out of scope for a plugin audit unless the user explicitly asks for it (e.g. "audit the bundled dependencies too"). Audit the plugin's own code; assume deps are the upstream maintainers' responsibility.
+
+List what you skipped in the report's Scope section ("Ignored (gitignore/distignore): …", and note `vendor/`/`node_modules/` skipped) so the reader knows the coverage boundary. If the user wants deps included, scan them and say so in Scope.
+
+```bash
+test -f .gitignore  && echo "--- .gitignore ---"  && cat .gitignore
+test -f .distignore && echo "--- .distignore ---" && cat .distignore
+```
 
 For remote audits (wp.org slug, GitHub URL): `references/remote-fetch.md`.
 
@@ -157,7 +170,23 @@ Full traps + procedures: `references/false-positive-traps.md`.
 
 ## 5. Report
 
-Write to `AUDIT.md` in CWD (or path the user specifies). Inline summary in chat: verdict + counts + top-3-to-fix.
+### Where to write the report
+
+The report contains vulnerability details. **Never let it leak into a public repo by accident** — the default of writing to the project root is unsafe in a git-tracked plugin.
+
+**Always ask the user where to write the report before writing it.** Don't silently default to the root. Offer concrete options, with the safest first:
+
+1. **`.claude/`** (create it if missing) — the convention for "important project context", and commonly git-excluded. Recommended default.
+2. **A custom path** the user gives (e.g. somewhere outside the repo).
+3. **The project root (CWD)** — only after confirming it won't be committed.
+
+Before writing to any git-tracked location, check whether the report (or `AUDIT-*.md`) is matched by `.gitignore`. If not, warn the user inline and offer to add `AUDIT-*.md` to `.gitignore` first. Skip the question only if the user already specified a path in their request.
+
+### Filename — keep history, never overwrite
+
+Name the report `AUDIT-<yyyy-mm-dd>.md` (e.g. `AUDIT-2026-05-29.md`). Re-audits on a later day produce a new dated file — the history is preserved for reference. If a file with today's date already exists (a second audit the same day), append a time suffix: `AUDIT-<yyyy-mm-dd>-<HHMM>.md`. **Never overwrite an existing audit report.**
+
+Inline summary in chat: report path + verdict + counts + top-3-to-fix.
 
 Minimum report skeleton (full template + worked examples: `references/report-template.md`):
 
@@ -180,6 +209,7 @@ Minimum report skeleton (full template + worked examples: `references/report-tem
 - Dependencies (PHP): ...
 - Dependencies (JS): ...
 - Tools run: PHPCS (yes/no), PHPStan (yes/no), Plugin Check (yes/no)
+- Ignored (gitignore/distignore): ... · `vendor/` + `node_modules/` skipped (deps out of scope unless requested)
 - Sections audited: security ✓ performance ✓ standards ✓ FP-traps ✓
 
 ## Findings
@@ -266,7 +296,7 @@ State the verdict + two-sentence reasoning. Reader should know why.
 - `references/performance-checklist.md` — performance audit categories.
 - `references/standards-checklist.md` — WPCS + WordPress.org plugin guidelines.
 - `references/false-positive-traps.md` — verification procedures for SQLi, nonce, escape, sanitize.
-- `references/report-template.md` — full `AUDIT.md` template with worked examples.
+- `references/report-template.md` — full `AUDIT-<yyyy-mm-dd>.md` template with worked examples.
 - `references/tooling.md` — PHPCS / PHPStan / Plugin Check commands + interpretation.
 - `references/remote-fetch.md` — fetching plugins from wp.org slug or GitHub URL.
 

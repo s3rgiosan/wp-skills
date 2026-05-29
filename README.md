@@ -37,7 +37,7 @@ Opinionated, production-tested playbook for WordPress content migrations — WP�
 
 ### [wp-plugin-code-audit](./wp-plugin-code-audit)
 
-Verification-first code audit for WordPress plugins. Five-phase workflow (discover → tool scan → manual read → verify → report) covering security, performance, WordPress coding standards, and WordPress.org Plugin Directory guidelines. Produces an `AUDIT.md` with severity-sorted findings (Critical / High / Medium / Low / Info), fix recommendations, a verified-false appendix, and a final **GO / NO-GO / GO WITH FIXES** verdict. Works against a local plugin directory, a single file, or a remote source (wp.org slug, GitHub URL).
+Verification-first code audit for WordPress plugins. Five-phase workflow (discover → tool scan → manual read → verify → report) covering security, performance, WordPress coding standards, and WordPress.org Plugin Directory guidelines. Produces a dated `AUDIT-<yyyy-mm-dd>.md` (written to a location you choose, defaulting to a non-public one like `.claude/`) with severity-sorted findings (Critical / High / Medium / Low / Info), fix recommendations, a verified-false appendix, and a final **GO / NO-GO / GO WITH FIXES** verdict. Works against a local plugin directory, a single file, or a remote source (wp.org slug, GitHub URL).
 
 **Triggers on:** "audit this plugin", "review the plugin", "is this plugin secure", "code audit", "security review", "is this plugin safe to install", "check this plugin for vulnerabilities", "performance review of this plugin".
 
