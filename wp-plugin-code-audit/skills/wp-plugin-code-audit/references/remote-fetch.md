@@ -130,7 +130,7 @@ For wp.org plugin zips, source is what gets shipped to users. If JS is minified 
 ## 6. Cleanup
 
 ```bash
-# After AUDIT.md is written to a persistent location:
+# After the dated AUDIT-<yyyy-mm-dd>.md is written to a persistent location:
 rm -rf $WORK
 ```
 

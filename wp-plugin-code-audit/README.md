@@ -61,9 +61,9 @@ The skill runs a five-phase audit:
 2. **Tool scan** — run PHPCS+WPCS, PHPStan, Plugin Check, Composer/npm audit if available.
 3. **Manual read** — read main file, hooks, REST routes, AJAX, admin pages, DB queries, file ops.
 4. **Verify** — every candidate finding traced through source before being written.
-5. **Report** — write `AUDIT.md` with Critical / High / Medium / Low / Info findings + verdict.
+5. **Report** — write a dated `AUDIT-<yyyy-mm-dd>.md` with Critical / High / Medium / Low / Info findings + verdict.
 
-Outputs an `AUDIT.md` file plus a short inline summary in chat (verdict + counts + top-3-to-fix).
+Outputs a dated `AUDIT-<yyyy-mm-dd>.md` file (it asks where to write it — defaulting to a non-public location like `.claude/` so vulnerability details don't get committed to a public repo, and keeping a per-day history) plus a short inline summary in chat (verdict + counts + top-3-to-fix).
 
 ---
 
@@ -112,7 +112,7 @@ Outputs an `AUDIT.md` file plus a short inline summary in chat (verdict + counts
 | **`references/performance-checklist.md`** | Autoloaded options, queries, transients, cron, HTTP API, asset enqueue, custom tables |
 | **`references/standards-checklist.md`** | WPCS rules, prefixing, i18n, plugin header, GPL, wp.org guidelines |
 | **`references/false-positive-traps.md`** | Verification procedures for the 4 most over-flagged categories (SQLi, nonce, escape, sanitize) |
-| **`references/report-template.md`** | Full `AUDIT.md` template + worked examples |
+| **`references/report-template.md`** | Full `AUDIT-<yyyy-mm-dd>.md` template + worked examples |
 | **`references/tooling.md`** | PHPCS / PHPStan / Plugin Check / Composer audit / npm audit |
 | **`references/remote-fetch.md`** | Fetching plugins from wp.org slug or GitHub URL (with reproducibility metadata) |
 

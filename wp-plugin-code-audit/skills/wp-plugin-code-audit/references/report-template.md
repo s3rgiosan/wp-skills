@@ -1,14 +1,18 @@
 # Report Template
 
-Full `AUDIT.md` skeleton plus a worked example showing the level of detail expected per finding.
+Full `AUDIT-<yyyy-mm-dd>.md` skeleton plus a worked example showing the level of detail expected per finding.
 
 ---
 
 ## Where to write it
 
-Default: `AUDIT.md` in the CWD where the audit was initiated (NOT inside the plugin directory — keep the report alongside the user's notes, not inside the artifact being audited).
+**Always ask the user where to write the report** (see SKILL.md → Report → "Where to write the report"). The report contains vulnerability details — never default it into a git-tracked project root where it could be committed to a public repo.
 
-If the user wants it elsewhere, ask. For multi-plugin audits, prefix with the slug: `AUDIT-foo.md`.
+- Name the file `AUDIT-<yyyy-mm-dd>.md` (e.g. `AUDIT-2026-05-29.md`) so each run keeps a dated history instead of overwriting the last. Second audit the same day → append a time suffix: `AUDIT-<yyyy-mm-dd>-<HHMM>.md`.
+- Preferred location: `.claude/` (commonly git-excluded), a path outside the repo, or — only if confirmed git-ignored — the CWD.
+- Never write inside the plugin directory being audited (don't pollute the artifact).
+- Multi-plugin audits: prefix with the slug too: `AUDIT-foo-<yyyy-mm-dd>.md`.
+- Before writing to a git-tracked location, confirm `AUDIT-*.md` is in `.gitignore`; offer to add it if not.
 
 ---
 
@@ -264,10 +268,10 @@ add_action( 'admin_init', [ BaseTable::class, 'upgrade' ] );
 
 ## Inline summary in chat
 
-After writing `AUDIT.md`, also output a short summary in chat (not the whole file):
+After writing the report, also output a short summary in chat (not the whole file):
 
 ```markdown
-**wp-plugin-code-audit complete.** Wrote `AUDIT.md`.
+**wp-plugin-code-audit complete.** Wrote `.claude/AUDIT-2026-05-29.md`.
 
 - Verdict: **GO WITH FIXES**
 - 🔴 0 critical · 🟠 2 high · 🟡 4 medium · 🟢 3 low · ⚪ 2 info
@@ -276,7 +280,7 @@ After writing `AUDIT.md`, also output a short summary in chat (not the whole fil
   2. `plugin.php:60` — No activation hook; tables never created on frontend-only sites
   3. `includes/Helpers.php:109` — Request-scoped static cache never invalidated
 
-See `AUDIT.md` for full findings + traces + fixes.
+See the report file for full findings + traces + fixes.
 ```
 
 Keep it under 10 lines. Reader skims the file for the full picture.
