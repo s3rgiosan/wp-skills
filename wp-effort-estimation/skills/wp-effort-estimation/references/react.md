@@ -25,7 +25,12 @@
 | Dynamic block (server-rendered via `render_callback`) | — | 6–12 hrs | — | — |
 | Dynamic block pulling CPT / taxonomy data | — | 8–16 hrs | — | — |
 | Dynamic block with AJAX / REST API data refresh | — | — | 1–3 days | — |
-| ACF Block (dynamic block via ACF Pro) | — | 6–12 hrs | 1–2 days | — |
+| ACF Block — substantial rework of an existing one | — | 6–12 hrs | 1–2 days | — |
+
+> This range is ACF-block *build* cost, and it stays that way — reworking an
+> existing ACF block costs about what building one costs. Retained only for
+> inherited codebases. A block being **created** never uses this row; new blocks
+> are native (`register_block_type` + `block.json`) and size off the rows above.
 
 ### Gutenberg — Block Bindings API (WP 6.5+)
 | Task | S | M | L | XL |
@@ -113,13 +118,30 @@
 
 ---
 
+## FE/BE Split Hints
+
+> **Not calibrated.** Unlike the hour ranges in the tables above, these ratios are
+> rough starting points — they were not derived from logged actuals. Recalibrate
+> them as real FE/BE splits get tracked.
+
+When the optional FE/BE split applies (see SKILL.md), these task families typically divide as follows:
+
+- **Dynamic blocks** — BE: render callback, data queries, registration. FE: edit UI, controls, editor preview. Roughly 40/60 BE/FE for control-heavy blocks; 60/40 when the data layer dominates.
+- **wp-admin React UIs** — FE: components, wp-data store, forms. BE: REST endpoints, capability checks, persistence. Usually near 60/40 FE/BE.
+- **Headless frontends** — FE: Next.js/Faust app work. BE: WP-side schema exposure (REST fields, WPGraphQL registration, CPT setup). Split varies widely — state it per estimate.
+- **Interactivity API** — FE: store, directives, client behavior. BE: server-rendered markup, `wp_interactivity_*` state. Typically 70/30 FE/BE.
+
+Static blocks, block themes/FSE, patterns, and editor customisation are effectively FE-only — keep a single total.
+
+---
+
 ## React-in-WP Risk Factors
 
 - **`@wordpress/scripts` version drift** — WP core ships its own React version. Mismatches between theme/plugin React and core React cause subtle runtime errors. Confirm version before estimating block work.
 - **Vite / custom build vs `@wordpress/scripts`** — Custom build chains (Vite, esbuild, Rspack) need explicit externals config for `@wordpress/*` packages and for React/ReactDOM (must come from core, not bundled). Add 4–8 hrs first time on a project; +20% to any block task on a non-`@wordpress/scripts` setup.
 - **theme.json schema version bumps** — `version: 2 → 3` (and future) changes how styles/blocks/elements resolve. Mid-project WP upgrades that cross schema versions require re-validation of every theme.json override. Add 0.5–1 day for a v2→v3 audit.
 - **Classic editor still active** — If the site hasn't fully migrated to the block editor, any Gutenberg work needs a "does this even load?" baseline check. Add +2–4 hrs.
-- **ACF version (Free vs Pro)** — ACF Blocks require Pro. Clarify before estimating any ACF block work.
+- **ACF version (Free vs Pro)** — ACF Blocks require Pro. Clarify before estimating work on existing ACF blocks. **Never estimate a new block as an ACF block** — every new block is native (`register_block_type` + `block.json`), even on a codebase already using ACF. The ACF Block row above only sizes rework of blocks that already exist. For custom fields the order is core meta / Gutenberg APIs → Fieldmanager → ACF (only if the client already uses it); see the scope note in `wordpress.md`.
 - **Interactivity API — WP version lock** — Available from WP 6.5. Sites on older versions need a WP upgrade path before any Interactivity API work can start. Flag and add +0.5–1 day for upgrade validation.
 - **FSE / block theme on existing content** — Converting a classic theme with years of content can surface template rendering issues across many post types. Add ×1.5–2.0 for conversion tasks.
 - **Headless + WPGraphQL schema changes** — Schema changes in WPGraphQL (especially with custom CPTs or ACF fields) ripple into frontend queries. Add +25–40% if the GraphQL schema is evolving.
@@ -127,7 +149,11 @@
 - **wp-admin React UI + nonce/REST auth** — Admin UIs hitting the WP REST API need correct nonce handling, capability checks, and sanitisation. Add +2–4 hrs for security review on any admin UI.
 - **Block deprecations** — Updating an existing block's `save()` function requires a `deprecated` entry. Missing this breaks existing post content. Add +1–3 hrs per deprecation cycle.
 - **`blocks.getSaveContent.extraProps` deprecation cost** — Modifying saved block markup via this filter forces deprecation entries to keep existing post content valid. Add +1–3 hrs per affected block that uses this filter (one deprecation entry per save-shape change), on top of the block deprecation cost above.
-- **Multisite** — Add ×1.5 on all block, theme, and admin UI work for multisite installs.
+- **Multisite** — Add ×1.5 on all block, theme, and admin UI work for multisite installs. *Stacks* — environment factor, not codebase quality, so it applies on top of whichever codebase row you picked.
+
+> **Stacking these:** risk factors above are multiplicative on top of the General
+> Multipliers unless marked as competing. If the total compounded multiplier
+> exceeds 3×, re-tier as XL and recommend a spike — see `multipliers.md`.
 
 ---
 
