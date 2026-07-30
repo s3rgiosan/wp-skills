@@ -81,6 +81,22 @@ Or wire it directly via `settings.json`:
 
 Plugins live in the same Claude Code session as your own `.claude/` configs — no conflict with prior `install.sh` installs.
 
+### Keep it updated
+
+Auto-update is **off by default** for third-party marketplaces. Turn it on once:
+
+`/plugin` → **Marketplaces** tab → select `s3rgiosan-wp-skills` → **Enable auto-update**
+
+Claude Code then refreshes the marketplace and installed plugins in the background shortly after startup (random delay of up to 10 minutes), and prompts you to run `/reload-plugins`.
+
+Without it, update by hand:
+
+```
+/plugin marketplace update s3rgiosan-wp-skills
+/plugin update
+/reload-plugins
+```
+
 > Heads-up on namespaces. Skills installed via plugins are invoked with the `<plugin>:<skill>` form (e.g. `wp-plugin-code-audit:wp-plugin-code-audit`). Skills installed via `install.sh` keep the bare name (e.g. `wp-plugin-code-audit`). Pick one source per skill to avoid duplicates.
 
 ---
