@@ -201,6 +201,7 @@ Minimum report skeleton (full template + worked examples: `references/report-tem
 1. ...
 2. ...
 3. ...
+**Decisions needed from the owner:** <D> — see § Decisions needed from the owner (omit this line when D = 0)
 
 ## Scope
 - Path / source: ...
@@ -225,11 +226,24 @@ Description with the trace through source. Why it's exploitable / what breaks.
 ...same format...
 
 ### 🟡 MEDIUM — M1: ...
+### 🟡 MEDIUM — M5: `file.php:line` — short title [DECISION]
+
+> **[DECISION] Needs a decision from the owner.** <the question, in one sentence> Default if unanswered: <what current behaviour does>.
+
+...same format...
 ### 🟢 LOW — L1: ...
 ### ⚪ INFO — I1: ...
 
 ## Verified false (appendix)
 - `file.php:line` — pattern that looked like X but isn't because Y.
+
+## Decisions needed from the owner
+
+Findings marked `[DECISION]`, collected. Omit the whole section when there are none.
+
+| | Question | Default if unanswered | Consequence / blocks |
+|---|---|---|---|
+| **M5** | ... | ... | free-standing / blocks C1, H2 |
 
 ## Recommendation
 - Two-sentence verdict reasoning.
@@ -277,6 +291,33 @@ The privilege axis above asks *who can trigger this?* — the right question for
 
 This only reaches Critical when the plugin is the **system of record** for the corrupted data (see Discover) — it owns the authoritative copy. A plugin that renders someone else's data wrongly is a display bug, not silent corruption; the authoritative value is still intact upstream. The purest example isn't commerce: a backup plugin that silently doesn't back up has no attack surface at all and can still end a business.
 
+### Owner-decision findings (`[DECISION]`)
+
+Some findings aren't defects. The code is doing something defensible, a *different* defensible thing is also possible, and only whoever holds authority over that trade-off can choose. Engineering cannot close these, and listing them next to real defects implies it can. Marking them turns a report from "here are N problems" into "here are N−k problems and k questions for you" — a more actionable thing to hand someone.
+
+"Owner" is deliberately role-neutral. Depending on the engagement it's the developer auditing their own plugin, the client who commissioned the work, another developer who owns the subsystem, the product owner, the site owner, or a compliance contact. Don't assume an agency-and-client shape — often the owner is the person reading the report.
+
+Common shapes (none domain-specific): **exposure** (should this be visible to end users at all?); **override** (silently overrule an explicit human setting, or refuse and explain?); **degradation** (is this failure mode acceptable under load, or is hardening worth its cost?); **retention** (what happens to the data on uninstall — is any of it personal data?); **fail open or fail closed** (when a dependency is unavailable, block or let through?); **model choice at an integration boundary** (two valid representations, wrong pick expensive to reverse).
+
+Mark and collect:
+
+- **Marker.** Append the text token `[DECISION]` to the finding heading (keep its severity emoji + ID), and put a one-line callout directly under it. Text, not a glyph — it stays greppable without unicode (`grep '\[DECISION\]' AUDIT-*.md`), reads distinctly from the severity emoji rather than as a sixth level, and survives conversion to HTML / PDF / email where emoji coverage is inconsistent.
+
+  ```markdown
+  ### 🟡 MEDIUM — M5: `file.php:line` — short title [DECISION]
+
+  > **[DECISION] Needs a decision from the owner.** <the question, in one sentence> Default if unanswered: <what current behaviour does>.
+  ```
+
+- **Collected section.** A `## Decisions needed from the owner` table immediately before `## Recommendation`, plus the pointer line in the summary block at the top of the report.
+
+Rules that keep the class useful rather than a dumping ground:
+
+- **Non-critical by construction.** If the current behaviour is outright *wrong*, it's a defect — give it a real severity, not a decision marker. This class is for genuine forks in the road.
+- **Doesn't move the verdict on its own** (see Verdict Rules) — but an unanswered decision can block *other* work. Record which findings each one blocks; call out any that block everything.
+- **Every one states its default.** What happens if no answer arrives. "We kept current behaviour" must be an explicit choice, not a silent one.
+- **Not a parking lot.** If the answer is knowable from the code, it isn't a decision — it's a finding you haven't finished. Resolve it.
+
 ---
 
 ## Verdict Rules
@@ -290,6 +331,8 @@ This only reaches Critical when the plugin is the **system of record** for the c
 | 0 High, 0 Medium, or total ≤ 5 with no High | **GO** |
 
 State the verdict + two-sentence reasoning. Reader should know why.
+
+`[DECISION]` findings don't enter this table — they're questions, not defects, and can't be closed by engineering. But if an unanswered one blocks other work (e.g. it gates all integration until resolved), say so in the reasoning; the verdict can be GO WITH FIXES while a decision still blocks the fix.
 
 ---
 
