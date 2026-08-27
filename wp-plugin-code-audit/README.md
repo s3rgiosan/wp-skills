@@ -55,13 +55,14 @@ Open any Claude Code session and ask naturally:
 "Performance review of this plugin before we ship."
 ```
 
-The skill runs a five-phase audit:
+The skill runs a six-phase audit (one optional):
 
 1. **Discover** — scope plugin (size, surfaces, dependencies).
 2. **Tool scan** — run PHPCS+WPCS, PHPStan, Plugin Check, Composer/npm audit if available.
 3. **Manual read** — read main file, hooks, REST routes, AJAX, admin pages, DB queries, file ops.
 4. **Verify** — every candidate finding traced through source before being written.
-5. **Report** — write a dated `AUDIT-<yyyy-mm-dd>.md` with Critical / High / Medium / Low / Info findings + verdict.
+5. **Reproduce** *(optional)* — where an environment is available, build the smallest fixture that triggers the top findings and capture before/after; put the recipe in the report. Skipped cleanly when read-only.
+6. **Report** — write a dated `AUDIT-<yyyy-mm-dd>.md` with Critical / High / Medium / Low / Info findings + verdict.
 
 Outputs a dated `AUDIT-<yyyy-mm-dd>.md` file (it asks where to write it — defaulting to a non-public location like `.claude/` so vulnerability details don't get committed to a public repo, and keeping a per-day history) plus a short inline summary in chat (verdict + counts + top-3-to-fix).
 

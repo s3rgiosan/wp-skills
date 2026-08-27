@@ -38,9 +38,10 @@ If the goal is "is this safe / good enough / mergeable", this is the right refer
 2. **Tool scan** — run PHPCS+WPCS, PHPStan, Plugin Check if available; collect raw findings.
 3. **Manual read** — read entry file, hooks, REST routes, AJAX, admin pages, DB queries, file ops, CLI. Tools miss intent.
 4. **Verify** — every candidate finding traced through source. No unverified findings in the report.
-5. **Report** — write `AUDIT-<yyyy-mm-dd>.md` to a non-public location with severity-sorted findings, fix per finding, verdict.
+5. **Reproduce** *(optional, high value)* — where an environment is available, build the smallest fixture that triggers the top findings and capture before/after. Skip cleanly when read-only.
+6. **Report** — write `AUDIT-<yyyy-mm-dd>.md` to a non-public location with severity-sorted findings, fix per finding, verdict.
 
-Skipping phase 4 is how false positives ship and erode trust. Don't.
+Skipping phase 4 is how false positives ship and erode trust. Don't. Phase 5 is the one optional phase — it confirms a finding is real, but never replaces the source tracing in phase 4 that explains *why*.
 
 ---
 
@@ -174,7 +175,19 @@ Full traps + procedures: `references/false-positive-traps.md`.
 
 ---
 
-## 5. Report
+## 5. Reproduce (optional, high value)
+
+A code audit is a reading exercise, and often there's no environment — this phase is **optional and never a requirement**. But where you *can* run the plugin, a finding the reader can trigger themselves stops being a claim. It also surfaces what reading misses: a null cast to `(int) 0` that renders a confident "0 available" (an unconfigured dependency indistinguishable from a genuinely empty one) is obvious in a fixture and easy to read past in source.
+
+Run this **after Verify, not instead of it.** Reproduction confirms a finding is real; only the phase-4 source trace explains *why*, and that trace still belongs in the report.
+
+- **Build the smallest fixture that exercises the top findings.** Usually two or three records: a product with two variants, a membership with an expiring plan, a form with one conditional field, a booking that crosses a capacity boundary. Capture before/after (add one item → correct; add a second → the bug).
+- **Put the fixture recipe in the report** — the exact records and settings — so the owner can reproduce it without you. Reference it from the finding (`**Reproduced.**`).
+- **When reproduction isn't possible, say so and say what it costs:** name which findings remain traced-only, and state that they should be reproduced before *and* after any fix. An Info finding recording "audit was static, no environment reached" is appropriate.
+
+---
+
+## 6. Report
 
 ### Where to write the report
 
