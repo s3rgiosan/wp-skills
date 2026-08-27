@@ -82,6 +82,8 @@ What breaks. Why the current code doesn't protect against it.
 
 **Verified.** How you confirmed (which file:line you read; what call chain you followed; what input the verification used).
 
+**Reproduced.** *(optional — phase 5)* The fixture recipe: exact records + settings, and the before/after observed (e.g. "add one variant → validated; add a second → silently accepted; error surfaces one page later"). Include only when an environment was available; omit the line entirely otherwise. State once, up front, if the whole audit was static.
+
 **Fix.**
 Concrete change. Often a code snippet:
 
