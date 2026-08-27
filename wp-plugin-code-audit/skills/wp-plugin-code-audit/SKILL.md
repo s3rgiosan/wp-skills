@@ -166,6 +166,8 @@ For every candidate finding, before adding to the report, run the verification p
 
 If verification fails, **drop the finding**. Note in the report's appendix: "Verified false: <pattern>, <reason>" — this saves the next auditor's time and shows your work.
 
+**Counts are findings too.** Any number that appears in the report — call sites, occurrences, endpoints, LOC, handlers, queries — must come from a command whose output you captured, not from reading. Counting by eye is how `__()` "called 14 times" ships when it's called six (an accidental tally of the prefix, which happened to occur 17 times). A count is the cheapest thing a reader spot-checks: one wrong number and every other number in the report is suspect. If you can't produce the command that yields the figure, don't put the figure in the report — describe it qualitatively instead ("several", "throughout").
+
 This phase exists because subagents and pattern scanners over-flag in WP. Real audit: a subagent flagged `PostToPost.php:67` as IN-clause SQLi; verified false (`post_type_exists()` in ctor + `esc_sql()` applied). Always re-run findings against source.
 
 Full traps + procedures: `references/false-positive-traps.md`.
