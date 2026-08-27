@@ -48,6 +48,7 @@ Full `AUDIT-<yyyy-mm-dd>.md` skeleton plus a worked example showing the level of
   - Blocks: N (`block.json` files)
   - Custom tables: N
   - Custom CPTs / taxonomies: N
+- **System of record:** yes / no — authoritative data it owns (stock, entitlements, invoices, bookings, backups, …), or "view over <source>" (drives the silent-corruption rule)
 - **Dependencies (PHP):** key composer packages
 - **Dependencies (JS):** key npm packages
 - **Tools run:**
@@ -72,7 +73,7 @@ None.
 
 ### 🟠 HIGH — H1: `<file.php>:<line>` — Short title
 
-**Severity rationale.** Why this is High and not Medium / Critical. If reachable by Subscriber and destructive, escalate to Critical per the rubric.
+**Severity rationale.** Why this is High and not Medium / Critical. If reachable by Subscriber and destructive, escalate to Critical per the rubric. If it silently, cumulatively, and unreconstructibly corrupts data the plugin is the system of record for, escalate to Critical per the silent-corruption rule — regardless of who triggers it.
 
 **Description.**
 Trace through source. What the attacker / triggering scenario looks like.
