@@ -48,6 +48,8 @@ Skipping phase 4 is how false positives ship and erode trust. Don't.
 
 Before reading code, scope the plugin. Write the scope inline at the top of the report — sets reader expectations.
 
+**Ask up front: is this plugin the system of record for the data it writes, or a view over someone else's?** A plugin owns the authoritative copy of something (stock levels, entitlements, expiry dates, booking capacity, invoice numbers, backup archives, anything doing two-way sync) versus merely displaying or caching data whose source of truth lives elsewhere. Corrupting the system of record is a different class of problem from rendering it wrongly — the authoritative value is gone, not just shown wrong — and it changes how the Severity Rubric's silent-corruption rule applies. It's usually answerable in the first ten minutes; record the answer in the Scope section.
+
 ```bash
 # Plugin entry, version, requires
 head -40 plugin-name.php
@@ -206,6 +208,7 @@ Minimum report skeleton (full template + worked examples: `references/report-tem
 - Author / contact: ...
 - LOC: ... PHP, ... JS
 - Surface: REST endpoints (N), AJAX handlers (N), admin pages (N), CLI commands (N), blocks (N)
+- System of record: yes / no — what authoritative data it owns (stock, entitlements, invoices, backups, …), or "view over <source>"
 - Dependencies (PHP): ...
 - Dependencies (JS): ...
 - Tools run: PHPCS (yes/no), PHPStan (yes/no), Plugin Check (yes/no)
@@ -246,7 +249,7 @@ Each finding in the report gets a traffic-light emoji + severity tag in its head
 
 | Severity | Emoji | Rule of thumb | Examples |
 |---|---|---|---|
-| **Critical** | 🔴 | Exploitable from the network with low / no privilege; remote code execution; auth bypass; data loss; **OR** destructive / business-critical action reachable by the lowest-privilege authenticated role (Subscriber / Customer — roles auto-granted on registration or checkout on most WP sites). | Unauthenticated SQLi; arbitrary file upload via REST; `eval()` on user input; auth bypass on admin action; arbitrary file read via path traversal; **subscriber-exploitable AJAX that overwrites product catalog / generates billing documents / exports private data / sends emails on the site's behalf**; SSRF reachable by any authenticated user. |
+| **Critical** | 🔴 | Exploitable from the network with low / no privilege; remote code execution; auth bypass; data loss; **OR** destructive / business-critical action reachable by the lowest-privilege authenticated role (Subscriber / Customer — roles auto-granted on registration or checkout on most WP sites); **OR** silently corrupts data the plugin is the system of record for, cumulatively, in a way that cannot be reconstructed from other data the site holds — regardless of the privilege required to trigger it. | Unauthenticated SQLi; arbitrary file upload via REST; `eval()` on user input; auth bypass on admin action; arbitrary file read via path traversal; **subscriber-exploitable AJAX that overwrites product catalog / generates billing documents / exports private data / sends emails on the site's behalf**; SSRF reachable by any authenticated user; **a refund handler that silently decrements true stock on every refund with no way to rebuild the real quantity; a backup routine that silently backs up nothing**. |
 | **High** | 🟠 | Exploitable with auth but below the privilege required for the impact; data integrity; CSRF on destructive admin actions; persistent XSS by editor+; sensitive info disclosure; missing activation hook (data loss); plaintext credential storage. | Editor-exploitable destructive action (Editor cap doesn't include `manage_options` but the action requires it); capability check missing on settings save when only admins can reach the form; deserialization on stored editor-writable meta; API keys in plaintext in `wp_options` autoloaded; missing nonce on destructive admin-ajax that already has correct cap check. |
 | **Medium** | 🟡 | Reliability / fragility / hardening; functionally exploitable only in narrow scenarios. | Query builder counter desync; SQL builder fragile under refactor; transient with no TTL; option `autoload=yes` for large blob; reflected XSS only in admin-self context; hard `die()` returning plaintext from an AJAX endpoint (info disclosure + breakage). |
 | **Low** | 🟢 | Code smell with no realistic exploit path; standards violations that don't change behavior; cosmetic. | Hardcoded table names; non-prefixed names that don't currently collide; missing `wp_set_script_translations` despite shipped `.pot`; integer cast missing on `$_REQUEST['id']` that goes to a function that handles non-int gracefully. |
@@ -261,6 +264,18 @@ If you are tempted to call a finding **High** because it requires authentication
 - Admin / `manage_options` → CSRF (missing nonce) is **High**; capability check alone makes destructive actions **not** Critical.
 
 Distribution amplifier: if the plugin has no update channel (private, no `Update URI`), bump anything Critical/High that requires an author fix by half a level in the verdict reasoning — the site owner can't auto-patch.
+
+### Silent-corruption rule (critical)
+
+The privilege axis above asks *who can trigger this?* — the right question for a finding that **exposes** data. It is the wrong question for a finding that **writes wrong data**, where the worst case is the site owner doing their job correctly while the plugin quietly records the wrong value. For those, don't ask who can trigger it. Ask three questions:
+
+1. **Is the wrong state visible?** Does anything surface it — an error, a notice, a log line, an admin warning, an email — or nothing at all?
+2. **Does it accumulate?** A one-off bad row, or a little more drift on every operation?
+3. **Is it reconstructible?** Can the correct value be rebuilt from other data the site still holds (order history, an upstream source, an audit log)?
+
+**Silent AND cumulative AND unreconstructible → Critical**, regardless of the privilege required to trigger it. All three conditions must hold: any one of them false drops the finding back to the ordinary data-integrity ladder (High for a genuine integrity bug, Medium for reliability / desync). A site can run for weeks accumulating drift before anyone notices, and by then the original values are gone.
+
+This only reaches Critical when the plugin is the **system of record** for the corrupted data (see Discover) — it owns the authoritative copy. A plugin that renders someone else's data wrongly is a display bug, not silent corruption; the authoritative value is still intact upstream. The purest example isn't commerce: a backup plugin that silently doesn't back up has no attack surface at all and can still end a business.
 
 ---
 
