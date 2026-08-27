@@ -86,6 +86,8 @@ Distribution shape affects severity weighting and the remediation path. Record i
 
 A private plugin with no update mechanism amplifies severity — the site owner can't auto-patch when the author ships a fix. Note this in the Scope section AND in the verdict reasoning if it changes the call.
 
+**`Update URI` absent on a non-wp.org plugin is itself a finding, not just a classification.** Any plugin classified private / GitHub / marketplace that lacks an `Update URI` header is exposed to wp.org slug hijacking: `wp_update_plugins()` broadcasts its folder slug to the wp.org update API, and an unclaimed matching slug can be published by anyone at a higher version and served as an "update" — silently, if auto-updates are on. Verify slug ownership and recommend `Update URI: false` (or a real updater URL) — see `references/standards-checklist.md` → §2 → Folder slug ownership.
+
 ### Skip ignored paths and dependencies
 
 Read `.gitignore` and `.distignore` if present. **Skip their excluded paths during the scan** — auditing `tests/`, `*.md`, dev configs, or `.git/` wastes effort and adds noise.

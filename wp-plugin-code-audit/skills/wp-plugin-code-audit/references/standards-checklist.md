@@ -61,6 +61,36 @@ grep -RnE "(define|const)\(\s*['\"][A-Z_]" --include="*.php" .  # constants
 
 WordPress core "owns" any unprefixed names. Pretty much any short name (3–10 chars, lowercase) is at collision risk.
 
+**A short prefix is not a namespace.** Three or four letters is a habit, not a guarantee — another widely-installed plugin can ship classes, options, or `$_POST` fields under the same letters. Every §2 row can be green while a real collision waits. Verify rather than assume: when auditing in place on a full install, grep the sibling plugins for the prefix. (Skip this when the audit is remote, a single file, or a wp.org slug — there's no sibling-plugins directory to check.)
+
+```bash
+# From the WordPress root; <prefix> without trailing separator, <this-plugin> = the folder being audited.
+grep -rIl --include="*.php" -E "(^|[^a-z_])<prefix>[_-]" wp-content/plugins/ | grep -v "<this-plugin>"
+# Any file listed is another plugin using the same prefix — the prefix is not owned. Flag it.
+```
+
+**An unprefixed global class is worse than it looks.** A collision on a plain `class Settings {}` or `class Logger {}` is a fatal `Cannot redeclare class` **at load, site-wide, before WordPress renders the admin screen you would use to deactivate anything** — the site owner is locked out of the fix. Treat an unprefixed, non-namespaced global class as **High**, not a Low code-smell.
+
+### Folder slug ownership
+
+§2 covers every name *inside* the code. The folder slug — the one name WordPress itself broadcasts — isn't a code name and is easy to miss. `wp_update_plugins()` posts **every installed plugin's folder slug** to `api.wordpress.org/plugins/update-check/1.1/` and applies whatever comes back. A privately-distributed plugin in a generic directory (`analytics/`, `seo/`, `dashboard/`) is exposed: the day anyone publishes to the wp.org directory under that slug at a higher version, the site is *offered* their unrelated code — and with auto-updates enabled, silently *given* it.
+
+A **free** slug is the risk, not the reassurance. Check ownership with one command:
+
+```bash
+curl -s "https://api.wordpress.org/plugins/info/1.2/?action=plugin_information&request[slug]=<slug>"
+# {"error":"Plugin not found."}  →  unclaimed on wp.org, and claimable by anyone → finding
+# a JSON plugin record             →  slug is owned; confirm it's the same plugin, not a namesake
+```
+
+**Remedy (WP 5.8+), one header line:**
+
+```php
+ * Update URI: false
+```
+
+Any value that isn't a `wordpress.org` / `w.org` URL removes the plugin from the wp.org update path; `false` disables automatic updates for it entirely. Second reason to want it, unrelated to slug collisions: where the owner hand-edits the plugin on the server, an automatic update silently discards those edits. Any plugin not distributed through wp.org and lacking `Update URI` gets a finding (see SKILL.md → Discover).
+
 ---
 
 ## 3. i18n
