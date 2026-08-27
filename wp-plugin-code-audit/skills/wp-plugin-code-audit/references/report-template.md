@@ -50,6 +50,10 @@ Full `AUDIT-<yyyy-mm-dd>.md` skeleton plus a worked example showing the level of
   - Custom tables: N
   - Custom CPTs / taxonomies: N
 - **System of record:** yes / no — authoritative data it owns (stock, entitlements, invoices, bookings, backups, …), or "view over <source>" (drives the silent-corruption rule)
+- **Operating constraints:** (ask the user — invisible in source)
+  - Other writers of this data: another plugin / scheduled import / external integration / admin user / staging→prod sync — or "none reported"
+  - How changes reach production: version control + CI / hand-edited on the server (drives which remediations are reachable)
+  - Planned but not yet installed: multilingual layer / platform migration / headless front end / new integration — or "none reported"
 - **Dependencies (PHP):** key composer packages
 - **Dependencies (JS):** key npm packages
 - **Tools run:**
@@ -162,6 +166,12 @@ Two-sentence verdict reasoning. State the verdict explicitly and which findings 
 - "Plugin is on wp.org. Critical findings should be reported via wp.org's plugins@wordpress.org with a copy to the author through the plugin's support forum."
 
 If the site owner cannot wait for an upstream fix, list the safest interim mitigations (deactivate the plugin, block the affected endpoint via mu-plugin, restrict capability).
+
+**Every recommendation must be reachable within the operating constraints captured in Scope.** Where the obvious fix is one the owner has ruled out, give the reachable alternative instead — unreachable advice makes the report read as written for someone else. Example: the owner hand-edits the plugin on the server and will never put it under version control, so instead of "adopt VCS":
+
+- Keep it a **single file** so a partial upload can't leave a half-working plugin.
+- Put the **changelog inside the file** — the header `Version` is the only history that will exist.
+- Set **`Update URI: false`** so an automatic update can't silently discard the hand edits.
 
 ---
 
