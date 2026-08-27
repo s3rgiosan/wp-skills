@@ -27,6 +27,7 @@ Full `AUDIT-<yyyy-mm-dd>.md` skeleton plus a worked example showing the level of
 1. `<file>:<line>` — short title (the most consequential High).
 2. `<file>:<line>` — short title.
 3. `<file>:<line>` — short title.
+**Decisions needed from the owner:** 1 — see § Decisions needed from the owner (omit this line when there are none)
 
 ---
 
@@ -109,6 +110,14 @@ if ( isset( $_POST['save'] ) ) {
 
 ---
 
+### 🟡 MEDIUM — M5: `<file>:<line>` — Short title [DECISION]
+
+> **[DECISION] Needs a decision from the owner.** Should the plugin overrule the explicit setting the user chose, or refuse and surface an error? Default if unanswered: current behaviour silently overrides.
+
+(An owner-decision finding — see SKILL.md → Owner-decision findings. It keeps its severity emoji and ID; the `[DECISION]` token and the callout are the only additions. The code isn't wrong — a defensible alternative exists and only the owner can pick. Every one states its default and, in the collected table, what it blocks.)
+
+---
+
 ### 🟢 LOW — L1: `<file>:<line>` — Short title
 
 One sentence + one-line fix. Don't pad.
@@ -125,6 +134,18 @@ One sentence. No fix required (these are suggestions / context for the maintaine
 
 - `<file>:<line>` — pattern that looked like X but isn't because Y. Listed
   so the next auditor doesn't re-flag it.
+
+---
+
+## Decisions needed from the owner
+
+Every `[DECISION]` finding, collected. Omit the whole section when there are none. These don't drive the verdict, but an unanswered one can block other work — the last column says which.
+
+| | Question | Default if unanswered | Consequence / blocks |
+|---|---|---|---|
+| **M5** | Silently override the user's explicit setting, or refuse and explain? | Current behaviour silently overrides. | Free-standing. |
+| **M6** | On uninstall, drop the custom tables or leave them? Any personal data? | Tables left in place. | Free-standing (GDPR question for the owner). |
+| **H4** | When the upstream API is unreachable, fail open (allow) or fail closed (block)? | Fails open — operation proceeds. | **Blocks all integration work** until resolved. |
 
 ---
 
