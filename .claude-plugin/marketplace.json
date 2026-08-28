@@ -25,6 +25,11 @@
       "description": "Verification-first code audit for WordPress plugins: security, performance, standards, wp.org guidelines. Produces a markdown report with severity-sorted findings + GO / NO-GO / GO WITH FIXES verdict."
     },
     {
+      "name": "wp-plugin-audit-remediation",
+      "source": "./wp-plugin-audit-remediation",
+      "description": "The phase after a plugin audit: a per-finding remediation log, an immutable copy of the audited version so citations stay readable, and a PHP token-diff that proves renames / formatter runs / refactors changed no behaviour."
+    },
+    {
       "name": "wp-mnemon",
       "source": "./wp-mnemon",
       "description": "Deep architectural analysis of WordPress plugins — what the plugin does, how it works, what triggers what, and how data flows. 12-phase workflow with structured output."
