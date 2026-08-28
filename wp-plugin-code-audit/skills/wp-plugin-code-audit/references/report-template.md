@@ -62,7 +62,7 @@ Full `AUDIT-<yyyy-mm-dd>.md` skeleton plus a worked example showing the level of
   - Plugin Check: yes — N issues — `/tmp/audit-<slug>/plugin-check.txt`
   - Composer audit: yes — N vulnerable packages
   - npm audit: skipped (no source for `dist/`)
-- **Sections audited:** auth/authz ✓ · nonces ✓ · IDOR ✓ · sanitize/escape ✓ · SQLi ✓ · file-ops ✓ · SSRF ✓ · deserialization ✓ · secrets ✓ · error-disclosure ✓ · ABSPATH ✓ · perf ✓ · standards ✓ · FP-traps ✓
+- **Sections audited:** auth/authz ✓ · nonces ✓ · IDOR ✓ · sanitize/escape ✓ · SQLi ✓ · file-ops ✓ · SSRF ✓ · deserialization ✓ · secrets ✓ · error-disclosure ✓ · ABSPATH ✓ · perf ✓ · standards ✓ · integration ✓ (or n/a — no shared-data companion) · FP-traps ✓
 
 ---
 

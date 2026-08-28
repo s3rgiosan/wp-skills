@@ -112,6 +112,7 @@ Outputs a dated `AUDIT-<yyyy-mm-dd>.md` file (it asks where to write it — defa
 | **`references/security-checklist.md`** | Auth, nonces, capabilities, sanitize, escape, SQLi, file ops, SSRF, deserialization, secrets |
 | **`references/performance-checklist.md`** | Autoloaded options, queries, transients, cron, HTTP API, asset enqueue, custom tables |
 | **`references/standards-checklist.md`** | WPCS rules, prefixing, i18n, plugin header, GPL, wp.org guidelines |
+| **`references/integration-checklist.md`** | Cross-plugin coupling (companions writing shared data via direct SQL, stored foreign IDs, hook races, cache staleness) + WooCommerce HPOS / Cart-Checkout-Blocks declarations — conditional |
 | **`references/false-positive-traps.md`** | Verification procedures for the 4 most over-flagged categories (SQLi, nonce, escape, sanitize) |
 | **`references/report-template.md`** | Full `AUDIT-<yyyy-mm-dd>.md` template + worked examples |
 | **`references/tooling.md`** | PHPCS / PHPStan / Plugin Check / Composer audit / npm audit |
