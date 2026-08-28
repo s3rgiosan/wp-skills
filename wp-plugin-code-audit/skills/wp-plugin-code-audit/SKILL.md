@@ -2,17 +2,18 @@
 name: wp-plugin-code-audit
 description: >
   Use when auditing a WordPress plugin for security, performance, coding
-  standards, and WordPress.org guidelines compliance. Triggers: "audit this
-  plugin", "review the plugin", "is this plugin secure", "code audit", "security
-  review", "plugin code review", "is this plugin safe to install", "check this
-  plugin for vulnerabilities", "review plugin for performance", or any request
-  to evaluate the quality / safety of a WordPress plugin from a local checkout,
+  standards, WordPress.org guidelines compliance, and cross-plugin integration.
+  Triggers: "audit this plugin", "review the plugin", "is this plugin secure",
+  "code audit", "security review", "plugin code review", "is this plugin safe to
+  install", "check this plugin for vulnerabilities", "review plugin for
+  performance", "does this plugin conflict with another", or any request to
+  evaluate the quality / safety of a WordPress plugin from a local checkout,
   a single file/function, or a remote source (wp.org slug, GitHub URL).
 ---
 
 # WordPress Plugin Code Audit
 
-Opinionated, verification-first audit workflow for WordPress plugins. Produces a markdown report with findings sorted by risk, a fix recommendation per finding, and a final **GO / NO-GO / GO WITH FIXES** verdict.
+Opinionated, verification-first audit workflow for WordPress plugins. Produces a markdown report with findings sorted by risk, a fix recommendation per finding, owner-decision (`[DECISION]`) questions only the owner can answer, an optional reproduction step, and a final **GO / NO-GO / GO WITH FIXES** verdict. Covers security, performance, coding standards, WordPress.org guidelines, and cross-plugin integration.
 
 > **Scope:** WordPress plugins — local checkout (directory path), targeted file / function, or remote (wp.org slug, GitHub URL). Not themes. Not bulk repo sweeps — one plugin at a time.
 
@@ -244,7 +245,7 @@ Minimum report skeleton (full template + worked examples: `references/report-tem
 - Dependencies (JS): ...
 - Tools run: PHPCS (yes/no), PHPStan (yes/no), Plugin Check (yes/no)
 - Ignored (gitignore/distignore): ... · `vendor/` + `node_modules/` skipped (deps out of scope unless requested)
-- Sections audited: security ✓ performance ✓ standards ✓ integration ✓ (or n/a — no shared-data companion) FP-traps ✓
+- Sections audited: security ✓ · performance ✓ · standards ✓ · integration ✓ (or n/a — no shared-data companion) · FP-traps ✓
 
 ## Findings
 

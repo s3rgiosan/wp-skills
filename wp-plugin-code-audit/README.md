@@ -4,7 +4,7 @@ Part of [wp-skills](../README.md) — Claude Code skills for WordPress developer
 
 A Claude Code skill that runs an opinionated, verification-first audit of a WordPress plugin and produces a markdown report with severity-sorted findings, fix recommendations, a collected list of `[DECISION]` questions only the plugin's owner can answer, and a final **GO / NO-GO / GO WITH FIXES** verdict.
 
-Covers security, performance, WordPress coding standards, and WordPress.org Plugin Directory guidelines. Works against a local plugin directory, a single file / function, or a remote source (wp.org slug, GitHub URL).
+Covers security, performance, WordPress coding standards, WordPress.org Plugin Directory guidelines, and cross-plugin integration. Works against a local plugin directory, a single file / function, or a remote source (wp.org slug, GitHub URL).
 
 ---
 
