@@ -152,12 +152,14 @@ Tools catch patterns; people catch intent. Read in this order:
 10. **Capability checks** — every `current_user_can`. Missing? Wrong cap (`read` instead of `manage_options`)?
 11. **i18n** — translation functions used? Text domain matches plugin slug? Late-init load (post `init`)?
 12. **Cron** — `wp_schedule_event` registrations. Cleared in deactivation? Hook callback registered before scheduling?
+13. **Companion source (conditional)** — when Discover's "who else writes this data?" named a companion plugin that touches the same data, **read that companion's source for the shared-data path.** This class of finding is invisible from the audited plugin alone. Trigger only; not "read every other plugin." See `references/integration-checklist.md`.
 
-Apply the four checklists. **Traverse every section of every checklist; don't skim and assume coverage.** A common audit failure is forgetting to read a reference file end-to-end and missing entire categories (secrets storage, IDOR, ABSPATH guards, error-response disclosure).
+Apply the five checklists. **Traverse every section of every checklist; don't skim and assume coverage.** A common audit failure is forgetting to read a reference file end-to-end and missing entire categories (secrets storage, IDOR, ABSPATH guards, error-response disclosure).
 
 - `references/security-checklist.md` — auth, nonces, caps, **IDOR**, sanitize, escape, SQLi, CSRF, SSRF, file ops, deserialization, secrets in code, **stored credentials**, **error response & info disclosure**, **direct file access**.
 - `references/performance-checklist.md` — autoloaded options, expensive queries, missing indexes, transients without TTL, cache-thrashing hooks, cron storms, enqueue scope, asset weight.
 - `references/standards-checklist.md` — WPCS rules, function/class prefixing, i18n, deprecated APIs, plugin header completeness, GPL compatibility.
+- `references/integration-checklist.md` — cross-plugin coupling invisible from a single plugin: companions writing shared data via direct SQL (hooks never fire), stored foreign IDs vs record-duplicating layers, hook-ordering races, cache staleness, WooCommerce HPOS / Cart-Checkout-Blocks declarations. **Conditional — apply only when a companion touches the same data.**
 - `references/false-positive-traps.md` — verification procedures for SQLi / nonce / escape / sanitize before flagging.
 
 **Traversal checklist** — before moving to phase 4, confirm you ran each detection in every section of each file. If a section produced zero candidates, note that in the report's Scope section under "Sections audited" — it shows your work and tells the reader nothing was skipped.
@@ -242,7 +244,7 @@ Minimum report skeleton (full template + worked examples: `references/report-tem
 - Dependencies (JS): ...
 - Tools run: PHPCS (yes/no), PHPStan (yes/no), Plugin Check (yes/no)
 - Ignored (gitignore/distignore): ... · `vendor/` + `node_modules/` skipped (deps out of scope unless requested)
-- Sections audited: security ✓ performance ✓ standards ✓ FP-traps ✓
+- Sections audited: security ✓ performance ✓ standards ✓ integration ✓ (or n/a — no shared-data companion) FP-traps ✓
 
 ## Findings
 
@@ -382,6 +384,7 @@ State the verdict + two-sentence reasoning. Reader should know why.
 - `references/security-checklist.md` — security audit categories with detection patterns + verification procedures.
 - `references/performance-checklist.md` — performance audit categories.
 - `references/standards-checklist.md` — WPCS + WordPress.org plugin guidelines.
+- `references/integration-checklist.md` — cross-plugin coupling and platform compatibility declarations (conditional; applies when a companion writes the same data or a layer duplicates referenced records).
 - `references/false-positive-traps.md` — verification procedures for SQLi, nonce, escape, sanitize.
 - `references/report-template.md` — full `AUDIT-<yyyy-mm-dd>.md` template with worked examples.
 - `references/tooling.md` — PHPCS / PHPStan / Plugin Check commands + interpretation.
