@@ -74,6 +74,7 @@ Full template: `references/remediation-log-template.md`. Status vocabulary:
 | **Fixed (unverified)** | Change made but not yet re-checked. A transient state, not a resting one — it must become Fixed (verified) or go back to Open. |
 | **Won't fix (accepted)** | Owner accepts the risk. Record who accepted and the stated reason. |
 | **Blocked on owner** | A `[DECISION]` finding, or any fix gated on an owner choice. Record the exact question and the default-if-unanswered (carry these straight over from the report's "Decisions needed from the owner" table). |
+| **Superseded** | The finding was correct when the audit was written but no longer describes reality — the situation moved, nobody was wrong (e.g. an Info finding "runtime verification not possible" once the environment becomes reachable and the Highs reproduce). Keep the ID; point to what replaced it. Distinct from *withdrawn*, which means the finding was wrong. Carried from the report — see `wp-plugin-code-audit` → Finding IDs are permanent. |
 
 Rules:
 
@@ -81,6 +82,22 @@ Rules:
 - **Owner-blocked findings stay visible over time.** They don't silently disappear or get marked done — they carry their question and default until the owner answers. When answered, record the decision and the resulting change.
 - **Cite both the frozen and current location.** The report's citation points at the frozen copy; the log adds where the code lives now.
 - **The log is the source of truth for "where are we?"** Keep it current as fixes land, so nobody has to reconstruct state from the diff.
+- **Reuse the report's finding IDs exactly; never renumber them.** The IDs are the join key between the two documents (see below).
+
+### Findings discovered during remediation get their own namespace
+
+While fixing, someone spots a further defect the audit didn't catch. Do **not** call it `L10` and carry on — the reader's frozen copy of the report has no `L10` and never will, so that invents a finding in a document they hold *and* falsely implies the audit found it.
+
+Give remediation-discovered findings an **`N` prefix** (`N1`, `N2`, …), declared once at the top of the log. It costs nothing and keeps "what the audit found" and "what the fix work found" permanently distinguishable — which matters when someone later asks how much the audit actually caught.
+
+### IDs are the join key — verify coverage mechanically
+
+Once the log references findings by ID, the ID set is an *interface* between report and log. Do not assume it matches — a 34-row table looks complete on a scan even when rows are silently missing, and scanning does not catch it. **Diff the two ID sets both ways** (see `references/id-coverage-check.md`):
+
+- in the report but **not** tracked in the log → a coverage gap (a finding nobody is remediating).
+- in the log but **not** in the report → an **invented ID** (an `N`-finding that forgot its prefix, or a renumbered one — the exact failure permanent IDs exist to prevent).
+
+Run it whenever the log is updated, not just at the end. Care demonstrably doesn't catch this; a script does.
 
 ---
 
@@ -93,6 +110,7 @@ When remediation is done (or paused), the log tells the owner exactly three thin
 ## References
 
 - `references/behaviour-neutrality-check.md` — the token-stream diff script + workflow for proving renames / formatter runs / mechanical refactors changed no behaviour.
+- `references/id-coverage-check.md` — bidirectional finding-ID set-diff between the report and the log; catches coverage gaps and invented IDs.
 - `references/remediation-log-template.md` — the `REMEDIATION-<yyyy-mm-dd>.md` companion-document skeleton.
 
 ## Related skills
