@@ -89,6 +89,16 @@ A private plugin with no update mechanism amplifies severity — the site owner 
 
 **`Update URI` absent on a non-wp.org plugin is itself a finding, not just a classification.** Any plugin classified private / GitHub / marketplace that lacks an `Update URI` header is exposed to wp.org slug hijacking: `wp_update_plugins()` broadcasts its folder slug to the wp.org update API, and an unclaimed matching slug can be published by anyone at a higher version and served as an "update" — silently, if auto-updates are on. Verify slug ownership and recommend `Update URI: false` (or a real updater URL) — see `references/standards-checklist.md` → §2 → Folder slug ownership.
 
+### Capture operating constraints
+
+Distribution is *how the plugin ships*. These are *the conditions it runs under* — and they're invisible in the plugin's own source, so you have to ask. Each one changes what the audit finds or what it can recommend. **You can't read these out of the code; ask the user.** Record the answers in the report's Scope section.
+
+| Question | Why it changes the audit |
+|---|---|
+| **Who else writes this data?** Another plugin, a scheduled import, an external integration, a human in the admin, a staging-to-production sync. | Concurrency, precedence and overwrite bugs live here and are invisible in the plugin's own source. A per-record hook that's a mild "uncached query" note becomes a real finding once a nightly sync touches thousands of records; a writer that overwrites what the plugin computes is the premise of a design-risk section. This is the system-of-record question (Discover, above) from the other side — the plugin may *own* the data (silent-corruption rule) yet still not be its *only* writer. |
+| **How do changes actually reach production?** Version control + CI, or a file copied over by hand. | Determines which remediations are reachable at all. "Put it under version control" is not advice for an owner who hand-edits on the server — see the Report-phase reachability rule. Hand-edited deployments change the fix: keep it a single file so a partial upload can't leave a half-working plugin, put the changelog *inside* the file (the header version is the only history that will exist), and set `Update URI: false` so an auto-update can't discard the edits. |
+| **What's already planned?** A multilingual layer, a platform migration, a headless front end, a new integration not yet installed. | Turns "not applicable today" findings into ones worth writing now, while they're cheap. Two High findings can live entirely in the *interaction* between the plugin and a layer that isn't installed yet. |
+
 ### Skip ignored paths and dependencies
 
 Read `.gitignore` and `.distignore` if present. **Skip their excluded paths during the scan** — auditing `tests/`, `*.md`, dev configs, or `.git/` wastes effort and adds noise.
@@ -227,6 +237,7 @@ Minimum report skeleton (full template + worked examples: `references/report-tem
 - LOC: ... PHP, ... JS
 - Surface: REST endpoints (N), AJAX handlers (N), admin pages (N), CLI commands (N), blocks (N)
 - System of record: yes / no — what authoritative data it owns (stock, entitlements, invoices, backups, …), or "view over <source>"
+- Operating constraints: other writers of this data (…), how changes reach production (VCS+CI / hand-edited on server), what's planned (multilingual / migration / headless / new integration) — or "none reported"
 - Dependencies (PHP): ...
 - Dependencies (JS): ...
 - Tools run: PHPCS (yes/no), PHPStan (yes/no), Plugin Check (yes/no)
@@ -265,6 +276,7 @@ Findings marked `[DECISION]`, collected. Omit the whole section when there are n
 ## Recommendation
 - Two-sentence verdict reasoning.
 - If distribution is private and findings require an author fix: who to contact + suggested disclosure path.
+- **Every recommendation must be reachable within the operating constraints captured in Discover.** Where the obvious fix is one the owner has already ruled out (e.g. "put it under version control" when they hand-edit on the server), say what to do *instead* — don't issue advice they can't follow. Unreachable advice makes the whole report read as written for someone else.
 
 ## Tooling output
 - PHPCS: `/tmp/audit-<slug>/phpcs.txt` (N errors, N warnings)
