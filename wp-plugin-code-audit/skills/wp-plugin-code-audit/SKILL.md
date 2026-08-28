@@ -367,6 +367,12 @@ State the verdict + two-sentence reasoning. Reader should know why.
 
 ---
 
+## After the audit
+
+The report is the start of the work, not the end — findings get fixed, the owner needs to know what changed, and `[DECISION]` findings wait on their answers. That remediation phase has its own skill: **`wp-plugin-audit-remediation`**. It covers the per-finding remediation log, freezing an immutable copy of the audited version so the report's `file:line` citations stay readable once fixing starts, and proving that renames / formatter runs / mechanical refactors changed no behaviour. Hand off to it when the verdict is written.
+
+---
+
 ## Anti-patterns
 
 - **"PHPCS says missing escape, must be a bug."** PHPCS flags patterns. Verify context first.
@@ -394,6 +400,7 @@ State the verdict + two-sentence reasoning. Reader should know why.
 
 ## Related skills
 
+- `wp-plugin-audit-remediation` — the phase after this one: remediation log, immutable audited copy, behaviour-neutrality proof for fixes. Hand off once the report is written.
 - `wp-plugin-development` — building plugins (forward-looking patterns the audit checks for).
 - `wp-plugin-directory-guidelines` — wp.org submission rules (used in the standards checklist).
 - `wp-phpstan` — PHPStan setup for WP projects (deepens the static analysis step).

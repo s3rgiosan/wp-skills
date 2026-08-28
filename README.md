@@ -43,6 +43,14 @@ Verification-first code audit for WordPress plugins. Six-phase workflow (discove
 
 **[→ Install wp-plugin-code-audit](./wp-plugin-code-audit/README.md)**
 
+### [wp-plugin-audit-remediation](./wp-plugin-audit-remediation)
+
+The phase after the audit. Maintains a `REMEDIATION-<yyyy-mm-dd>.md` companion log (per-finding status, what changed, how it was verified, what's still owed by the owner), keeps a frozen copy of the audited version so the report's `file:line` citations stay readable while the code changes, and proves that renames / `phpcbf` runs / mechanical refactors changed no behaviour via a PHP token-stream diff (which also catches an auto-fixer flipping `==` to `===`). Companion to `wp-plugin-code-audit` — run the audit first.
+
+**Triggers on:** "start a remediation log", "mark this finding fixed", "where are we on the audit findings", "is this rename behaviour-neutral", "did phpcbf change behaviour", "freeze the audited version".
+
+**[→ Install wp-plugin-audit-remediation](./wp-plugin-audit-remediation/README.md)**
+
 ### [wp-mnemon](./wp-mnemon)
 
 Deep architectural analysis of WordPress plugins — what the plugin does, how it works, what triggers what, and how data flows through the system. 12-phase workflow produces structured documentation (overview, architecture, hooks, data, extending). Works against a local path or a GitHub URL (public or private). Paired with the [wp-mnemon subagent](https://github.com/s3rgiosan/wp-agents/tree/main/wp-mnemon) in `wp-agents` for persistent agent memory; usable standalone for one-shot analysis.
