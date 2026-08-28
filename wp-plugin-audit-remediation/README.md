@@ -69,6 +69,7 @@ Plus the **remediation log**: a `REMEDIATION-<yyyy-mm-dd>.md` companion with one
 |---|---|
 | **`SKILL.md`** | The two rules, the remediation log, status vocabulary, handing back |
 | **`references/behaviour-neutrality-check.md`** | Token-stream diff script + how to read the result (empty / rename-only / not-neutral) |
+| **`references/id-coverage-check.md`** | Bidirectional finding-ID set-diff between report and log — catches coverage gaps and invented IDs |
 | **`references/remediation-log-template.md`** | The `REMEDIATION-<yyyy-mm-dd>.md` companion-document skeleton |
 
 ---

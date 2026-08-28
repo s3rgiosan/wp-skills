@@ -266,6 +266,8 @@ Description with the trace through source. Why it's exploitable / what breaks.
 
 ## Verified false (appendix)
 - `file.php:line` — pattern that looked like X but isn't because Y.
+- M9 — withdrawn: traced properly, not exploitable. ID retired, not reused.
+- I3 — superseded: environment later reached; Highs reproduced. See H1–H4 repro.
 
 ## Decisions needed from the owner
 
@@ -285,6 +287,17 @@ Findings marked `[DECISION]`, collected. Omit the whole section when there are n
 - PHPStan: `/tmp/audit-<slug>/phpstan.txt` (level 5, N errors)
 - Plugin Check: `/tmp/audit-<slug>/plugin-check.txt` (N issues)
 ```
+
+### Finding IDs are permanent
+
+Findings are numbered within severity — C1, H1, M1, L1, I1. **Allocate an ID once and never reuse or renumber it. IDs are labels, not positions.** The moment anything outside the report references a finding — a generated HTML/PDF, a client's tracking spreadsheet, an email, a ticket, the remediation log — renumbering makes "M11" ambiguous with no way to tell which finding was meant. Reports *do* change (a re-audit, a finding withdrawn after tracing it properly, a section rewritten), and the default behaviour on change is to renumber and let every derived artifact silently disagree.
+
+- **Withdrawing a finding does not free its number.** Move it to the verified-false appendix and note it: `M9 — withdrawn, see appendix`. The number stays retired.
+- **A finding that changes severity keeps its original ID.** Note the change in the finding; do **not** move it into the new severity's numbering. This is the non-obvious case — the instinct is to renumber, and an ID that survives its own severity change is far more useful than one that reads tidily.
+- **A finding that was correct when written but no longer describes reality is *superseded*, not withdrawn.** Keep the ID, mark it superseded, and point to what replaced it. Withdrawn means the finding was wrong; superseded means the situation moved underneath it. The common case is a phase-5 reversal: an Info finding recording "runtime verification not possible, environment unreachable" that later *becomes* possible and reproduces the Highs — that finding wasn't an error, so `superseded → see <repro>` is accurate where `withdrawn` would read as "we got that wrong".
+- **New findings take the next unused number in their severity, even if that leaves gaps.** Gaps are the point: a gap says "something was here and is now withdrawn/superseded", which is information. Renumbering to close it destroys the ability to reference the report from outside itself.
+
+Remediation-discovered findings get their own namespace, not the next audit number — see `wp-plugin-audit-remediation`.
 
 ---
 

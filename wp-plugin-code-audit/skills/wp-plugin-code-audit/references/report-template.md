@@ -68,7 +68,7 @@ Full `AUDIT-<yyyy-mm-dd>.md` skeleton plus a worked example showing the level of
 
 ## Findings
 
-(Numbering convention: severity letter + index — C1, C2, H1, H2, M1, L1, I1. Reference findings by ID in the Top-3 list and Verdict section.)
+(Numbering convention: severity letter + index — C1, C2, H1, H2, M1, L1, I1. Reference findings by ID in the Top-3 list and Verdict section. **IDs are permanent — allocate once, never renumber or reuse** (see SKILL.md → Finding IDs are permanent): withdrawn and superseded findings keep their number and move to the appendix; a severity change keeps the original ID; new findings take the next unused number even if that leaves gaps. Gaps are information.)
 
 <!-- If a section is empty: -->
 ### 🔴 Critical
@@ -140,6 +140,11 @@ One sentence. No fix required (these are suggestions / context for the maintaine
 
 - `<file>:<line>` — pattern that looked like X but isn't because Y. Listed
   so the next auditor doesn't re-flag it.
+
+Retired IDs also live here — the number stays reserved so the label never means two things:
+
+- **M9 — withdrawn.** Traced properly on re-audit; not exploitable. The finding was wrong; ID retired, never reused.
+- **I3 — superseded.** Was accurate when written ("runtime verification not possible, environment unreachable"); the environment was later reached and the Highs reproduced. The situation moved — not an error. See H1–H4 (Reproduced).
 
 ---
 
