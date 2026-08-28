@@ -1,7 +1,7 @@
 {
   "name": "wp-plugin-code-audit",
-  "version": "1.0.0",
-  "description": "Verification-first code audit for WordPress plugins: security, performance, standards, wp.org guidelines. Produces a markdown report with severity-sorted findings + GO / NO-GO / GO WITH FIXES verdict.",
+  "version": "1.1.0",
+  "description": "Verification-first code audit for WordPress plugins: security, performance, standards, wp.org guidelines, cross-plugin integration. Produces a markdown report with severity-sorted findings + GO / NO-GO / GO WITH FIXES verdict.",
   "author": {
     "name": "Sérgio Santos",
     "url": "https://github.com/s3rgiosan"

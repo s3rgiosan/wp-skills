@@ -1,0 +1,19 @@
+{
+  "name": "wp-plugin-audit-remediation",
+  "version": "1.0.0",
+  "description": "The phase after a plugin audit: a per-finding remediation log, an immutable copy of the audited version so citations stay readable, and a PHP token-diff that proves renames / formatter runs / refactors changed no behaviour.",
+  "author": {
+    "name": "Sérgio Santos",
+    "url": "https://github.com/s3rgiosan"
+  },
+  "contributors": [
+    {
+      "name": "Marco Almeida",
+      "url": "https://github.com/webdados"
+    }
+  ],
+  "homepage": "https://github.com/s3rgiosan/wp-skills/tree/main/wp-plugin-audit-remediation",
+  "repository": "https://github.com/s3rgiosan/wp-skills",
+  "license": "MIT",
+  "keywords": ["wordpress", "audit", "remediation", "code-review", "refactoring", "plugin-review"]
+}

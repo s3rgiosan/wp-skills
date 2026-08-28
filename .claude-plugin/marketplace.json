@@ -22,7 +22,7 @@
     {
       "name": "wp-plugin-code-audit",
       "source": "./wp-plugin-code-audit",
-      "description": "Verification-first code audit for WordPress plugins: security, performance, standards, wp.org guidelines. Produces a markdown report with severity-sorted findings + GO / NO-GO / GO WITH FIXES verdict."
+      "description": "Verification-first code audit for WordPress plugins: security, performance, standards, wp.org guidelines, cross-plugin integration. Produces a markdown report with severity-sorted findings + GO / NO-GO / GO WITH FIXES verdict."
     },
     {
       "name": "wp-plugin-audit-remediation",
