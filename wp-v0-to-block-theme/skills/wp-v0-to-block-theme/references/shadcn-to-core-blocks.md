@@ -31,6 +31,51 @@ v0 builds on shadcn/ui primitives. None port directly; approximate each with cor
 
 ## Recipes and traps
 
+### Block style variations
+A shadcn button/card/badge variant (outline, ghost, secondary) maps to a **block style variation**, not a new block. Two equivalent mechanisms register the same kind of variation:
+
+- **`register_block_style()` with `style_data`** (WP 6.6+) — register the variation in PHP; its styles live in `style_data` (theme.json-shaped) and stay editable from the Global Styles UI, same as a built-in style.
+- **theme.json `styles.blocks.<block>.variations.<slug>`** — style an already-registered variation slug (a core style, or one registered via `register_block_style()`/`block.json`) directly in theme.json. theme.json only supplies styles for a registered variation slug; it doesn't register a new one by itself.
+
+Minimal outline-button example, registered in PHP:
+
+```php
+register_block_style(
+    'core/button',
+    array(
+        'name'       => 'outline',
+        'label'      => __( 'Outline', 'mytheme' ),
+        'style_data' => array(
+            'color'  => array(
+                'background' => 'transparent',
+                'text'       => 'var:preset|color|primary',
+            ),
+            'border' => array(
+                'color' => 'var:preset|color|primary',
+                'width' => '1px',
+            ),
+        ),
+    )
+);
+```
+
+The same styling, expressed in theme.json instead (for a variation slug already registered elsewhere):
+
+```json
+"styles": {
+  "blocks": {
+    "core/button": {
+      "variations": {
+        "outline": {
+          "color": { "background": "transparent" },
+          "border": { "color": "var:preset|color|primary", "width": "1px" }
+        }
+      }
+    }
+  }
+}
+```
+
 ### Cover overlay hides the image
 A `core/cover` overlay carries a `has-<color>-background-color` class, and WordPress emits preset color classes as `background-color: … !important`. A gradient set with the `background` shorthand does not clear that `!important` color, so a solid layer sits over the photo. Set the overlay explicitly:
 

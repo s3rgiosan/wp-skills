@@ -95,6 +95,55 @@ A cross-page element (breadcrumbs, eyebrows, section headings, cards, search) is
 
 When a section shows counts or facets (filter chips with per-group counts, muted-zero states), plan a **query module** — cached, invalidated on write — rather than assuming a block attribute or `term->count`. `term->count` is wrong whenever items are tagged on descendant taxa; use a descendant-inclusive (`include_children`) count. Keep the facet mechanism server-side (core query + query-filter + a custom block), not a client-side filter.
 
+If a facet count needs to resync after a client-side navigation, see interactivity-recipes.md's Cross-region state section for `getServerState()` / `getServerContext()`.
+
+## Bind repeated fields with the Block Bindings API
+
+When a v0 section repeats a structured record backed by post meta rather than a query (team bios, pricing rows, stats), prefer binding core block attributes to that meta over a bespoke custom block. The Block Bindings API (WP 6.7+) connects an attribute in the saved markup to a data source; the block keeps its normal editor UI, and the source resolves the value on render.
+
+- **Built-in `core/post-meta` source** — bind a paragraph's or heading's content, an image's `url`/`alt`, or a button's `url`/text to a registered meta key via the block's `metadata.bindings` attribute. The meta key must be registered with `show_in_rest => true` (and can't start with an underscore) to be bindable in the editor.
+- **`register_block_bindings_source()`** for anything `core/post-meta` doesn't cover (a computed value, a related object's field) — register a named source, with a label and a value callback, from an `init` hook.
+
+Minimal example: a heading bound to a `subtitle` meta field, with static fallback content for when the binding can't resolve:
+
+```html
+<!-- wp:heading {
+  "metadata":{
+    "bindings":{
+      "content":{
+        "source":"core/post-meta",
+        "args":{"key":"subtitle"}
+      }
+    }
+  }
+} -->
+<h2 class="wp-block-heading">Fallback subtitle</h2>
+<!-- /wp:heading -->
+```
+
+Custom source registration shape, for reference:
+
+```php
+add_action(
+    'init',
+    function () {
+        register_block_bindings_source(
+            'mytheme/team-role',
+            array(
+                'label'              => __( 'Team role', 'mytheme' ),
+                'get_value_callback' => function ( array $source_args, $block_instance ) {
+                    $post_id = $block_instance->context['postId'];
+                    return get_post_meta( $post_id, $source_args['key'], true );
+                },
+                'uses_context'       => array( 'postId' ),
+            )
+        );
+    }
+);
+```
+
+A binding replaces one attribute at a time, so a record with several fields (name, role, photo) needs one binding per attribute, each pointing at its own meta key — repeated per record inside the pattern.
+
 ## Pages reference patterns, not flattened copies
 
 A page built from a theme pattern should store a reference in `post_content`:
