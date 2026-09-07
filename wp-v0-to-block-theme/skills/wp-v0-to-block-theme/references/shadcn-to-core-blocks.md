@@ -10,7 +10,7 @@ v0 builds on shadcn/ui primitives. None port directly; approximate each with cor
 | `Card` | `core/group` (with padding, radius, border) + inner blocks | Card grids → `core/columns` or a Query loop pattern. |
 | `Badge` | `core/paragraph` styled, or an inline `core/group` | Small pill; use a block style for the shape. |
 | `Input` / `Textarea` / form | `core/group` + a forms plugin, or a custom block | Core has no form field block. Use the project's form solution (or WS Form / Fluent Forms if present); custom block only if none. |
-| `Accordion` | `core/details` **or** custom Interactivity block | `core/details` covers simple cases with no JS. Animated/single-open accordions → Interactivity API (see interactivity-recipes.md). Recent Gutenberg ships a native accordion block set (`core/accordion` / `core/accordion-item` / …); check whether it's in the target WP version before building a custom Interactivity block. |
+| `Accordion` | `core/details` **or** custom Interactivity block | `core/details` covers simple cases with no JS. Animated/single-open accordions → Interactivity API (see interactivity-recipes.md). Recent Gutenberg ships a native accordion block set (`core/accordion` / `core/accordion-item` / …), stable since WordPress 6.9; check whether it's in the target WP version before building a custom Interactivity block. |
 | `Tabs` | Custom Interactivity block | No core tabs block. Rebuild with the Interactivity API. |
 | `Carousel` / slider | Custom Interactivity block | No core carousel. Interactivity API, or a vetted slider block if the project already ships one. |
 | `Dialog` / `Sheet` / modal | Custom Interactivity block | Interactivity API for open/close + focus trap. |
@@ -55,6 +55,8 @@ Drop `contentPosition:"center left"`. The single-definition rule applies to layo
 
 ### Grid column count
 Tailwind `grid-cols-N` → core grid `columnCount:N` (a fixed, even N). `minimumColumnWidth` uses `auto-fill`, which creates as many tracks as fit and leaves empty tracks when items < tracks — reserve it for genuinely fluid galleries (`auto-fit`/`auto-fill` intentions), and pick a value that yields the intended N at the content width.
+
+`columnCount` is fixed at every breakpoint — the core grid does not auto-stack. For Tailwind's `md:grid-cols-N` (one column on mobile, N on desktop), use `core/columns` with `isStackedOnMobile:true` (breakpoint-aware) rather than a grid `columnCount`, or add your own media query.
 
 ### Form controls
 - `select`: `appearance: none` removes the native caret — re-add one with an inline-SVG chevron `background-image`.

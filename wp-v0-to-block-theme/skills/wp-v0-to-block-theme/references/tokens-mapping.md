@@ -30,6 +30,8 @@ Derive the preset scale from the design's real spacing:
 - Cap each preset's `max` at that desktop value; keep a smaller `min` for a gentle mobile taper. Use the `vw` term only for that taper, not to exceed the design.
 - Add an `x-small` step (`0.5rem` / 8px) — designs lean on tight gaps that a coarse scale skips.
 
+Tailwind v4 derives utilities like `gap-8` from an implicit base unit (`--spacing` × N) even when no `--spacing-8` var is declared, so `scripts/tokens.mjs` cannot see or compute that value — derive any such missing step by hand from the base unit.
+
 `settings.spacing.spacingSizes[]` has no `fluid` key (unlike `typography.fontSizes[]`) — a `fluid` object on a spacing entry is silently ignored and the preset never tapers. Express a fluid/tapering spacing preset by putting a `clamp()` directly in `size`; cap the clamp's max at the design's real desktop value and use the `vw` term only for a gentle mobile taper:
 
 ```json
@@ -62,6 +64,8 @@ v0 headings are frequently responsive (clamp, or different `text-*` per breakpoi
 
 Set the min from the mobile capture, the max from the desktop capture (see the per-breakpoint `computed-*.json` from `capture.mjs`).
 
+Per-size `fluid` takes effect only when `settings.typography.fluid: true` is also set (it defaults to `false`) — set it globally, or the plain `size` renders unclamped.
+
 ## Semantic color decisions
 
 - Map only the colors the design **uses**, not every Tailwind default. A palette of 8–15 named entries beats dumping the full scale.
@@ -69,10 +73,11 @@ Set the min from the mobile capture, the max from the desktop capture (see the p
   - A bare channel triple (`--primary: 222 47% 11%`), consumed via `hsl(var(--primary))` — compute it to a concrete hex/hsl value for the palette.
   - A full color function value (`oklch(0.205 0 0)`, `hsl(...)`, `rgb(...)`, common in recent shadcn/v4 exports) — already complete; carry it into the palette as-is (or convert to the project's preferred color space), not as channels needing a wrapper.
 - Give every palette entry a human `name` — it shows in the editor color picker.
+- `scripts/tokens.mjs` only scans `@theme { … }` bodies. shadcn semantic vars declared in a bare `:root { }` (outside `@theme`) — `--background`, `--foreground`, etc. — are not captured; hand-add the ones the design uses to the palette.
 
 ## After the script
 
-1. Rename machine slugs to intent (`gray-900` → `foreground` if that is its role in the design).
+1. Rename machine slugs to intent (`gray-900` → `foreground` if that is its role in the design). This applies to spacing too: the script emits bare numeric spacing slugs (`"4"`, `"16"`) whose `name` is also the digit; rename them to a named scale (`x-small`/`small`/`medium`/`large`) matching the Spacing scale section above.
 2. Delete unused entries.
 3. Add `styles` (base): body font family/size/color, heading scale, link color — these are theme.json `styles`, not `settings`.
 4. Set `settings.appearanceTools: true` (or the granular flags the design needs) and `settings.layout` sizes.

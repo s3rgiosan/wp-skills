@@ -65,9 +65,11 @@ function parseArgs(argv) {
       case '--selectors':
         args.selectors = argv[++i].split(',').map((s) => s.trim()).filter(Boolean);
         break;
-      case '--timeout':
-        args.timeout = parseInt(argv[++i], 10);
+      case '--timeout': {
+        const t = parseInt(argv[++i], 10);
+        args.timeout = Number.isFinite(t) && t > 0 ? t : 60000;
         break;
+      }
       default:
         if (!args.url && !a.startsWith('-')) {
           args.url = a;

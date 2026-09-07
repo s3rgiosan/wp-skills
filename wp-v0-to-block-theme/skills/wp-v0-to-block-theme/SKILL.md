@@ -27,7 +27,7 @@ Split the work: **mechanical** (token extraction, design capture — run the scr
 
 Steps 1–2 are scripts; the rest is the rebuild. Delegate depth to the referenced files and, when installed, to the named WordPress skills.
 
-1. **Capture.** `scripts/capture.mjs <url>` → per-breakpoint DOM, computed CSS, screenshots. Read downloaded code for the Tailwind config and component behavior. Segment the page per `references/section-to-pattern.md`.
+1. **Capture.** `scripts/capture.mjs <url>` → per-breakpoint DOM, computed CSS, screenshots. Read downloaded code for the Tailwind config and component behavior. Segment the page per `references/section-to-pattern.md`. When there is no deployed URL, skip capture and read the downloaded code's classes/JSX by hand for markup and behavior instead — flag fluid min/max (step 2) and the parity checklist (step 7) as estimates, since they then rest on manual reading rather than measured `computed-*.json`.
 2. **Tokens → theme.json.** `scripts/tokens.mjs <config-or-css>` → a `theme.json` `settings` fragment. Refine against `references/tokens-mapping.md` (fluid type, nested colors, edge cases). Tokens **before** patterns.
 3. **Scaffold.** `style.css`, `theme.json` (merge step 2), `templates/`, `parts/`, `patterns/`, `functions.php`, `package.json` (`@wordpress/scripts`), `src/`. Delegate to **wp-block-themes**.
 4. **Layout.** Header/footer → `parts/*.html`. Page types → `templates/*.html` (index, front-page, page, single, archive, 404).
