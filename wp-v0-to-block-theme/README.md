@@ -57,13 +57,13 @@ The skill ships two helper scripts (used automatically, or run by hand):
 
 ```bash
 # Capture a deployed design (needs Playwright)
-node skills/wp-v0-to-block-theme/scripts/capture.mjs <url> --out ./capture
+node skills/wp-v0-to-block-theme/scripts/capture.mjs <url> --out ./capture --breakpoints 390,768,1280 --timeout 60000
 
 # Map Tailwind tokens → theme.json settings (Tailwind v4 @theme CSS or v3 JS config)
-node skills/wp-v0-to-block-theme/scripts/tokens.mjs <tailwind.config.js | globals.css>
+node skills/wp-v0-to-block-theme/scripts/tokens.mjs <tailwind.config.js | globals.css> --out ./theme-settings.json
 ```
 
-`capture.mjs` requires Playwright (`npx playwright install chromium`). `tokens.mjs` has no dependencies and does no network I/O.
+Pass `--help` to either script for the full flag list. `capture.mjs` requires Playwright (`npx playwright install chromium`); `tokens.mjs` has no dependencies and does no network I/O.
 
 ---
 
@@ -80,11 +80,11 @@ wp-v0-to-block-theme/
     └── wp-v0-to-block-theme/
         ├── SKILL.md                  ← the seven-step workflow
         ├── references/
-        │   ├── tokens-mapping.md     ← Tailwind → theme.json map
-        │   ├── shadcn-to-core-blocks.md
-        │   ├── section-to-pattern.md
-        │   ├── interactivity-recipes.md
-        │   └── parity-pitfalls.md    ← per-section parity checklist
+        │   ├── tokens-mapping.md         ← Tailwind → theme.json map, fluid type, dark-mode variation
+        │   ├── shadcn-to-core-blocks.md  ← shadcn/ui → core blocks, layout/form/icon recipes, block styles
+        │   ├── section-to-pattern.md     ← page segmentation, pattern headers, block bindings
+        │   ├── interactivity-recipes.md  ← Interactivity API widget recipes + directive reference
+        │   └── parity-pitfalls.md        ← per-section computed-CSS parity checklist
         └── scripts/
             ├── capture.mjs           ← Playwright design capture
             └── tokens.mjs            ← Tailwind → theme.json settings

@@ -59,6 +59,14 @@ Deep architectural analysis of WordPress plugins — what the plugin does, how i
 
 **[→ Install wp-mnemon](./wp-mnemon/README.md)**
 
+### [wp-v0-to-block-theme](./wp-v0-to-block-theme)
+
+Translate a v0 (Vercel) design — React/Next + Tailwind + shadcn/ui — into a WordPress block theme (FSE). No automatic converter exists, so the skill splits the work into the mechanical parts it automates (per-breakpoint Playwright capture of the rendered design, mapping Tailwind v3/v4 tokens to `theme.json`) and the judgment parts it guides: rebuilding each section as patterns, templates, and Interactivity API blocks, against a per-section computed-CSS parity checklist. Covers current block-theme practice (theme.json v3, style variations for dark mode, block bindings, root-padding-aware alignments) and the Interactivity API (server-seeded state, `data-wp-*` directives). Ships two scripts (`capture.mjs`, `tokens.mjs`) and composes with `wp-block-themes` / `wp-patterns` / `wp-block-development` / `wp-interactivity-api`.
+
+**Triggers on:** "v0 to WordPress", "v0 to block theme", "convert this v0 design", "Vercel design to WP theme", "Tailwind to theme.json", a v0.dev / *.vercel.app URL paired with a WordPress theme request.
+
+**[→ Install wp-v0-to-block-theme](./wp-v0-to-block-theme/README.md)**
+
 ---
 
 ## Install via Claude Code plugin marketplace (recommended)
