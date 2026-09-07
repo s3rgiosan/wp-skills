@@ -19,6 +19,7 @@ echo ""
 mkdir -p "$CLAUDE_CONFIG_DIR/skills"
 rm -rf "$CLAUDE_CONFIG_DIR/skills/$SKILL_NAME"
 cp -r "$SKILL_SRC" "$CLAUDE_CONFIG_DIR/skills/$SKILL_NAME"
+find "$CLAUDE_CONFIG_DIR/skills/$SKILL_NAME" -name '.DS_Store' -delete
 echo "  ✓ Installed → $CLAUDE_CONFIG_DIR/skills/$SKILL_NAME"
 
 echo ""
