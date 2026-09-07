@@ -93,11 +93,26 @@ function fontSizeValue(val) {
   return typeof val === 'string' ? val : '';
 }
 
+/** Token groups that may be function-valued in a v3 config (e.g. `colors: ({ colors }) => ({...})`). */
+const FUNCTION_UNSAFE_GROUPS = ['colors', 'fontFamily', 'fontSize', 'spacing', 'borderRadius'];
+
+function warnAboutFunctionValuedGroups(merged) {
+  for (const group of FUNCTION_UNSAFE_GROUPS) {
+    if (typeof merged[group] === 'function') {
+      console.error(
+        `Warning: theme.${group} is a function; function-valued Tailwind config can't be statically read. Point at the Tailwind v4 @theme CSS or a resolved config instead.`
+      );
+    }
+  }
+}
+
 function settingsFromTailwindTheme(theme) {
   const merged = { ...(theme || {}), ...((theme && theme.extend) || {}) };
   const settings = {};
 
-  const colors = flattenColors(merged.colors);
+  warnAboutFunctionValuedGroups(merged);
+
+  const colors = typeof merged.colors === 'function' ? {} : flattenColors(merged.colors);
   const palette = toPalette(colors);
   if (palette.length) {
     settings.color = { palette };
@@ -144,8 +159,13 @@ function settingsFromTailwindTheme(theme) {
 
 /** Parse a Tailwind v4 `@theme { --token: value; }` block into a settings fragment. */
 function settingsFromCss(css) {
-  const themeMatch = css.match(/@theme[^{]*\{([\s\S]*?)\}/);
-  const body = themeMatch ? themeMatch[1] : css;
+  const themeRe = /@theme[^{]*\{([\s\S]*?)\}/g;
+  const bodies = [];
+  let themeMatch;
+  while ((themeMatch = themeRe.exec(css)) !== null) {
+    bodies.push(themeMatch[1]);
+  }
+  const body = bodies.length ? bodies.join('\n') : css;
 
   const vars = {};
   const varRe = /--([a-z0-9-]+)\s*:\s*([^;]+);/gi;
@@ -211,9 +231,13 @@ async function loadTailwindConfig(file) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  if (args.help || !args.input) {
+  if (args.help) {
     console.log(HELP);
-    process.exit(args.input ? 0 : 1);
+    process.exit(0);
+  }
+  if (!args.input) {
+    console.log(HELP);
+    process.exit(1);
   }
 
   const ext = extname(args.input).toLowerCase();

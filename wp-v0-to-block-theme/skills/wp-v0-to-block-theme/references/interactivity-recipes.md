@@ -39,7 +39,7 @@ Simple, static accordions with no animation can use **`core/details`** instead â
 ## Tabs
 
 ```html
-<div data-wp-interactive="mytheme" data-wp-context='{"active":0}'>
+<div data-wp-interactive="mytheme">
   <div role="tablist">
     <button role="tab"
       data-wp-on--click="actions.select"
@@ -54,18 +54,18 @@ Simple, static accordions with no animation can use **`core/details`** instead â
 ```js
 store('mytheme', {
   state: {
+    active: 0,
     get isActive() {
-      const ctx = getContext();
-      return ctx.index === ctx.active; // read parent active via nested context
+      return getContext().index === store('mytheme').state.active;
     },
   },
   actions: {
-    select() { getContext().active = getContext().index; },
+    select() { store('mytheme').state.active = getContext().index; },
   },
 });
 ```
 
-Adjust context nesting so panels read the parent's `active`. Keep `aria-selected`, `role`, and keyboard handling (`data-wp-on--keydown`) for accessibility.
+The shared `active` index lives in global `state`, not per-block `context` â€” each tab/panel has its own context chain off the ancestor, so a value written into shared context only shadows one branch and siblings never see the update. Only `index` stays in local context. Keep `aria-selected`, `role`, and keyboard handling (`data-wp-on--keydown`) for accessibility.
 
 ## Carousel / slider
 
@@ -79,6 +79,27 @@ Adjust context nesting so panels read the parent's `active`. Keep `aria-selected
 - Context `open`; toggle actions on trigger and close controls.
 - `data-wp-bind--hidden`/class binding for visibility; trap focus and close on `Escape` (`data-wp-on--keydown`).
 - Mobile nav: prefer `core/navigation` (built-in responsive behavior) before a custom build.
+
+## Cross-region state (control here, target elsewhere)
+
+A control in one block driving a target in another (a header-search toggle in the utility bar opening a panel below the main nav; a mega-menu; a drawer) does **not** require nesting the two. The Interactivity store is global **per namespace**: give both the control and the target the same `data-wp-interactive="mytheme"` and bind them to the same `state`, wherever each sits in the DOM.
+
+```html
+<!-- toggle, in one block/region -->
+<button data-wp-interactive="mytheme" data-wp-on--click="actions.toggleSearch">Search</button>
+
+<!-- panel, in a different block/region -->
+<div data-wp-interactive="mytheme" data-wp-bind--hidden="!state.searchOpen"> â€¦ </div>
+```
+
+```js
+const { state } = store('mytheme', {
+  state: { searchOpen: false },
+  actions: { toggleSearch() { state.searchOpen = !state.searchOpen; } },
+});
+```
+
+Use global `state` (not per-block `context`) for anything two regions share.
 
 ## Accessibility checklist
 

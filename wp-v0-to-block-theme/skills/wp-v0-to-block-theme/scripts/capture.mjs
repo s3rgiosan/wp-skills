@@ -8,7 +8,7 @@
  *   - computed-<w>.json  computed styles for a curated selector set
  *
  * Usage:
- *   node capture.mjs <url> [--out DIR] [--breakpoints 390,768,1280] [--selectors "body,h1,h2,..."]
+ *   node capture.mjs <url> [--out DIR] [--breakpoints 390,768,1280] [--selectors "body,h1,h2,..."] [--timeout 60000]
  *
  * Requires Playwright:
  *   npm i -D playwright   (or)   npx playwright install chromium
@@ -33,7 +33,7 @@ const CAPTURED_PROPS = [
 const HELP = `capture.mjs — capture a page for block-theme translation
 
 Usage:
-  node capture.mjs <url> [--out DIR] [--breakpoints 390,768,1280] [--selectors "body,h1,..."]
+  node capture.mjs <url> [--out DIR] [--breakpoints 390,768,1280] [--selectors "body,h1,..."] [--timeout 60000]
 
 Writes shot-<w>.png, dom-<w>.html, computed-<w>.json per breakpoint into --out (default ./v0-capture).
 Requires Playwright: npx playwright install chromium`;
@@ -44,6 +44,7 @@ function parseArgs(argv) {
     out: 'v0-capture',
     breakpoints: DEFAULT_BREAKPOINTS,
     selectors: DEFAULT_SELECTORS,
+    timeout: 60000,
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -63,6 +64,9 @@ function parseArgs(argv) {
         break;
       case '--selectors':
         args.selectors = argv[++i].split(',').map((s) => s.trim()).filter(Boolean);
+        break;
+      case '--timeout':
+        args.timeout = parseInt(argv[++i], 10);
         break;
       default:
         if (!args.url && !a.startsWith('-')) {
@@ -88,9 +92,17 @@ async function loadPlaywright() {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  if (args.help || !args.url) {
+  if (args.help) {
     console.log(HELP);
-    process.exit(args.url ? 0 : 1);
+    process.exit(0);
+  }
+  if (!args.url) {
+    console.log(HELP);
+    process.exit(1);
+  }
+  if (!args.breakpoints.length) {
+    console.error('No valid breakpoints; expected e.g. --breakpoints 390,768,1280');
+    process.exit(1);
   }
 
   const chromium = await loadPlaywright();
@@ -106,7 +118,7 @@ async function main() {
       });
       const page = await context.newPage();
 
-      await page.goto(args.url, { waitUntil: 'networkidle', timeout: 60000 });
+      await page.goto(args.url, { waitUntil: 'networkidle', timeout: args.timeout });
       await page.waitForTimeout(500);
 
       await page.screenshot({ path: `${outDir}/shot-${width}.png`, fullPage: true });
@@ -118,18 +130,23 @@ async function main() {
         ({ selectors, props }) => {
           const result = {};
           for (const sel of selectors) {
-            const nodes = Array.from(document.querySelectorAll(sel)).slice(0, 5);
-            if (!nodes.length) {
-              continue;
-            }
-            result[sel] = nodes.map((el) => {
-              const cs = getComputedStyle(el);
-              const entry = {};
-              for (const p of props) {
-                entry[p] = cs.getPropertyValue(p);
+            try {
+              const nodes = Array.from(document.querySelectorAll(sel)).slice(0, 5);
+              if (!nodes.length) {
+                continue;
               }
-              return entry;
-            });
+              result[sel] = nodes.map((el) => {
+                const cs = getComputedStyle(el);
+                const entry = {};
+                for (const p of props) {
+                  entry[p] = cs.getPropertyValue(p);
+                }
+                return entry;
+              });
+            } catch (err) {
+              result._errors = result._errors || {};
+              result._errors[sel] = err.message || String(err);
+            }
           }
           return result;
         },

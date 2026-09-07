@@ -57,3 +57,21 @@ Register patterns via PHP file headers in `patterns/`. Auto-registered by the th
 ## When a section needs a custom block
 
 Only when the section carries behavior or data that core blocks cannot express (interactive widget, a dynamic query with custom output). Static/visual sections are always patterns. Raise the custom-block decision before building it.
+
+## Author shared elements once
+
+A cross-page element (breadcrumbs, eyebrows, section headings, cards, search) is authored **once** — one block or one pattern — and varied by a modifier class or block attributes, never re-authored inline for a variant. A light-on-dark breadcrumb over a dark hero is an `is-inverted` modifier on the same block (`get_block_wrapper_attributes()` carries `className`), styled in the same stylesheet — not a second implementation with different markup. Reviewing for duplicate implementations of the same element is a checklist item: divergent markup means divergent styling.
+
+## Facets and counts need a real query
+
+When a section shows counts or facets (filter chips with per-group counts, muted-zero states), plan a **query module** — cached, invalidated on write — rather than assuming a block attribute or `term->count`. `term->count` is wrong whenever items are tagged on descendant taxa; use a descendant-inclusive (`include_children`) count. Keep the facet mechanism server-side (core query + query-filter + a custom block), not a client-side filter.
+
+## Pages reference patterns, not flattened copies
+
+A page built from a theme pattern should store a reference in `post_content`:
+
+```html
+<!-- wp:pattern {"slug":"mytheme/about-intro"} /-->
+```
+
+so a later edit to the pattern propagates to every page using it. An importer that **flattens** pattern output into `post_content` freezes a copy — theme pattern fixes never reach it, and the divergence is invisible until you edit the pattern and one page doesn't change. Flattened pages must be re-imported (or edited) to adopt changes. See the **wp-migration-playbook** skill for import-time handling.

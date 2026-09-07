@@ -83,7 +83,8 @@ wp-v0-to-block-theme/
         │   ├── tokens-mapping.md     ← Tailwind → theme.json map
         │   ├── shadcn-to-core-blocks.md
         │   ├── section-to-pattern.md
-        │   └── interactivity-recipes.md
+        │   ├── interactivity-recipes.md
+        │   └── parity-pitfalls.md    ← per-section parity checklist
         └── scripts/
             ├── capture.mjs           ← Playwright design capture
             └── tokens.mjs            ← Tailwind → theme.json settings

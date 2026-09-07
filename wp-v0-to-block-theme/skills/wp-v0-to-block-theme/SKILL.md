@@ -31,9 +31,11 @@ Steps 1–2 are scripts; the rest is the rebuild. Delegate depth to the referenc
 2. **Tokens → theme.json.** `scripts/tokens.mjs <config-or-css>` → a `theme.json` `settings` fragment. Refine against `references/tokens-mapping.md` (fluid type, nested colors, edge cases). Tokens **before** patterns.
 3. **Scaffold.** `style.css`, `theme.json` (merge step 2), `templates/`, `parts/`, `patterns/`, `functions.php`, `package.json` (`@wordpress/scripts`), `src/`. Delegate to **wp-block-themes**.
 4. **Layout.** Header/footer → `parts/*.html`. Page types → `templates/*.html` (index, front-page, page, single, archive, 404).
-5. **Sections → patterns.** One `patterns/*.php` per section. **Core blocks first**, styled via tokens; custom block only where core cannot express it — raise first. Use `references/shadcn-to-core-blocks.md` and `references/section-to-pattern.md`. Delegate to **wp-patterns** / **wp-block-development**.
-6. **Interactivity.** Accordions, tabs, sliders, mobile nav → **Interactivity API** (`data-wp-*` + store), server-rendered then hydrated. See `references/interactivity-recipes.md`. Delegate to **wp-interactivity-api**.
-7. **Verify.** Activate locally; Site Editor loads parts/patterns and tokens resolve. Compare each section vs the deployed URL per breakpoint. Exercise every interactive block. `npm run build` clean, no console errors.
+5. **Sections → patterns.** One `patterns/*.php` per section. **Core blocks first**, styled via tokens; custom block only where core cannot express it — raise first. Inventory the design's lucide icons up front (linked icon → linkable primitive, not a bare decorative SVG); author shared elements once, vary by modifier. Use `references/shadcn-to-core-blocks.md` and `references/section-to-pattern.md`. Delegate to **wp-patterns** / **wp-block-development**.
+6. **Interactivity.** Accordions, tabs, sliders, mobile nav → **Interactivity API** (`data-wp-*` + store), server-rendered then hydrated; cross-region controls share one namespace. See `references/interactivity-recipes.md`. Delegate to **wp-interactivity-api**.
+7. **Verify.** Activate locally; Site Editor loads parts/patterns and tokens resolve. Run the **per-section parity checklist** (computed CSS local vs deployed, per breakpoint) *during* the rebuild and again here — see `references/parity-pitfalls.md`. Exercise every interactive block. `npm run build` clean, no console errors.
+
+A v0 redesign after the build is a **re-capture + diff pass** against the current patterns/blocks, not a rebuild.
 
 ## Scripts
 
@@ -46,4 +48,8 @@ Steps 1–2 are scripts; the rest is the rebuild. Delegate depth to the referenc
 - Hardcoding px/hex — reference theme.json tokens so global styles stay editable.
 - Defaulting to a custom block or `ServerSideRender` — prefer core blocks; raise a custom block first.
 - Eyeballing screenshots — use computed CSS from `capture.mjs` for real values.
+- Editing patterns with `perl -0pi` / `sed` — they carry translatable non-ASCII UI text that stream editors double-encode. Use structured edits.
+- Cover overlay hiding the image — a preset color class emits `background-color:…!important`; clear it with `background-color:transparent!important` + `background-image`, not the `background` shorthand.
+- `minimumColumnWidth` for a fixed row — it auto-fills and leaves empty tracks; use `columnCount:N` for a set N.
+- Hand-writing `aria-*`/`data-*`/`role` onto a core block's saved HTML — it invalidates on re-serialise; put it on a wrapper or a custom block.
 - Building a classic PHP-template theme — this skill is block themes only.
