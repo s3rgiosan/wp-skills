@@ -47,6 +47,35 @@ Register patterns via PHP file headers in `patterns/`. Auto-registered by the th
 - **Categories** from core (`featured`, `call-to-action`, `banner`, `gallery`, `testimonials`, `pricing`, `posts`) or a custom category registered in `functions.php`.
 - Keep translatable strings wrapped and escaped where PHP emits dynamic values; static block markup is fine as-is.
 
+Optional headers bind a pattern to a specific slot instead of leaving it as a general-purpose inserter pattern:
+
+- **Block Types** — binds the pattern to a block or template-part area (e.g. `core/template-part/header`), so it's offered where that block/area is edited.
+- **Post Types** — restricts the pattern to specific post types.
+- **Template Types** — restricts the pattern to specific templates (e.g. `front-page`, `single`).
+- **Inserter: no** — hides a template-bound pattern from the general inserter, since it's meant to fill one slot, not be inserted anywhere.
+
+Header/footer example, so the pattern surfaces in the Site Editor's header template-part picker rather than the general inserter:
+
+```php
+<?php
+/**
+ * Title: Header
+ * Slug: mytheme/header
+ * Categories: header
+ * Block Types: core/template-part/header
+ * Inserter: no
+ */
+```
+
+theme.json declares the matching part areas so the Site Editor knows where each template part belongs:
+
+```json
+"templateParts": [
+  { "name": "header", "title": "Header", "area": "header" },
+  { "name": "footer", "title": "Footer", "area": "footer" }
+]
+```
+
 ## Block markup rules
 
 - Patterns are **serialized block markup** (`<!-- wp:... -->` comments), not JSX and not raw HTML.

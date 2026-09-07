@@ -77,7 +77,46 @@ Per-size `fluid` takes effect only when `settings.typography.fluid: true` is als
 
 ## After the script
 
-1. Rename machine slugs to intent (`gray-900` → `foreground` if that is its role in the design). This applies to spacing too: the script emits bare numeric spacing slugs (`"4"`, `"16"`) whose `name` is also the digit; rename them to a named scale (`x-small`/`small`/`medium`/`large`) matching the Spacing scale section above.
-2. Delete unused entries.
-3. Add `styles` (base): body font family/size/color, heading scale, link color — these are theme.json `styles`, not `settings`.
-4. Set `settings.appearanceTools: true` (or the granular flags the design needs) and `settings.layout` sizes.
+1. Start every `theme.json` the skill emits with the current schema and version:
+
+   ```json
+   {
+     "$schema": "https://schemas.wp.org/trunk/theme.json",
+     "version": 3
+   }
+   ```
+
+   `version: 3` is current (WP 6.6+); `$schema` gives editor validation and autocomplete.
+2. Rename machine slugs to intent (`gray-900` → `foreground` if that is its role in the design). This applies to spacing too: the script emits bare numeric spacing slugs (`"4"`, `"16"`) whose `name` is also the digit; rename them to a named scale (`x-small`/`small`/`medium`/`large`) matching the Spacing scale section above.
+3. Delete unused entries.
+4. Add `styles` (base): body font family/size/color, heading scale, link color — these are theme.json `styles`, not `settings`.
+5. Set `settings.appearanceTools: true` (or the granular flags the design needs) and `settings.layout` sizes.
+
+## Dark mode → style variation
+
+shadcn ships `:root` (light) and `.dark` as two sets of the same CSS variables. Map `:root` to the base theme.json `styles` and `.dark` to a partial style variation in `/styles/`:
+
+```json
+// styles/dark.json
+{
+  "$schema": "https://schemas.wp.org/trunk/theme.json",
+  "version": 3,
+  "title": "Dark",
+  "settings": {
+    "color": {
+      "palette": [
+        { "slug": "background", "color": "#0a0a0a", "name": "Background" },
+        { "slug": "foreground", "color": "#fafafa", "name": "Foreground" }
+      ]
+    }
+  },
+  "styles": {
+    "color": {
+      "background": "var(--wp--preset--color--background)",
+      "text": "var(--wp--preset--color--foreground)"
+    }
+  }
+}
+```
+
+Pull the dark values from the `.dark` block's CSS variables. Once registered, the variation appears as a selectable option in the Site Editor under Styles → Browse styles — this is the current mechanism for dark mode in a block theme, not a CSS media query in the stylesheet.

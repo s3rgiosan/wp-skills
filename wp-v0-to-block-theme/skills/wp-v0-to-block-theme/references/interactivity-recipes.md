@@ -2,13 +2,22 @@
 
 v0 interactive widgets (React state) become server-rendered markup + `data-wp-*` directives + a store. The markup renders complete on the server; the API hydrates behavior. This keeps the block-editor preview faithful and avoids shipping a React runtime.
 
-For depth, delegate to the **wp-interactivity-api** skill when installed. This file is the quick recipe set for the common v0 widgets.
+For depth, delegate to the **wp-interactivity-api** skill when installed. This file is the quick recipe set for the common v0 widgets. The inline `data-wp-context='{…}'` string shown in the recipes below is the client-only shorthand; when the initial value comes from the server, prefer `wp_interactivity_data_wp_context()` instead (see Setup).
 
 ## Setup (once per theme)
 
 - Build interactive view scripts as **script modules** with `@wordpress/scripts`.
 - Register the module and mark the block/pattern interactive with `data-wp-interactive="mytheme"` on the wrapper.
 - Server-render the full markup (all panels present, correct initial `hidden`/`aria` state) so no-JS and first paint are correct.
+- Seed server-rendered initial values from PHP rather than hard-coding them as `data-wp-context` JSON strings: `wp_interactivity_state( 'mytheme', [...] )` for shared state, and `wp_interactivity_data_wp_context( [...] )` to emit the `data-wp-context` attribute from pattern PHP:
+
+  ```php
+  <?php wp_interactivity_state( 'mytheme', array( 'active' => 0 ) ); ?>
+  <div
+    data-wp-interactive="mytheme"
+    <?php echo wp_interactivity_data_wp_context( array( 'open' => false ) ); ?>
+  >
+  ```
 
 ## Accordion (single-open)
 

@@ -43,8 +43,21 @@ A `core/cover` overlay carries a `has-<color>-background-color` class, and WordP
 
 Don't rely on `overlayColor` when a custom gradient overlay is in play.
 
+### Full-bleed sections: root-padding-aware alignments first
+The baseline mechanism for full-bleed handling is theme.json, not manual CSS. Turn on root-padding-aware alignments and set the content/wide sizes and root padding there:
+
+```json
+"settings": {
+  "useRootPaddingAwareAlignments": true,
+  "layout": { "contentSize": "40rem", "wideSize": "72rem" },
+  "spacing": { "padding": { "left": "1rem", "right": "1rem" } }
+}
+```
+
+With it on, WordPress applies the root padding so `alignfull` bands span edge-to-edge while constrained content keeps the inset — no manual edge handling for the common case.
+
 ### Align a capped box to the content column inside an alignfull section
-`margin-left: 0` aligns a width-capped box to the full-bleed section's padding edge, not to the centered content column where the rest of the page sits. `contentPosition:"center left"` on a cover compounds it by shrink-wrapping the inner container. Align to the column instead, and define the inset once:
+Root-padding-aware alignments alone place full-bleed bands and constrained content correctly, but a width-capped box that needs to sit at the content column's edge *inside* an alignfull section (rather than centered) is a narrower case they don't cover. `margin-left: 0` aligns the box to the full-bleed section's padding edge, not to the centered content column where the rest of the page sits. `contentPosition:"center left"` on a cover compounds it by shrink-wrapping the inner container. Align to the column instead, and define the inset once:
 
 ```css
 :root { --content-inset: max(0px, calc((100% - var(--wp--style--global--content-size)) / 2)); }
