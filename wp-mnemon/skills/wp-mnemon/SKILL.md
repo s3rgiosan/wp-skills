@@ -1,9 +1,9 @@
 ---
 name: wp-mnemon
 description: >
-  Step-by-step instructions for deep analysis of a WordPress plugin — architecture,
-  execution flows, hook chains, data lifecycle, and extensibility — from a local path
-  or GitHub URL. Writes structured documentation into agent memory.
+  Use when the user wants to understand, document, or explore a WordPress plugin's
+  architecture, hooks, execution flows, data lifecycle, or extensibility, from a
+  local path or a GitHub URL (public or private).
 ---
 
 # wp-mnemon — WordPress Plugin Deep Analyzer
@@ -22,7 +22,10 @@ Check what the user provided:
 
 **Local path** (e.g. `/wp-content/plugins/my-plugin` or `~/plugins/my-plugin`):
 - Use `Glob` and `Read` tools directly on the filesystem
-- Use the bash scripts in `~/.claude/skills/wp-mnemon/scripts/` for fast scanning
+- Use the bash scripts in this skill's `scripts/` folder for fast scanning:
+  ```bash
+  SKILL_DIR=<this skill's folder>
+  ```
 
 **GitHub URL** (e.g. `https://github.com/org/repo`):
 - Extract `{owner}` and `{repo}` from the URL
@@ -84,7 +87,7 @@ Count total PHP files and estimate plugin complexity.
 
 **For local plugins**, run:
 ```bash
-bash ~/.claude/skills/wp-mnemon/scripts/scan_classes.sh /path/to/plugin
+bash "$SKILL_DIR/scripts/scan_classes.sh" /path/to/plugin
 ```
 
 **For GitHub**, read key PHP files and scan for the same patterns.
@@ -136,7 +139,7 @@ Document this as a sequential flow with clear arrows/steps.
 
 **For local plugins**, run:
 ```bash
-bash ~/.claude/skills/wp-mnemon/scripts/scan_hooks.sh /path/to/plugin
+bash "$SKILL_DIR/scripts/scan_hooks.sh" /path/to/plugin
 ```
 
 **For GitHub**, scan PHP files for hook patterns.
@@ -166,7 +169,7 @@ Group hooks into:
 
 **For local plugins**, run:
 ```bash
-bash ~/.claude/skills/wp-mnemon/scripts/scan_data.sh /path/to/plugin
+bash "$SKILL_DIR/scripts/scan_data.sh" /path/to/plugin
 ```
 
 **For GitHub**, scan PHP files for data patterns.

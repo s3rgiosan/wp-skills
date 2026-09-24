@@ -149,7 +149,7 @@ Tools catch patterns; people catch intent. Read in this order:
 4. **AJAX handlers** — every `wp_ajax_*` and `wp_ajax_nopriv_*`. Capability + nonce + sanitization.
 5. **Admin pages + form handlers** — Settings API or hand-rolled? Nonces, caps, `register_setting()` sanitize callbacks.
 6. **DB queries** — every `$wpdb->query`, `->get_results`, `->get_var`, `->prepare`, `->insert`, `->update`, `->delete`. Trace inputs.
-7. **File ops** — `file_get_contents`, `file_put_contents`, `fopen`, `unlink`, `move_uploaded_file`, `wp_handle_upload`, `wp_upload_bits`. Path traversal? Extension whitelist?
+7. **File ops** — `file_get_contents`, `file_put_contents`, `fopen`, `unlink`, `move_uploaded_file`, `wp_handle_upload`, `wp_upload_bits`. Path traversal? Extension allowlist?
 8. **HTTP egress** — `wp_remote_*`. SSRF if URL is user-controlled.
 9. **Deserialization** — `unserialize`, `maybe_unserialize` on user-controllable or low-trust stored data → object injection.
 10. **Capability checks** — every `current_user_can`. Missing? Wrong cap (`read` instead of `manage_options`)?
@@ -175,7 +175,7 @@ For every candidate finding, before adding to the report, run the verification p
 
 | Candidate | Verification |
 |---|---|
-| **SQL injection** | Trace the input. Is it `$wpdb->prepare()`'d? `esc_sql()`'d? Whitelisted via `post_type_exists` / `in_array` against a static list? If yes → not exploitable. Note as "fragile, not exploitable" only if a refactor would break the guard. |
+| **SQL injection** | Trace the input. Is it `$wpdb->prepare()`'d? `esc_sql()`'d? Allowlisted via `post_type_exists` / `in_array` against a static list? If yes → not exploitable. Note as "fragile, not exploitable" only if a refactor would break the guard. |
 | **Missing nonce** | Is the endpoint admin-only with a real capability gate (`manage_options`, not `read`)? Is it a REST route with cookie auth + meaningful `permission_callback`? Verify the threat model before flagging. |
 | **Missing escape** | Confirm the output context (HTML body / attr / URL / JS / CSS). Confirm the value isn't already escaped upstream. Wrong-escape ≠ missing-escape. |
 | **Missing sanitize** | Trace the value to its sink. Sanitization for storage ≠ sanitization for output. Storage sanitization matters when input shape matters or when the sink later doesn't escape. |
@@ -184,7 +184,7 @@ If verification fails, **drop the finding**. Note in the report's appendix: "Ver
 
 **Counts are findings too.** Any number that appears in the report — call sites, occurrences, endpoints, LOC, handlers, queries — must come from a command whose output you captured, not from reading. Counting by eye is how `__()` "called 14 times" ships when it's called six (an accidental tally of the prefix, which happened to occur 17 times). A count is the cheapest thing a reader spot-checks: one wrong number and every other number in the report is suspect. If you can't produce the command that yields the figure, don't put the figure in the report — describe it qualitatively instead ("several", "throughout").
 
-This phase exists because subagents and pattern scanners over-flag in WP. Real audit: a subagent flagged `PostToPost.php:67` as IN-clause SQLi; verified false (`post_type_exists()` in ctor + `esc_sql()` applied). Always re-run findings against source.
+This phase exists because subagents and pattern scanners over-flag in WP. Always verify findings against the source. See `references/false-positive-traps.md`.
 
 Full traps + procedures: `references/false-positive-traps.md`.
 
@@ -224,7 +224,7 @@ Inline summary in chat: report path + verdict + counts + top-3-to-fix.
 
 **Reports describe the method in plain terms.** A report never names the audit skills (`wp-plugin-code-audit`, `wp-theme-code-audit`, `wp-project-audit`, `wp-plugin-audit-remediation`) or the skills' own scripts and working files, and carries no process notes (model tiers, how the run was split, "single-model run"). Say what was done instead: "a component inventory", "known-vulnerability lookups at production versions", "core files against the official wordpress.org checksums". External tools and data sources the evidence rests on stay named, because a reader can rerun or check them: PHPCS/WPCS, PHPStan, Plugin Check, Theme Check, `composer audit`, `npm audit`, WPVulnerability, Wordfence, Patchstack, OSV, the wordpress.org APIs, php.net. The audited code's own files (its deploy scripts, its `composer.lock`) are evidence and stay. Tool output is cited by tool name, version and counts, never by an internal file path.
 
-The Summary's findings table lists every finding by its permanent ID, one row each, in severity order; it is an index into the Findings section, not a second numbering. It has no effort column: effort estimation is out of scope for the audit. Category is security, performance or standards.
+The Summary's findings table lists every finding by its permanent ID, one row each, in severity order; it is an index into the Findings section, not a second numbering. It has no effort column: effort estimation is out of scope for the audit. Category is security, performance, standards or integration.
 
 **Every report opens with a TL;DR.** It is the first section, directly under the title and above the verdict and counts block, written so the owner can forward it on its own to stakeholders or a customer. About 20 lines at most:
 
@@ -236,102 +236,21 @@ The Summary's findings table lists every finding by its permanent ID, one row ea
 
 Writing rules: no finding IDs; no file paths or code identifiers beyond what a non-technical reader needs (a site path such as `/legacy/` is fine); no plugin internals, attack mechanics or payloads; no internal tool, skill or audit-process words. Every claim traces to a verified finding in the report body, and a positive appears only when it was verified. Plain, calm tone, no alarmism. It must stay accurate when forwarded without the rest of the report. The TL;DR is the report's plain-language summary; the Summary section below it does not repeat it.
 
-Minimum report skeleton (full template + worked examples: `references/report-template.md`):
+Full skeleton: `references/report-template.md`.
 
-```markdown
-# Audit: <plugin-name> <version>
+Required section order:
 
-## TL;DR
-
-**Overall:** <the verdict in one plain sentence>
-
-**What needs attention now**
-- <most serious issue in plain language: what is wrong, why it matters, who could exploit it>
-- ...
-
-**What is in good shape**
-- <a verified positive>
-- ...
-
-**Recommended next steps**
-1. <containment first>
-2. ...
-3. ...
-
-**At a glance:** <C> critical · <H> high · <M> medium · <L> low · <I> info; most serious issues in <area>.
-
-**Verdict:** GO / NO-GO / GO WITH FIXES
-**Counts:** 🔴 <C> critical · 🟠 <H> high · 🟡 <M> medium · 🟢 <L> low · ⚪ <I> info
-**Top 3 to fix first:**
-1. ...
-2. ...
-3. ...
-**Decisions needed from the owner:** <D> — see § Decisions needed from the owner (omit this line when D = 0)
-
-## Summary
-
-| Finding | Area | Category | Recommendation | Priority |
-|---|---|---|---|---|
-| H1 · short title | REST / AJAX / admin / front end / data / build | security / performance / standards | one line | High |
-
-Optional glossary: one line per technical term the TL;DR could not avoid (for example "nonce", "capability").
-
-## Scope
-- Path / source: ...
-- Distribution: wp.org / GitHub / private / commercial · Update channel: ...
-- Author / contact: ...
-- LOC: ... PHP, ... JS
-- Surface: REST endpoints (N), AJAX handlers (N), admin pages (N), CLI commands (N), blocks (N)
-- System of record: yes / no — what authoritative data it owns (stock, entitlements, invoices, backups, …), or "view over <source>"
-- Operating constraints: other writers of this data (…), how changes reach production (VCS+CI / hand-edited on server), what's planned (multilingual / migration / headless / new integration) — or "none reported"
-- Dependencies (PHP): ...
-- Dependencies (JS): ...
-- Tools run: PHPCS (yes/no), PHPStan (yes/no), Plugin Check (yes/no)
-- Ignored (gitignore/distignore): ... · `vendor/` + `node_modules/` skipped (deps out of scope unless requested)
-- Sections audited: security ✓ · performance ✓ · standards ✓ · integration ✓ (or n/a — no shared-data companion) · FP-traps ✓
-
-## Findings
-
-### 🔴 CRITICAL — C1: `file.php:line` — short title
-Description with the trace through source. Why it's exploitable / what breaks.
-*Fix:* concrete change.
-
-### 🟠 HIGH — H1: `file.php:line` — short title
-...same format...
-
-### 🟡 MEDIUM — M1: ...
-### 🟡 MEDIUM — M5: `file.php:line` — short title [DECISION]
-
-> **[DECISION] Needs a decision from the owner.** <the question, in one sentence> Default if unanswered: <what current behaviour does>.
-
-...same format...
-### 🟢 LOW — L1: ...
-### ⚪ INFO — I1: ...
-
-## Verified false (appendix)
-- `file.php:line` — pattern that looked like X but isn't because Y.
-
-## Decisions needed from the owner
-
-Findings marked `[DECISION]`, collected. Omit the whole section when there are none.
-
-| | Question | Default if unanswered | Consequence / blocks |
-|---|---|---|---|
-| **M5** | ... | ... | free-standing / blocks C1, H2 |
-
-## Recommendation
-- Two-sentence verdict reasoning.
-- If distribution is private and findings require an author fix: who to contact + suggested disclosure path.
-- **Every recommendation must be reachable within the operating constraints captured in Discover.** Where the obvious fix is one the owner has already ruled out (e.g. "put it under version control" when they hand-edit on the server), say what to do *instead* — don't issue advice they can't follow. Unreachable advice makes the whole report read as written for someone else.
-
-## Sources
-- What the audit was based on: repository URL and commit (or wp.org slug and version, or archive name), branch, environment reached (none / local / staging), owner answers and when received, and one line per audit run when there was more than one (date, what it covered). Name the material; never link private documents.
-
-## Tooling output
-- PHPCS <version> (WordPress, WordPress-VIP-Go): N errors, N warnings
-- PHPStan <version> (level 5): N errors
-- Plugin Check <version>: N issues
-```
+1. `# Audit: <plugin-name> <version>`
+2. `## TL;DR`
+3. `## Summary`
+4. `## Scope`
+5. `## Findings`
+6. `## Verified false (appendix)`
+7. `## Decisions needed from the owner` — omit when there are no `[DECISION]` findings.
+8. `## Recommendation`
+9. `## Sources`
+10. `## Tooling output`
+11. `## Audit metadata`
 
 ### Fix guidance by ownership
 

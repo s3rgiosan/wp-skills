@@ -2,7 +2,7 @@
 
 The four categories that get over-flagged in WP audits. Every candidate finding in these categories MUST go through the verification procedure below before being written to the report.
 
-> **Real precedent:** A subagent flagged an IN-clause `PostToPost.php:67` as SQLi during a real plugin audit. Verified false — the variable came from `post_type_exists()` validation in the constructor + `esc_sql()`. The finding was dropped; the *fragility* was noted as Low (a future refactor could break the guard) instead of falsely shipping a "Critical SQLi".
+> A candidate finding can appear exploitable but verified false when a guard — validation, allowlisting, or escaping — prevents the exploit path. Drop the finding, and note a fragile guard (one a refactor could break) as Low.
 
 Two failure modes the procedures protect against:
 
@@ -29,11 +29,11 @@ Trace `$type` from the source (`$_GET`) to the sink (`get_results`). For each tr
 | Transformation present | Effect | Verdict on this trace |
 |---|---|---|
 | `$wpdb->prepare()` wraps the value | Properly escaped | Not SQLi |
-| `esc_sql()` applied | Escapes single quotes; sufficient inside a single-quoted string literal | Not SQLi (but flag as fragile if no whitelist alongside) |
-| Whitelist check: `if ( ! post_type_exists( $type ) ) return;` | Value can only be a registered post type | Not SQLi |
-| Whitelist check: `if ( ! in_array( $type, $allowed, true ) ) ...` | Value can only be in a static list | Not SQLi |
+| `esc_sql()` applied | Escapes single quotes; sufficient inside a single-quoted string literal | Not SQLi (but flag as fragile if no allowlist alongside) |
+| Allowlist check: `if ( ! post_type_exists( $type ) ) return;` | Value can only be a registered post type | Not SQLi |
+| Allowlist check: `if ( ! in_array( $type, $allowed, true ) ) ...` | Value can only be in a static list | Not SQLi |
 | Cast to int: `$id = (int) $_GET['id'];` or `absint()` | Integer-shaped, safe for numeric column | Not SQLi |
-| Used in identifier context (table / column name) with whitelist | OK if the whitelist is exhaustive | Not SQLi |
+| Used in identifier context (table / column name) with allowlist | OK if the allowlist is exhaustive | Not SQLi |
 | **None of the above** | Raw interpolation of `$_GET` into SQL | **Critical SQLi** |
 
 ### Fragility note
@@ -167,7 +167,7 @@ Step 1: **Where does the value land?**
 | Used as a filename / path | Yes — `sanitize_file_name()` + path traversal check. |
 | Used as an array key / option key | Yes — `sanitize_key()`. |
 | Used as a URL passed to `wp_remote_get()` | Yes — validate scheme + host allowlist. |
-| Used as a callable (`call_user_func`) | Critical risk — must be whitelisted, not just sanitized. |
+| Used as a callable (`call_user_func`) | Critical risk — must be allowlisted, not just sanitized. |
 
 Step 2: **`wp_unslash()` precedes sanitize.**
 

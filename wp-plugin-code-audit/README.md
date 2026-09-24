@@ -71,30 +71,58 @@ Outputs a dated `AUDIT-<yyyy-mm-dd>.md` file (it asks where to write it — defa
 ## What the report looks like
 
 ````markdown
-# Audit: my-plugin 1.2.3
+# Audit: acme-forms 2.1.0
+
+## TL;DR
+
+**Overall:** Safe to keep running once two problems are fixed; neither needs the site taken offline.
+
+**What needs attention now**
+- Anyone on the internet, without logging in, can read draft form submissions.
+- A settings screen can be changed by tricking a logged-in administrator into clicking a crafted link.
+
+**What is in good shape**
+- Form data is stored and read safely: no way was found to inject database commands.
+
+**Recommended next steps**
+1. Restrict the submissions endpoint to users who can edit forms.
+2. Add the missing request check to the settings screen.
+
+**At a glance:** 0 critical · 2 high · 3 medium · 1 low · 1 info; the two most serious issues are in the submissions endpoint and the settings screen.
 
 **Verdict:** GO WITH FIXES
-**Counts:** 0 critical, 2 high, 4 medium, 3 low, 2 info
+**Counts:** 🔴 0 critical · 🟠 2 high · 🟡 3 medium · 🟢 1 low · ⚪ 1 info
 **Top 3 to fix first:**
-1. `includes/rest/Search.php:46` — unauthenticated search leaks private titles
-2. `plugin.php:60` — no activation hook; tables never created on frontend-only sites
+1. `includes/rest/Submissions.php:46` — unauthenticated endpoint returns draft form submissions
+2. `includes/Settings.php:60` — settings save has no nonce check
 3. `includes/Helpers.php:109` — request-scoped static cache never invalidated
+
+## Summary
+
+| Finding | Area | Category | Recommendation | Priority |
+|---|---|---|---|---|
+| H1 · Unauthenticated submissions endpoint | REST | security | Require `edit_posts` in the route's `permission_callback` | High |
+| H2 · Settings save missing nonce | admin | security | Add `check_admin_referer()` | High |
+| M1 · Uncached query on every page load | front end | performance | Cache the result in a transient | Medium |
 
 ## Scope
 - LOC: 4,200 PHP, 1,100 JS
 - Surface: REST endpoints (3), AJAX handlers (5), admin pages (2), CLI (0), blocks (1)
 - Tools run: PHPCS (yes), PHPStan level 5 (yes), Plugin Check (no — no WP install)
 
-## High
-### H-1. `includes/rest/Search.php:46` — Unauthenticated search returns private post titles
+...
+
+## Findings
+
+### 🟠 HIGH — H1: `includes/rest/Submissions.php:46` — Unauthenticated endpoint returns draft form submissions
 **Description.** ...trace through source...
-**Verified.** Read Search.php:42–87. permission_callback is __return_true...
+**Verified.** Read Submissions.php:42–87. permission_callback is __return_true...
 **Fix.**
 ```php
 'permission_callback' => fn() => current_user_can( 'edit_posts' ),
 ```
 
-## Medium
+### 🟡 MEDIUM — M1: ...
 ...
 
 ## Verified false (appendix)
@@ -108,7 +136,7 @@ Outputs a dated `AUDIT-<yyyy-mm-dd>.md` file (it asks where to write it — defa
 
 | File | Covers |
 |---|---|
-| **`SKILL.md`** | Audit phases, severity rubric, verdict rules, report skeleton |
+| **`SKILL.md`** | Audit phases, severity rubric, verdict rules, report section order |
 | **`references/security-checklist.md`** | Auth, nonces, capabilities, sanitize, escape, SQLi, file ops, SSRF, deserialization, secrets |
 | **`references/performance-checklist.md`** | Autoloaded options, queries, transients, cron, HTTP API, asset enqueue, custom tables |
 | **`references/standards-checklist.md`** | WPCS rules, prefixing, i18n, plugin header, GPL, wp.org guidelines |

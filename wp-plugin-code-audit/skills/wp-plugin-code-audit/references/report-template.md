@@ -23,7 +23,24 @@ Full `AUDIT-<yyyy-mm-dd>.md` skeleton plus a worked example showing the level of
 
 ## TL;DR
 
-(First section, shareable on its own; contract in SKILL.md → Report, "Every report opens with a TL;DR". Example below.)
+(First section, shareable on its own; contract in SKILL.md → Report, "Every report opens with a TL;DR". Worked example further below.)
+
+**Overall:** <the verdict in one plain sentence>
+
+**What needs attention now**
+- <most serious issue in plain language: what is wrong, why it matters, who could exploit it>
+- ...
+
+**What is in good shape**
+- <a verified positive>
+- ...
+
+**Recommended next steps**
+1. <containment first>
+2. ...
+3. ...
+
+**At a glance:** <C> critical · <H> high · <M> medium · <L> low · <I> info; most serious issues in <area>.
 
 **Verdict:** GO WITH FIXES
 **Counts:** 🔴 0 critical · 🟠 2 high · 🟡 4 medium · 🟢 3 low · ⚪ 2 info
@@ -83,6 +100,7 @@ One row per finding, by its permanent ID, in severity order. The table is an ind
   - Plugin Check: yes, N issues
   - Composer audit: yes — N vulnerable packages
   - npm audit: skipped (no source for `dist/`)
+- **Ignored (gitignore/distignore):** …, vendor/node_modules skipped
 - **Sections audited:** auth/authz ✓ · nonces ✓ · IDOR ✓ · sanitize/escape ✓ · SQLi ✓ · file-ops ✓ · SSRF ✓ · deserialization ✓ · secrets ✓ · error-disclosure ✓ · ABSPATH ✓ · perf ✓ · standards ✓ · integration ✓ (or n/a — no shared-data companion) · FP-traps ✓
 
 ---

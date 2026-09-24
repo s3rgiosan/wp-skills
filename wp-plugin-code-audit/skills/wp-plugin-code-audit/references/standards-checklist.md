@@ -29,11 +29,13 @@ Domain Path:        /languages
 
 | Missing / wrong | Severity |
 |---|---|
-| `License` not GPL-compatible | **NO-GO** (cannot ship to wp.org) |
+| `License` not GPL-compatible | **Critical** |
 | `Text Domain` missing | High (i18n broken) |
 | `Requires PHP` / `Requires at least` missing | Low |
 | `Version` not semver | Low |
 | `Description` empty / vague | Info |
+
+A GPL-incompatible license forces a NO-GO verdict for wp.org submission.
 
 ---
 
