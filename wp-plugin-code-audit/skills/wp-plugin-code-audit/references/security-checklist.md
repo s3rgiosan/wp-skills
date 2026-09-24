@@ -61,7 +61,7 @@ For each callsite, trace the ID to its sink. Examples that need a record-level c
 **Fix patterns:**
 - Check ownership explicitly: `if ( $order->get_customer_id() !== get_current_user_id() ) wp_die(403);`.
 - Use map-meta-cap with a per-record capability: `current_user_can( 'edit_post', $post_id )` (note the second arg — this is the correct way to call it for record-scoped caps).
-- For custom CPTs with per-record permissions, see [[wp-record-level-capability-scoping]] pattern (custom `capability_type` + `map_meta_cap` filter reading post meta).
+- For custom CPTs with per-record permissions, use a custom `capability_type` and `map_meta_cap` filter that reads post meta to determine access per record.
 
 **Severity:** IDOR with destructive impact is at least **High**; if the record holds sensitive data (PII / financial / private), **Critical** when reachable by Subscriber.
 
@@ -169,17 +169,17 @@ grep -RnE "\\\$wpdb->(query|get_results|get_var|get_row|get_col)\(" --include="*
 
 For each, confirm:
 - `$wpdb->prepare()` wraps any interpolation, OR
-- Identifiers (table / column names) come from a static whitelist (e.g. `post_type_exists( $type )` then interpolation), OR
+- Identifiers (table / column names) come from a static allowlist (e.g. `post_type_exists( $type )` then interpolation), OR
 - Value is an integer cast via `absint()` / `(int)` (low-risk, but flag as fragile).
 
-**Verify before flagging:** `false-positive-traps.md` §1. Don't flag `esc_sql()`-wrapped interpolations that go through a whitelist.
+**Verify before flagging:** `false-positive-traps.md` §1. Don't flag `esc_sql()`-wrapped interpolations that go through an allowlist.
 
 ### 5.2 `prepare()` misuse
 
 **Bad:** `$wpdb->prepare( "SELECT * FROM $table WHERE id = $id" )` — interpolation happens before `prepare()` sees it.
 **Bad:** `$wpdb->prepare( "SELECT * FROM %s WHERE id = %d", $table, $id )` — `%s` quotes table name, breaking the query and not actually escaping it as an identifier.
 
-Table / column names: interpolate from a whitelisted constant (`$wpdb->prefix . 'foo'`), never from `prepare()`.
+Table / column names: interpolate from an allowlisted constant (`$wpdb->prefix . 'foo'`), never from `prepare()`.
 
 ### 5.3 LIKE wildcards
 
