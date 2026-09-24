@@ -21,6 +21,10 @@ Full `AUDIT-<yyyy-mm-dd>.md` skeleton plus a worked example showing the level of
 ````markdown
 # Audit: <Plugin Name> <Version>
 
+## TL;DR
+
+(First section, shareable on its own; contract in SKILL.md → Report, "Every report opens with a TL;DR". Example below.)
+
 **Verdict:** GO WITH FIXES
 **Counts:** 🔴 0 critical · 🟠 2 high · 🟡 4 medium · 🟢 3 low · ⚪ 2 info
 **Top 3 to fix first:**
@@ -33,8 +37,6 @@ Full `AUDIT-<yyyy-mm-dd>.md` skeleton plus a worked example showing the level of
 
 ## Summary
 
-**In plain language.** Written for a reader who does not write code, in two to four sentences: what the plugin does for the site, what the most serious problem lets someone do (for example "anyone on the internet can read draft posts"), and what should happen next. No file names, no jargon.
-
 | Finding | Area | Category | Recommendation | Priority |
 |---|---|---|---|---|
 | H1 · Unauthenticated search returns private titles | REST | security | Require `edit_posts` in the route's `permission_callback` | High |
@@ -43,7 +45,7 @@ Full `AUDIT-<yyyy-mm-dd>.md` skeleton plus a worked example showing the level of
 
 One row per finding, by its permanent ID, in severity order. The table is an index into Findings: IDs, severities and titles match the headings exactly. No effort column.
 
-**Glossary** (optional): one line per term the plain-language summary could not avoid.
+**Glossary** (optional): one line per term the TL;DR could not avoid.
 
 - *Nonce:* a one-time token that proves a request came from the site's own form.
 - *Capability:* a named permission WordPress checks before an action (for example `edit_posts`).
@@ -228,6 +230,33 @@ Tool names, versions and counts only; the raw output files are working files and
 - Date: YYYY-MM-DD
 - Hours spent (approximate): N
 - Confidence: high / medium / low (low if source not fully available, or if scope was time-boxed)
+````
+
+---
+
+## Worked example: TL;DR (fabricated)
+
+````markdown
+# Audit: Acme Events 2.3.0
+
+## TL;DR
+
+**Overall:** The plugin is safe to keep running once two problems are fixed; neither needs the site taken offline.
+
+**What needs attention now**
+- Anyone on the internet, without logging in, can see the titles of unpublished and private events. That can reveal plans before they are announced.
+- A settings screen can be changed by tricking a logged-in administrator into clicking a crafted link. An attacker could switch off the event notifications.
+
+**What is in good shape**
+- Event data is stored and read safely: no way was found to inject database commands.
+- Visitor input shown on event pages is cleaned before display.
+
+**Recommended next steps**
+1. Restrict the public event search to published events (a small code change).
+2. Add the missing request check to the settings screen.
+3. Re-test both after the change, then schedule the smaller clean-ups.
+
+**At a glance:** 0 critical · 2 high · 3 medium · 1 low · 2 info; the two most serious issues are in the public event search and the settings screen.
 ````
 
 ---
