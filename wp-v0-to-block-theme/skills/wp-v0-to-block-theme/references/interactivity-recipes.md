@@ -23,7 +23,7 @@ For depth, delegate to the **wp-interactivity-api** skill when installed. This f
 
 - Mark the block/pattern interactive with `data-wp-interactive="mytheme"` on the wrapper.
 - Server-render the full markup (all panels present, correct initial `hidden`/`aria` state) so no-JS and first paint are correct.
-- Seed server-rendered initial values from PHP rather than hard-coding them as `data-wp-context` JSON strings: `wp_interactivity_state( 'mytheme', [...] )` for shared state, and `wp_interactivity_data_wp_context( [...] )` to emit the `data-wp-context` attribute from pattern PHP:
+- Seed server-rendered initial values from PHP: `wp_interactivity_state( 'mytheme', [...] )` for shared state, and `wp_interactivity_data_wp_context( [...] )` to emit the `data-wp-context` attribute from pattern PHP:
 
   ```php
   <?php wp_interactivity_state( 'mytheme', array( 'active' => 0 ) ); ?>
@@ -33,62 +33,91 @@ For depth, delegate to the **wp-interactivity-api** skill when installed. This f
   >
   ```
 
-## Accordion (single-open)
+## Context inheritance (read before the recipes)
+
+A nested `data-wp-context` inherits its ancestors' keys. Writing a key through `getContext()` updates the context that **owns** the key: a key the element declares itself is written locally, and an inherited key is written to the ancestor that declared it. The recipes below rely on this. Each widget instance keeps its shared value (`active`, `openId`) in a context on its own wrapper, and the items write to it. Two tab sets on one page therefore stay independent. Global `state` is only for values that different regions share (see Cross-region state).
+
+## Accordion
+
+Check first whether the target WP version has the native accordion blocks (`core/accordion` and its children, stable since WordPress 6.9); use them when their behavior matches the design.
+
+Radix/shadcn `Accordion type="single"` (v0's default) closes the open item when another opens. Check `behaviors-*.json` from `capture.mjs --behaviors` (`disclosurePairs[].closesPrevious`) to know which one the design uses.
+
+Single-open: the wrapper owns `openId`; each item declares only its `id`.
 
 ```html
-<div data-wp-interactive="mytheme" data-wp-context='{"open":false}'>
-  <button
-    data-wp-on--click="actions.toggle"
-    data-wp-bind--aria-expanded="context.open">
-    Question
-  </button>
-  <div data-wp-bind--hidden="!context.open">
-    Answer
+<div data-wp-interactive="mytheme" data-wp-context='{"openId":null}'>
+  <div data-wp-context='{"id":"q1"}'>
+    <button
+      data-wp-on--click="actions.toggle"
+      data-wp-bind--aria-expanded="state.isOpen">
+      Question
+    </button>
+    <div data-wp-bind--hidden="!state.isOpen">
+      Answer
+    </div>
   </div>
+  <!-- more items, each with its own id -->
 </div>
 ```
 
 ```js
 import { store, getContext } from '@wordpress/interactivity';
 store('mytheme', {
+  state: {
+    get isOpen() {
+      const ctx = getContext();
+      return ctx.openId === ctx.id;
+    },
+  },
   actions: {
-    toggle() { getContext().open = !getContext().open; },
+    toggle() {
+      const ctx = getContext();
+      ctx.openId = ctx.openId === ctx.id ? null : ctx.id;
+    },
   },
 });
 ```
 
-Simple, static accordions with no animation can use **`core/details`** instead — no JS at all.
+Independent items (`type="multiple"`): give each item its own `{"open":false}` context and toggle `getContext().open`. No wrapper value is needed.
+
+Simple, static accordions with no animation can use **`core/details`** instead, with no JS at all. `core/details` items open independently.
 
 ## Tabs
 
+The tab set's wrapper owns `active`. Each tab and panel declares only its `index`.
+
 ```html
-<div data-wp-interactive="mytheme">
+<div data-wp-interactive="mytheme" data-wp-context='{"active":0}'>
   <div role="tablist">
     <button role="tab"
+      data-wp-context='{"index":0}'
       data-wp-on--click="actions.select"
-      data-wp-bind--aria-selected="state.isActive"
-      data-wp-context='{"index":0}'>Tab 1</button>
+      data-wp-bind--aria-selected="state.isActive">Tab 1</button>
     <!-- more tabs, each with its own index context -->
   </div>
-  <div role="tabpanel" data-wp-bind--hidden="!state.isActive" data-wp-context='{"index":0}'>Panel 1</div>
+  <div role="tabpanel" data-wp-context='{"index":0}' data-wp-bind--hidden="!state.isActive">Panel 1</div>
 </div>
 ```
 
 ```js
 store('mytheme', {
   state: {
-    active: 0,
     get isActive() {
-      return getContext().index === store('mytheme').state.active;
+      const ctx = getContext();
+      return ctx.index === ctx.active;
     },
   },
   actions: {
-    select() { store('mytheme').state.active = getContext().index; },
+    select() {
+      const ctx = getContext();
+      ctx.active = ctx.index;
+    },
   },
 });
 ```
 
-The shared `active` index lives in global `state`, not per-block `context` — each tab/panel has its own context chain off the ancestor, so a value written into shared context only shadows one branch and siblings never see the update. Only `index` stays in local context. Keep `aria-selected`, `role`, and keyboard handling (`data-wp-on--keydown`) for accessibility.
+`select` writes `active` to the wrapper's context, because the tab only inherits it. Keep `aria-selected`, `role`, and keyboard handling (`data-wp-on--keydown`) for accessibility.
 
 ## Carousel / slider
 
@@ -96,6 +125,36 @@ The shared `active` index lives in global `state`, not per-block `context` — e
 - Prev/next actions mutate `current` with wrap-around.
 - Add `data-wp-on--keydown` for arrow keys and respect `prefers-reduced-motion` before any autoplay.
 - If the project already ships a vetted slider block, prefer it over a bespoke build.
+
+## Header that changes on scroll
+
+A v0 header is often transparent over the hero and turns solid (background, shadow) once the page scrolls. `sections-*.json` records the header's class and styles at the top and after scrolling (`header.atTop` / `header.scrolled`). Read the threshold from the source (`scrollY > 40` and similar).
+
+```html
+<header data-wp-interactive="mytheme"
+  data-wp-on-window--scroll="callbacks.trackScroll"
+  data-wp-class--is-scrolled="state.isScrolled">
+```
+
+```js
+const { state } = store('mytheme', {
+  state: { isScrolled: false },
+  callbacks: {
+    trackScroll() { state.isScrolled = window.scrollY > 40; },
+  },
+});
+```
+
+Style `.is-scrolled` in the theme stylesheet with preset colors. Server-render the at-top state, so the header is correct before hydration and without JS.
+
+## Reveal on scroll
+
+v0 sections often fade or slide in when they enter the viewport (framer-motion `whileInView`). Treat this as progressive enhancement:
+
+- Content is visible by default. Only a class added by JS (for example `has-reveal` on `<html>`) hides it before the reveal, so no-JS visitors and crawlers see everything.
+- Use one shared `IntersectionObserver` in a `data-wp-init` callback and add the reveal class once. Do not create an observer per element.
+- Under `prefers-reduced-motion: reduce`, skip the animation and show the content immediately.
+- Keep reveals out of the block editor. The editor preview must show the content at rest.
 
 ## Repeated items (data-wp-each)
 
@@ -117,7 +176,7 @@ The tabs and carousel recipes above hand-duplicate markup per item. A list actua
 
 - `data-wp-each` only iterates when placed on a `<template>` element.
 - The item variable defaults to `context.item`; naming the directive `data-wp-each--<name>` (e.g. `data-wp-each--item`) exposes it as `context.<name>` instead — useful when one `data-wp-each` nests inside another.
-- `data-wp-each-key`, on the same `<template>`, names the per-item identity (a property path such as `context.item.id`) so re-renders reconcile items instead of re-mounting all of them.
+- `data-wp-each-key`, on the same `<template>`, names the per-item identity (a property path such as `context.item.id`) so re-renders keep and update existing items.
 - For the server-rendered, no-JS-correct markup, emit the real `<li>` elements once per item outside the `<template>`, each marked `data-wp-each-child` — that's what the Interactivity API hydrates against on first load.
 
 ## Directive quick-reference
@@ -126,7 +185,7 @@ Directives used above, plus others the recipes don't otherwise reach for:
 
 - `data-wp-class--<name>` — toggle a CSS class based on a boolean expression.
 - `data-wp-style--<property>` — set an inline style property from an expression.
-- `data-wp-on-window--<event>` / `data-wp-on-document--<event>` — attach an event listener to `window`/`document` instead of the element, removed automatically when the element unmounts.
+- `data-wp-on-window--<event>` / `data-wp-on-document--<event>` — attach an event listener to `window`/`document`, removed automatically when the element unmounts.
 - `data-wp-watch` — run a callback on init and again whenever a value it reads changes; for effects and imperative DOM updates no other directive covers.
 - `data-wp-init` — run a callback once when the element is created; it can return a cleanup function to run on removal.
 - `data-wp-run` — run a callback during the element's render execution, with access to hooks like `useState`/`useEffect` for more involved reactive logic.
@@ -164,7 +223,7 @@ const { state } = store('mytheme', {
 
 Use global `state` (not per-block `context`) for anything two regions share.
 
-After a client-side navigation (region-based routing), a value the server recomputed for the new page — a cart count, a facet count — isn't automatically reflected in client state. Read it back with `getServerState()` / `getServerContext()` (WP 6.8+) inside a derived `state` getter or a callback, rather than assuming the client's existing copy is still authoritative:
+After a client-side navigation (region-based routing), a value the server recomputed for the new page — a cart count, a facet count — isn't automatically reflected in client state. Read it back with `getServerState()` / `getServerContext()` (WP 6.7+) inside a derived `state` getter or a callback:
 
 ```js
 import { store, getServerState } from '@wordpress/interactivity';

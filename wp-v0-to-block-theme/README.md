@@ -49,21 +49,25 @@ Open a Claude Code session with the design's downloaded code and/or its deployed
 "Map this Tailwind config to theme.json."
 ```
 
-The skill auto-triggers on v0 → WordPress theme requests and runs a seven-step flow: capture → tokens → scaffold → layout → patterns → interactivity → verify.
+The skill auto-triggers on v0 → WordPress theme requests and runs a nine-step flow: routes + capture → tokens → scaffold → layout → patterns → content → interactivity → verify → handover.
 
 ### Scripts
 
-The skill ships two helper scripts (used automatically, or run by hand):
+The skill ships three helper scripts (used automatically, or run by hand):
 
 ```bash
-# Capture a deployed design (needs Playwright)
-node skills/wp-v0-to-block-theme/scripts/capture.mjs <url> --out ./capture --breakpoints 390,768,1280 --timeout 60000
+# Capture the design (deployed, or a local `npm run dev`) per route and breakpoint (needs Playwright)
+node skills/wp-v0-to-block-theme/scripts/capture.mjs --routes routes.txt --base https://my-design.vercel.app --out ./capture/design --behaviors
 
-# Map Tailwind tokens → theme.json settings (Tailwind v4 @theme CSS or v3 JS config)
-node skills/wp-v0-to-block-theme/scripts/tokens.mjs <tailwind.config.js | globals.css> --out ./theme-settings.json
+# Map Tailwind tokens → theme.json settings, plus the .dark palette as a style variation
+node skills/wp-v0-to-block-theme/scripts/tokens.mjs app/globals.css --out ./theme-settings.json --dark-out ./styles/dark.json
+
+# Capture the WordPress rebuild with the same routes, then run the parity gate (exit 0 = pass)
+node skills/wp-v0-to-block-theme/scripts/capture.mjs --routes routes.txt --base http://mysite.test --out ./capture/local
+node skills/wp-v0-to-block-theme/scripts/compare.mjs ./capture/design ./capture/local
 ```
 
-Pass `--help` to either script for the full flag list. `capture.mjs` requires Playwright (`npx playwright install chromium`); `tokens.mjs` has no dependencies and does no network I/O.
+Pass `--help` to any script for the full flag list. `capture.mjs` and `compare.mjs` require Playwright (`npx playwright install chromium`); `tokens.mjs` has no dependencies and does no network I/O.
 
 ---
 
@@ -78,16 +82,27 @@ wp-v0-to-block-theme/
 │   └── plugin.json
 └── skills/
     └── wp-v0-to-block-theme/
-        ├── SKILL.md                  ← the seven-step workflow
+        ├── SKILL.md                  ← the nine-step workflow
         ├── references/
-        │   ├── tokens-mapping.md         ← Tailwind → theme.json map, fluid type, dark-mode variation
+        │   ├── tokens-mapping.md         ← Tailwind → theme.json map, fonts, fluid type, dark-mode variation
         │   ├── shadcn-to-core-blocks.md  ← shadcn/ui → core blocks, layout/form/icon recipes, block styles
-        │   ├── section-to-pattern.md     ← page segmentation, pattern headers, block bindings
+        │   ├── section-to-pattern.md     ← route map, segmentation, patterns, images, content, bindings
         │   ├── interactivity-recipes.md  ← Interactivity API widget recipes + directive reference
-        │   └── parity-pitfalls.md        ← per-section computed-CSS parity checklist
+        │   └── parity-pitfalls.md        ← parity gates and named failure modes
         └── scripts/
-            ├── capture.mjs           ← Playwright design capture
-            └── tokens.mjs            ← Tailwind → theme.json settings
+            ├── capture.mjs           ← Playwright capture of the design or the rebuild
+            ├── tokens.mjs            ← Tailwind → theme.json settings
+            └── compare.mjs           ← design vs rebuild parity gate
 ```
 
 The skill composes with the other WordPress skills — `wp-block-themes`, `wp-patterns`, `wp-block-development`, `wp-interactivity-api` — when they are installed, delegating scaffolding, pattern, and interactivity depth to them.
+
+### Scope of the references
+
+The references hold only what holds for any v0 design: how v0, Tailwind, shadcn/ui and lucide output behaves, and how WordPress core behaves. A single design's choices, such as its link styling, surface colors or layout quirks, do not belong here. The capture measures them for each design, and each project's `CONVERSION-NOTES.md` records them.
+
+---
+
+## License
+
+[MIT](../LICENSE)
