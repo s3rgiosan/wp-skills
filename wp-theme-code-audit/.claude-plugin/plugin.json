@@ -1,7 +1,7 @@
 {
   "name": "wp-theme-code-audit",
   "version": "1.0.0",
-  "description": "Verification-first code audit for WordPress themes (block, classic, child): security, performance, theme review standards, child-theme override diffs. Produces a markdown report with severity-sorted findings + GO / NO-GO / GO WITH FIXES verdict. Requires wp-plugin-code-audit.",
+  "description": "Verification-first code audit for WordPress themes (block, classic, hybrid, child): security, performance, theme review standards, child-theme override diffs. Produces a markdown report with severity-sorted findings + GO / NO-GO / GO WITH FIXES verdict. Requires wp-plugin-code-audit.",
   "author": {
     "name": "Sérgio Santos",
     "url": "https://github.com/s3rgiosan"

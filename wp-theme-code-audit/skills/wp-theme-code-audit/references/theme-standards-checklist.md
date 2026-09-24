@@ -22,7 +22,7 @@ The theme review requirements list these as required: Theme Name, Author, Descri
 
 | Missing / wrong | Severity |
 |---|---|
-| `License` not GPL-compatible | **NO-GO** for wp.org; for a custom theme, a licensing question for the owner |
+| `License` not GPL-compatible | **Critical** — forces NO-GO for wp.org submission; for a custom theme, a licensing question for the owner |
 | `Text Domain` missing or not the theme slug | Medium (translations break) |
 | `Requires at least` / `Requires PHP` missing | Low (users can install it on an unsupported stack) |
 | `Tested up to` far behind the current WordPress release | Low |
@@ -110,6 +110,8 @@ jq '.customTemplates, .templateParts' theme.json
 ls templates parts patterns styles 2>/dev/null
 grep -LE "^\s*\*\s*(Title|Slug):" patterns/*.php 2>/dev/null        # patterns missing required headers
 grep -hE "^\s*\*\s*Slug:" patterns/*.php 2>/dev/null | grep -v "<text-domain>/"
+grep -RnE "register_block_style\(" --include="*.php" .
+grep -RnE "registerBlockStyle\(" --include="*.js" src/ assets/src 2>/dev/null
 ```
 
 | Check | Expectation | Severity if wrong |
@@ -123,6 +125,7 @@ grep -hE "^\s*\*\s*Slug:" patterns/*.php 2>/dev/null | grep -v "<text-domain>/"
 | Pattern headers | `Title` and `Slug` required; `Slug` namespaced with the theme slug (`acme-agency/hero`); `Categories`, `Inserter: no` for patterns used only by templates; `Block Types`, `Post Types`, `Template Types`, `Viewport Width` where relevant | Low |
 | Style variations | `styles/*.json` valid, with `title`; no free-form CSS copied between variations when a preset would do | Info |
 | Hardcoded values in templates / parts | No absolute URLs, attachment IDs or post IDs from a development site (see `theme-security-checklist.md` §10) | Low |
+| `register_block_style()` / `registerBlockStyle()` | `style_handle` (an enqueued stylesheet) preferred over `inline_style` (unbounded inline CSS printed on every instance of the block); style name does not collide with a core style variant for the same block; a core style unregistered with `unregister_block_style()` is a deliberate choice, not an accident | Low |
 
 ---
 

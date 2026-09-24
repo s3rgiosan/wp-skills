@@ -109,14 +109,14 @@ Outputs a dated `THEME-AUDIT-<yyyy-mm-dd>.md` (it asks where to write it, defaul
 | File | Covers |
 |---|---|
 | **`SKILL.md`** | Phases, shared-convention deltas, theme-specific verification, report deltas |
-| **`references/theme-security-checklist.md`** | Role-to-severity table, chain rule, and 20 theme categories: kses widening, REST meta, save hooks, REST/sitemap exposure, routing overrides, render-by-ID, third-party output, shortcode injection, block render + Interactivity API, patterns, Global Styles CSS, dynamic template paths, DOM XSS, third-party scripts, bundled libraries, anonymous writes, redirects, info disclosure, direct access, stored ID pointers |
+| **`references/theme-security-checklist.md`** | Role-to-severity table, chain rule, and 21 theme categories: kses widening, REST meta, save hooks, REST/sitemap exposure, routing overrides, render-by-ID, third-party output, shortcode injection, block render + Interactivity API, patterns, Global Styles CSS, dynamic template paths, DOM XSS, third-party scripts, bundled libraries, anonymous writes, redirects, info disclosure, direct access, stored ID pointers, Customizer settings |
 | **`references/theme-standards-checklist.md`** | WordPress.org theme review requirements, `style.css` headers, i18n, plugin territory, block theme hygiene, classic requirements, enqueues, deprecated APIs, theme supports |
 | **`references/theme-performance-checklist.md`** | Enqueue scope, heavy scripts, fonts, images, template queries, N+1 loops, remote calls, `theme.json` weight |
 | **`references/child-theme-review.md`** | Parent identification, override enumeration, diff procedure, unhooked parent callbacks, parent version drift, when to audit the parent |
 | **`references/tooling.md`** | PHPCS/WPCS for themes, PHPStan, Theme Check (`wp theme-check run`), Composer and npm audit with a ships-to-frontend classification |
 | **`references/report-template.md`** | `THEME-AUDIT` deltas from the plugin template + a worked example |
 
-Shared material used from `wp-plugin-code-audit`: severity rubric, verdict rules, `[DECISION]` findings, permanent finding IDs, report rules, `security-checklist.md`, `performance-checklist.md`, `false-positive-traps.md`, `remote-fetch.md`, `tooling.md`, `report-template.md`.
+Shared material used from `wp-plugin-code-audit`: severity rubric, verdict rules, `[DECISION]` findings, permanent finding IDs, report rules, `security-checklist.md`, `performance-checklist.md`, `standards-checklist.md`, `false-positive-traps.md`, `remote-fetch.md`, `tooling.md`, `report-template.md`.
 
 ---
 

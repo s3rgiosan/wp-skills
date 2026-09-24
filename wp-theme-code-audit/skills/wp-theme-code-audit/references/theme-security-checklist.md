@@ -496,6 +496,45 @@ grep -RnE "wp_get_attachment_(image|url|image_src|image_url)\(\s*\\\$|get_post\(
 
 ---
 
+## 21. Customizer settings and controls
+
+**What.** `customize_register` registers Customizer settings and controls. `$wp_customize->add_setting( 'acme_hero_html', [ ... ] )` takes a `capability` (default `edit_theme_options`, held by Administrators only in a default install) and a `sanitize_callback`; without one, the raw submitted value is stored as a theme mod or option, unfiltered by kses. `add_control()`, or a custom `WP_Customize_Control` subclass, only controls the admin UI; it has no bearing on what a template later does with the stored value, and a subclass's own `render_content()` needs the same escaping discipline as any other admin-rendered markup. The realistic sink is the front end: every `get_theme_mod()` / `get_option()` call that outputs the value a setting stores.
+
+**Detect:**
+```bash
+grep -RnE "add_action\(\s*['\"]customize_register['\"]" --include="*.php" .
+grep -RnE "\\\$wp_customize->add_setting\(" --include="*.php" . -A8 | grep -E "add_setting|capability|sanitize_callback|transport"
+grep -RnE "\\\$wp_customize->add_control\(|extends WP_Customize_Control" --include="*.php" .
+grep -RnE "function render_content\(\)" --include="*.php" .
+grep -RnE "get_theme_mod\(|get_option\(" --include="*.php" --include="*.html" .
+```
+
+**Verify.** For each setting: the `capability` argument (default `edit_theme_options`, Administrator only unless a role plugin grants it; a value such as `edit_posts` extends the write to Contributors and Authors), whether a `sanitize_callback` is set, and whether it matches the control type: `absint()` / `intval()` for a `range` or number control, `esc_url_raw()` for a `url` control, `sanitize_hex_color()` for a `color` control, `wp_kses_post()` for a control meant to hold rich text, and validation against the registered choices for `select`, `radio` or `checkbox`. Then trace every `get_theme_mod()` / `get_option()` call that reads the setting and check the escaping at output: `esc_html()`, `esc_attr()`, `esc_url()`, or `wp_kses_post()` for HTML. A `WP_Customize_Control::render_content()` that fails to escape only prints in the Customizer pane, but a setting it fails to sanitize on save still reaches the front end through the same value.
+
+**Severity.** Missing `sanitize_callback` on a setting only Administrators can write, escaped at output: **Low** (hardening; the control's own JS could still submit an unexpected value). Missing or mismatched `sanitize_callback` (a `url` control without `esc_url_raw`, a `color` control without `sanitize_hex_color`) whose value reaches output unescaped: **Medium** on single site (Administrators hold `unfiltered_html`); **Medium to High** on multisite, where a per-site Administrator does not. A setting with no `sanitize_callback`, or one that allows HTML (`wp_kses_post()`), storing raw markup rendered unescaped: **High**. `capability` lowered to `edit_posts` or another Contributor/Author-held capability, combined with either of the above: rate by the table at the top of this file for that role, at least **High**.
+
+**Fix.** Set a `sanitize_callback` that matches the control's type and keep `capability` at `edit_theme_options` or higher unless a lower role is a deliberate product decision, in which case escape at output regardless:
+
+```php
+$wp_customize->add_setting( 'acme_accent_color', [
+	'default'           => '#0073aa',
+	'capability'        => 'edit_theme_options',
+	'sanitize_callback' => 'sanitize_hex_color',
+] );
+
+$wp_customize->add_control( 'acme_accent_color', [
+	'type'    => 'color',
+	'section' => 'colors',
+	'label'   => __( 'Accent color', 'acme-agency' ),
+] );
+```
+
+```php
+printf( '<style>:root{--acme-accent:%s}</style>', esc_attr( get_theme_mod( 'acme_accent_color', '#0073aa' ) ) );
+```
+
+---
+
 ## Verification reminder
 
 Every candidate here goes through the plugin skill's `false-positive-traps.md` before it is written, and every rating names the role that reaches the sink and the capability that proves it.

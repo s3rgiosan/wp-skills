@@ -32,16 +32,18 @@ A child overrides a parent file when the same relative path exists in both. The 
 | `functions.php` | **Not** an override: both load, child first. The child changes parent behaviour through hooks (§4) |
 | Assets loaded with `get_theme_file_uri()` / `get_theme_file_path()` | Same relative path in the child wins; `get_template_directory_uri()` always points at the parent |
 
+Write the lists under `$OUT`, the scoped-output directory the Discover script (`references/tooling.md`) already created for this audit:
+
 ```bash
-cd "$CHILD" && find . -type f \( -name "*.php" -o -name "*.html" \) -not -path "./node_modules/*" -not -path "./vendor/*" | sort > /tmp/child-files.txt
-cd "$PARENT" && find . -type f \( -name "*.php" -o -name "*.html" \) -not -path "./node_modules/*" -not -path "./vendor/*" | sort > /tmp/parent-files.txt
-comm -12 /tmp/child-files.txt /tmp/parent-files.txt | grep -v "^./functions.php$" > /tmp/overrides.txt
-wc -l < /tmp/overrides.txt
+cd "$CHILD" && find . -type f \( -name "*.php" -o -name "*.html" \) -not -path "./node_modules/*" -not -path "./vendor/*" | sort > "$OUT/child-files.txt"
+cd "$PARENT" && find . -type f \( -name "*.php" -o -name "*.html" \) -not -path "./node_modules/*" -not -path "./vendor/*" | sort > "$OUT/parent-files.txt"
+comm -12 "$OUT/child-files.txt" "$OUT/parent-files.txt" | grep -v "^./functions.php$" > "$OUT/overrides.txt"
+wc -l < "$OUT/overrides.txt"
 
 # Patterns overridden by slug rather than by path
-grep -hE "^\s*\*\s*Slug:" "$CHILD"/patterns/*.php 2>/dev/null | sort > /tmp/child-slugs.txt
-grep -hE "^\s*\*\s*Slug:" "$PARENT"/patterns/*.php 2>/dev/null | sort > /tmp/parent-slugs.txt
-comm -12 /tmp/child-slugs.txt /tmp/parent-slugs.txt
+grep -hE "^\s*\*\s*Slug:" "$CHILD"/patterns/*.php 2>/dev/null | sort > "$OUT/child-slugs.txt"
+grep -hE "^\s*\*\s*Slug:" "$PARENT"/patterns/*.php 2>/dev/null | sort > "$OUT/parent-slugs.txt"
+comm -12 "$OUT/child-slugs.txt" "$OUT/parent-slugs.txt"
 ```
 
 The count of overrides in the report comes from `wc -l`, not from reading the list. On an environment, also list database-stored template overrides, which neither theme's files show:
@@ -58,10 +60,10 @@ wp post list --post_type=wp_template,wp_template_part --fields=ID,post_name,post
 while read -r f; do
   echo "=== $f"
   diff -u "$PARENT/$f" "$CHILD/$f"
-done < /tmp/overrides.txt > /tmp/override-diffs.txt
+done < "$OUT/overrides.txt" > "$OUT/override-diffs.txt"
 
 # Lines the child removed that carried security meaning
-grep -E "^-[^-]" /tmp/override-diffs.txt \
+grep -E "^-[^-]" "$OUT/override-diffs.txt" \
   | grep -E "esc_(html|attr|url|js|textarea)|wp_kses|sanitize_|absint|intval|current_user_can|wp_verify_nonce|check_admin_referer|check_ajax_referer|post_password_required|is_user_logged_in|get_the_password_form|wp_nonce_field|is_post_publicly_viewable"
 ```
 
@@ -111,7 +113,7 @@ while read -r f; do
   printf "%s child:%s parent:%s\n" "$f" \
     "$(git -C "$CHILD" log -1 --format=%cs -- "$f" 2>/dev/null)" \
     "$(git -C "$PARENT" log -1 --format=%cs -- "$f" 2>/dev/null)"
-done < /tmp/overrides.txt
+done < "$OUT/overrides.txt"
 
 # Commercial parents often mark template versions in the file header
 grep -RnE "@version\s+[0-9.]+" "$CHILD" "$PARENT" --include="*.php"

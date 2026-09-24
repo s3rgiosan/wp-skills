@@ -50,6 +50,7 @@ Read these in the plugin skill before the first audit. Only the deltas are state
 | Report location and filename | plugin `SKILL.md` → Report | File is `THEME-AUDIT-<yyyy-mm-dd>.md` (same-day re-audit: `THEME-AUDIT-<yyyy-mm-dd>-<HHMM>.md`). Git-ignore pattern: `THEME-AUDIT-*.md`. Ask where to write, default to `.claude/`, never overwrite. |
 | False-positive traps | plugin `references/false-positive-traps.md` | Plus the theme notes in Verify below. |
 | Remote fetch | plugin `references/remote-fetch.md` | wp.org theme URLs differ; see Discover. |
+| Standards checklist (header fields, prefixing, i18n, plugin territory, deprecated APIs) | plugin `references/standards-checklist.md` | `references/theme-standards-checklist.md` cites this directly for the shared rules and adds theme-specific sections (`style.css` header, block theme hygiene, classic theme requirements, enqueues). |
 
 ---
 
@@ -72,57 +73,7 @@ Scope the theme before reading code. Write the scope at the top of the report, i
 
 **Ask up front: which plugins supply the data this theme renders?** A theme is mostly a view layer. Its riskiest output is data it did not write: profile fields, ACF values, form embeds, marketing-automation snippets (Marketo, HubSpot and similar), SEO fields. For each, you will need to know who can write the field (Verify). Record the list in Scope.
 
-**Scope the file list first; every count and grep below runs over it.** The block is safe to paste whole; empty results are normal and the block exits 0. Source only: exclude dependencies and build output. In a git repo, `git ls-files` is authoritative (tracked files only, ignoring whatever is built on disk); otherwise fall back to the filesystem. Adjust the exclusion to the theme's actual build directories, and use the same list for every count in the report.
-
-```bash
-cd path/to/theme
-SLUG=$(basename "$PWD"); OUT=/tmp/theme-audit-$SLUG; mkdir -p "$OUT"
-EXCL='(^|/)node_modules/|^(vendor|dist|build)/|^assets/(dist|build)/'
-if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-  git ls-files -- . | grep -vE "$EXCL" > "$OUT/files.txt"
-  git ls-files -- dist build assets/dist assets/build | head -3            # built output committed? note it in Scope
-else
-  find . -type f | sed 's|^\./||' | grep -vE "$EXCL" > "$OUT/files.txt"
-fi
-count()   { grep -cE "$1" "$OUT/files.txt" || true; }
-srcgrep() { local ext=$1; shift; grep -E "$ext" "$OUT/files.txt" | tr '\n' '\0' | xargs -0 grep -nHE "$@" 2>/dev/null || true; }
-
-# Identity and type
-grep -E "^\s*\*?\s*(Theme Name|Template|Version|Requires at least|Tested up to|Requires PHP|License|Text Domain|Update URI):" style.css
-if [ -f theme.json ]; then jq '.version' theme.json; fi
-if [ -f templates/index.html ]; then echo "block theme"; fi
-if [ -f index.php ]; then echo "classic entry"; fi
-
-# Shape (counts for the report)
-count '\.php$'; count '^templates/.*\.html$'; count '^parts/.*\.html$'; count '^patterns/.*\.php$'
-count '(^|/)block\.json$'; count '^styles/.*\.json$'
-
-# How modules load (reachability, see Verify)
-srcgrep '\.php$' "ModuleInitialization|init_classes\(|can_register\(|new \\\$[a-z_]+\(|^\s*[A-Za-z_\\\\]+::class\s*,"
-
-# Content model and exposure (security §4, §5, §20)
-srcgrep '\.php$' -A25 "register_(post_type|taxonomy)\(" | grep -E "register_(post_type|taxonomy)|(public|publicly_queryable|show_in_rest|exclude_from_search|rewrite)['\"]?\s*=>" || true
-srcgrep '\.php$' "extends [A-Za-z_\\\\]*Abstract(PostType|Taxonomy)"      # inherited registration defaults: security §4
-srcgrep '\.php$' -A15 "register_(post_|term_|user_)?meta\(" | grep -E "register_|show_in_rest|auth_callback|sanitize_callback" || true
-srcgrep '\.php$' "wp_sitemaps_|wpseo_sitemap_|wpseo_exclude_from_sitemap"
-srcgrep '\.php$' "add_(filter|action)\(\s*['\"](request|parse_request|do_parse_request|pre_get_posts|template_redirect|template_include|post_link|post_type_link|page_link|redirect_canonical)['\"]"
-srcgrep '\.php$' "get_(post|user|term)_meta\([^)]*(_id|_ids|_ref|image|avatar|attachment)['\"]|get_field\("
-
-# Other PHP surface
-srcgrep '\.php$' "register_rest_route|add_action\(\s*['\"]wp_ajax_|add_menu_page|add_(options|submenu|theme)_page|wp_schedule_event"
-srcgrep '\.php$' "wp_kses_allowed_html|kses_allowed_protocols|map_meta_cap|user_has_cap|kses_remove_filters|content_save_pre"
-srcgrep '\.php$' "add_action\(\s*['\"](save_post|wp_insert_post|rest_after_insert_)|wp_(insert|update)_post\("
-srcgrep '\.php$' "add_shortcode|do_shortcode|render_callback"; srcgrep 'block\.json$' '"render"'
-srcgrep '\.(php|html)$' "wp_interactivity_(state|config|data_wp_context)|data-wp-context"
-srcgrep '\.php$' "(get_template_part|locate_template|load_template|include|require)(_once)?\s*\(?[^;]*\\\$"
-srcgrep '\.php$' "\\\$_(GET|POST|REQUEST|SERVER|COOKIE)\[|\\\$wpdb->"
-srcgrep '\.php$' "wp_(enqueue|register)_(script|style|script_module)\("
-
-# Build and bundled libraries
-if [ -f package.json ]; then jq '.scripts, .dependencies, .devDependencies' package.json; fi
-if [ -f composer.json ]; then jq '.require, .["require-dev"]' composer.json; fi
-grep -E '\.min\.(js|css)$|(^|/)(vendor|lib|libs)/.*\.(js|css)$' "$OUT/files.txt" || true
-```
+**Scope the file list first; every count and grep below runs over it.** Run the Discover script in `references/tooling.md` → "Discover: scoped file list and helpers" before anything else. It builds `$OUT/files.txt` (tracked files only; dependencies and build output excluded), the `count()` and `srcgrep()` helpers this skill's checklists use throughout, and the identity, shape, module-loading, content-model and PHP-surface greps for the theme. Paste it whole; empty results are normal and it exits 0.
 
 Classify and record:
 
@@ -150,7 +101,7 @@ Ask the same three questions as the plugin skill (plugin `SKILL.md` → Discover
 
 ### Skip ignored paths and dependencies
 
-Same rule as the plugin skill: honour `.gitignore` / `.distignore`, skip `vendor/` and `node_modules/` unless asked, and audit source rather than `dist/` / `build/`. The file list above applies this; list what it excluded in Scope. **Delta: vendored front-end libraries copied into the theme (for example `assets/vendor/`, not installed by a package manager) stay in the list and are in scope for version checks** (`references/theme-security-checklist.md` §15): they ship to every visitor and nothing else updates them.
+Same rule as the plugin skill: honour `.gitignore` / `.distignore`, skip `vendor/` and `node_modules/` unless asked, and audit source rather than `dist/` / `build/`. The scoped file list from the Discover script (`references/tooling.md`) applies this; list what it excluded in Scope. **Delta: vendored front-end libraries copied into the theme (for example `assets/vendor/`, not installed by a package manager) stay in the list and are in scope for version checks** (`references/theme-security-checklist.md` §15): they ship to every visitor and nothing else updates them.
 
 ### Remote themes
 
@@ -196,18 +147,19 @@ Read in this order:
 6. **Patterns**: `patterns/*.php` headers and any PHP logic inside.
 7. **View scripts and front-end JS**: `viewScript` / `viewScriptModule`, Interactivity API stores, theme `src/js`.
 8. **Enqueues and third-party scripts**: every `wp_enqueue_*`, inline script, external URL, and vendored library.
-9. **Child overrides** (child themes only): each file that exists in both child and parent, diffed per `references/child-theme-review.md`.
+9. **Customizer** (classic and hybrid themes): every `customize_register` callback, each `add_setting()`'s `capability` and `sanitize_callback`, `add_control()` / custom `WP_Customize_Control::render_content()` output, and every `get_theme_mod()` / `get_option()` sink that renders the stored value. See `references/theme-security-checklist.md` §21.
+10. **Child overrides** (child themes only): each file that exists in both child and parent, diffed per `references/child-theme-review.md`.
 
 Apply the checklists. **Traverse every section of every checklist; don't skim.**
 
-- `references/theme-security-checklist.md`: 20 theme-specific categories (kses widening, REST meta, save hooks, REST/sitemap exposure, routing overrides, render-by-ID, third-party output, shortcode injection, block render and Interactivity API, patterns, Global Styles CSS, dynamic template paths, DOM XSS, third-party scripts, bundled libraries, anonymous writes, redirects, info disclosure, direct access, stored ID pointers).
+- `references/theme-security-checklist.md`: 21 theme-specific categories (kses widening, REST meta, save hooks, REST/sitemap exposure, routing overrides, render-by-ID, third-party output, shortcode injection, block render and Interactivity API, patterns, Global Styles CSS, dynamic template paths, DOM XSS, third-party scripts, bundled libraries, anonymous writes, redirects, info disclosure, direct access, stored ID pointers, Customizer settings).
 - Plugin skill `references/security-checklist.md`: for theme PHP that registers routes, handlers, admin pages, meta, cron or queries.
 - `references/theme-performance-checklist.md` plus plugin skill `references/performance-checklist.md` for shared server-side items.
 - `references/theme-standards-checklist.md`: theme review requirements, block theme hygiene, enqueue correctness.
 - `references/child-theme-review.md`: child themes only.
 - Plugin skill `references/false-positive-traps.md`: before flagging SQLi / nonce / escape / sanitize.
 
-**Sections audited (traversal rule).** The report's Scope lists **every** theme-security-checklist section, §1 to §20, each with the finding IDs it produced or "checked, none" (add "verified false, see appendix" where a candidate was dropped). A section can be marked checked only after its **Detect** commands ran over the scoped file list and every hit was read; "no hits" is a valid result, "not run" is not. The other checklists get one line each in the same form.
+**Sections audited (traversal rule).** The report's Scope lists **every** theme-security-checklist section, §1 to §21, each with the finding IDs it produced or "checked, none" (add "verified false, see appendix" where a candidate was dropped). A section can be marked checked only after its **Detect** commands ran over the scoped file list and every hit was read; "no hits" is a valid result, "not run" is not. The other checklists get one line each in the same form.
 
 ---
 
@@ -286,7 +238,7 @@ Remediation works exactly as for plugins: hand off to **`wp-plugin-audit-remedia
 - `references/child-theme-review.md`: parent identification, override enumeration, diff procedure, parent drift.
 - `references/tooling.md`: PHPCS/WPCS, PHPStan, Theme Check, Composer and npm audit for themes.
 - `references/report-template.md`: `THEME-AUDIT-<yyyy-mm-dd>.md` deltas and a worked example.
-- Plugin skill `references/security-checklist.md`, `references/performance-checklist.md`, `references/false-positive-traps.md`, `references/remote-fetch.md`, `references/tooling.md`, `references/report-template.md`: shared material this skill builds on.
+- Plugin skill `references/security-checklist.md`, `references/performance-checklist.md`, `references/standards-checklist.md`, `references/false-positive-traps.md`, `references/remote-fetch.md`, `references/tooling.md`, `references/report-template.md`: shared material this skill builds on.
 
 ---
 
