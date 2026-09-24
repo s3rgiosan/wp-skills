@@ -378,6 +378,21 @@ defined( 'ABSPATH' ) || exit;
 
 ---
 
+## 14. Personal data without exporters or erasers
+
+Code that stores personal data (form entries, contact details, IP addresses, order or booking details, user meta beyond core's own fields, custom tables, files under uploads) should let the site answer export and erasure requests through WordPress's privacy tools.
+
+```bash
+grep -RnE "wp_privacy_personal_data_(exporters|erasers)" --include="*.php" .
+grep -RnE "(\$wpdb->insert|update_user_meta|add_user_meta|update_post_meta|fputcsv|file_put_contents)\(" --include="*.php" . | grep -iE "email|phone|ip|address|name|user_agent" | head -20
+```
+
+**Severity.** **Low** when personal data is stored and neither filter is registered; **Info** when the data is incidental. Higher only when the owner confirms a compliance scope (GDPR, CCPA and similar) that makes erasure a requirement. How long the data is kept is often an owner call: mark the finding `[DECISION]` with the retention question and the current default (kept forever).
+
+**Fix.** Register an exporter and an eraser for each data type (`wp_privacy_personal_data_exporters`, `wp_privacy_personal_data_erasers`), and add a retention setting or scheduled cleanup where the owner wants one.
+
+---
+
 ## Verification reminder
 
 Every finding goes through `false-positive-traps.md` before being written to the report. The four worst FP categories — SQLi, missing nonce, missing escape, missing sanitize — have explicit procedures there.

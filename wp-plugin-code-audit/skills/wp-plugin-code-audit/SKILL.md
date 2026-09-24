@@ -109,8 +109,8 @@ Read `.gitignore` and `.distignore` if present. **Skip their excluded paths duri
 List what you skipped in the report's Scope section ("Ignored (gitignore/distignore): …", and note `vendor/`/`node_modules/` skipped) so the reader knows the coverage boundary. If the user wants deps included, scan them and say so in Scope.
 
 ```bash
-test -f .gitignore  && echo "--- .gitignore ---"  && cat .gitignore
-test -f .distignore && echo "--- .distignore ---" && cat .distignore
+if [ -f .gitignore ];  then echo "--- .gitignore ---";  cat .gitignore;  fi
+if [ -f .distignore ]; then echo "--- .distignore ---"; cat .distignore; fi
 ```
 
 For remote audits (wp.org slug, GitHub URL): `references/remote-fetch.md`.
@@ -135,6 +135,8 @@ Details + interpretation: `references/tooling.md`.
 
 > Tools generate **candidates**, not findings. A WPCS warning is a hint to look — not a confirmed bug. Verify (phase 4) before reporting.
 
+**Branch reviews: `/security-review` as an extra candidate source (optional).** When the audit target is a feature branch or a set of pending changes, and Claude Code's built-in `/security-review` is available, run it on the branch. It reviews the diff only and has no WordPress-specific knowledge, so treat its output like any other tool: candidates that go through Verify, cited in the report as `[security-review]`. Skip it for whole-plugin audits, where the diff is not the audit's scope.
+
 ---
 
 ## 3. Manual read
@@ -157,7 +159,7 @@ Tools catch patterns; people catch intent. Read in this order:
 
 Apply the five checklists. **Traverse every section of every checklist; don't skim and assume coverage.** A common audit failure is forgetting to read a reference file end-to-end and missing entire categories (secrets storage, IDOR, ABSPATH guards, error-response disclosure).
 
-- `references/security-checklist.md` — auth, nonces, caps, **IDOR**, sanitize, escape, SQLi, CSRF, SSRF, file ops, deserialization, secrets in code, **stored credentials**, **error response & info disclosure**, **direct file access**.
+- `references/security-checklist.md` — auth, nonces, caps, **IDOR**, sanitize, escape, SQLi, CSRF, SSRF, file ops, deserialization, secrets in code, **stored credentials**, **error response & info disclosure**, **direct file access**, **personal data without exporters or erasers**.
 - `references/performance-checklist.md` — autoloaded options, expensive queries, missing indexes, transients without TTL, cache-thrashing hooks, cron storms, enqueue scope, asset weight.
 - `references/standards-checklist.md` — WPCS rules, function/class prefixing, i18n, deprecated APIs, plugin header completeness, GPL compatibility.
 - `references/integration-checklist.md` — cross-plugin coupling invisible from a single plugin: companions writing shared data via direct SQL (hooks never fire), stored foreign IDs vs record-duplicating layers, hook-ordering races, cache staleness, WooCommerce HPOS / Cart-Checkout-Blocks declarations. **Conditional — apply only when a companion touches the same data.**
@@ -220,6 +222,8 @@ Name the report `AUDIT-<yyyy-mm-dd>.md` (e.g. `AUDIT-2026-05-29.md`). Re-audits 
 
 Inline summary in chat: report path + verdict + counts + top-3-to-fix.
 
+The Summary's findings table lists every finding by its permanent ID, one row each, in severity order; it is an index into the Findings section, not a second numbering. It has no effort column: effort estimation is out of scope for the audit. Category is security, performance or standards.
+
 Minimum report skeleton (full template + worked examples: `references/report-template.md`):
 
 ```markdown
@@ -232,6 +236,16 @@ Minimum report skeleton (full template + worked examples: `references/report-tem
 2. ...
 3. ...
 **Decisions needed from the owner:** <D> — see § Decisions needed from the owner (omit this line when D = 0)
+
+## Summary
+
+**In plain language.** Two to four sentences for a reader who does not write code: what the plugin does for the site, what the worst problem means for the business (who could do what), and what happens next.
+
+| Finding | Area | Category | Recommendation | Priority |
+|---|---|---|---|---|
+| H1 · short title | REST / AJAX / admin / front end / data / build | security / performance / standards | one line | High |
+
+Optional glossary: one line per technical term the plain-language summary could not avoid (for example "nonce", "capability").
 
 ## Scope
 - Path / source: ...
@@ -283,11 +297,31 @@ Findings marked `[DECISION]`, collected. Omit the whole section when there are n
 - If distribution is private and findings require an author fix: who to contact + suggested disclosure path.
 - **Every recommendation must be reachable within the operating constraints captured in Discover.** Where the obvious fix is one the owner has already ruled out (e.g. "put it under version control" when they hand-edit on the server), say what to do *instead* — don't issue advice they can't follow. Unreachable advice makes the whole report read as written for someone else.
 
+## Sources
+- What the audit was based on: repository URL and commit (or wp.org slug and version, or archive name), branch, environment reached (none / local / staging), owner answers and when received. Name the material; never link private documents.
+
 ## Tooling output
 - PHPCS: `/tmp/audit-<slug>/phpcs.txt` (N errors, N warnings)
 - PHPStan: `/tmp/audit-<slug>/phpstan.txt` (level 5, N errors)
 - Plugin Check: `/tmp/audit-<slug>/plugin-check.txt` (N issues)
 ```
+
+### Fix guidance by ownership
+
+Report every finding in full, whoever owns the code. The fix line depends on ownership, which Discover already captured as distribution and update channel. For third-party code, never make "edit the plugin's files" the fix: the next update overwrites it.
+
+| Ownership | Fix line says |
+|---|---|
+| **Own code** (the owner maintains the plugin) | The code change. |
+| **Third-party, distributed** (wp.org, vendor updater, marketplace, VCS package) | Update to the fixed version when one exists. When none exists: report to the author (see Recommendation for the disclosure path), and mitigate without touching the plugin's files: turn off the affected feature or module, deactivate or remove the plugin, block the route at the edge or WAF, or neutralize it from a site-owned mu-plugin through the plugin's own hooks. Say explicitly that edits to the plugin's files are overwritten on the next update. |
+| **Third-party, committed or already modified** (vendor code checked into the site's repo, or a copy with local changes) | As above, plus: this copy is already outside the vendor's update path. A local patch is possible, but it is a fork that must be re-applied after every vendor update. Recommend returning to a managed source, and record any local patch as a fork. |
+| **Third-party, abandoned or closed** (closed on wp.org, author unreachable, vendor compromised) | Replace or remove; mitigate until then. |
+
+A temporary local patch to third-party code is acceptable only as a stopgap for a Critical with no update and no other mitigation. The fix line then says it is temporary, names the files touched, and says it is lost on update.
+
+### Writing fix recommendations
+
+Most fixes are one or two lines and need no extra guidance. When a fix changes structure (moving a hand-rolled settings form to the Settings API, reworking activation and uninstall, splitting a handler into a REST route with a real `permission_callback`), consult `wp-plugin-development` if it is installed, so the recommended fix is idiomatic. It is not required: without it, write the fix from the checklists.
 
 ### Finding IDs are permanent
 
@@ -415,8 +449,8 @@ The report is the start of the work, not the end — findings get fixed, the own
 ## Related skills
 
 - `wp-plugin-audit-remediation` — the phase after this one: remediation log, immutable audited copy, behaviour-neutrality proof for fixes. Hand off once the report is written.
-- `wp-plugin-development` — building plugins (forward-looking patterns the audit checks for).
+- `wp-plugin-development` — building plugins (forward-looking patterns the audit checks for). Optional at report time for structural fix recommendations; see Report → Writing fix recommendations.
 - `wp-plugin-directory-guidelines` — wp.org submission rules (used in the standards checklist).
 - `wp-phpstan` — PHPStan setup for WP projects (deepens the static analysis step).
 - `wp-performance` — performance investigation when audit findings need deeper triage.
-- `wp-project-triage` / `10up-project-triage` — repo-shape inspection (useful in Discover phase).
+- `wp-project-triage` — repo-shape inspection (useful in Discover phase).

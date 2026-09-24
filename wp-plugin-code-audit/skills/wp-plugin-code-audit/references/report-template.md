@@ -31,6 +31,25 @@ Full `AUDIT-<yyyy-mm-dd>.md` skeleton plus a worked example showing the level of
 
 ---
 
+## Summary
+
+**In plain language.** Written for a reader who does not write code, in two to four sentences: what the plugin does for the site, what the most serious problem lets someone do (for example "anyone on the internet can read draft posts"), and what should happen next. No file names, no jargon.
+
+| Finding | Area | Category | Recommendation | Priority |
+|---|---|---|---|---|
+| H1 · Unauthenticated search returns private titles | REST | security | Require `edit_posts` in the route's `permission_callback` | High |
+| H2 · No activation hook | data | standards | Create tables on activation and on new sites | High |
+| M1 · Uncached query on every page load | front end | performance | Cache the result in a transient | Medium |
+
+One row per finding, by its permanent ID, in severity order. The table is an index into Findings: IDs, severities and titles match the headings exactly. No effort column.
+
+**Glossary** (optional): one line per term the plain-language summary could not avoid.
+
+- *Nonce:* a one-time token that proves a request came from the site's own form.
+- *Capability:* a named permission WordPress checks before an action (for example `edit_posts`).
+
+---
+
 ## Scope
 
 - **Source:** local path / wp.org slug / GitHub URL (commit SHA if available)
@@ -177,6 +196,19 @@ If the site owner cannot wait for an upstream fix, list the safest interim mitig
 - Keep it a **single file** so a partial upload can't leave a half-working plugin.
 - Put the **changelog inside the file** — the header `Version` is the only history that will exist.
 - Set **`Update URI: false`** so an automatic update can't silently discard the hand edits.
+
+---
+
+## Sources
+
+What the audit was based on, so a reader can tell what it did and did not see:
+
+- Code: repository URL and commit SHA / wp.org slug and version / archive name and checksum; branch.
+- Environment: none (static) / local install / staging, and when it was reached.
+- Owner answers: what was asked and when the answers arrived.
+- Data: database export used or not (never its contents).
+
+Name private material by title and date only; never link it.
 
 ---
 
