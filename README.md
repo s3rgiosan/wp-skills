@@ -43,6 +43,22 @@ Verification-first code audit for WordPress plugins. Six-phase workflow (discove
 
 **[→ Install wp-plugin-code-audit](./wp-plugin-code-audit/README.md)**
 
+### [wp-theme-code-audit](./wp-theme-code-audit)
+
+Theme counterpart of `wp-plugin-code-audit`: a verification-first audit for WordPress themes (block, classic, hybrid, child). Same six phases, severity rubric, `[DECISION]` findings and verdict rules, plus theme-specific checks: kses and capability filters widened below `unfiltered_html`, REST meta without a real `auth_callback`, contributor publishing bypasses, render-by-ID, block render files and Interactivity API context, patterns, Global Styles CSS, DOM XSS, third-party and bundled scripts, theme review standards, front-end performance, and child-theme overrides diffed against the parent. Produces a dated `THEME-AUDIT-<yyyy-mm-dd>.md` with a **GO / NO-GO / GO WITH FIXES** verdict. Requires `wp-plugin-code-audit`.
+
+**Triggers on:** "audit this theme", "review the theme", "is this theme secure", "theme security review", "is this theme safe to install", "review this block theme", "review this child theme".
+
+**[→ Install wp-theme-code-audit](./wp-theme-code-audit/README.md)**
+
+### [wp-project-audit](./wp-project-audit)
+
+Verification-first security and vulnerability audit of a whole WordPress project (a `wp-content` repo, a full site root, or a Bedrock-style layout). Seven-phase workflow (inventory → automated sweeps → component depth → verify → correlate → production check (optional, owner-run) → report): a component inventory with active status per site, dependency advisories with a ships-to-production column, known vulnerabilities at the production version (free and premium slugs), wp.org staleness and slug-hijack risk, vendor compromise, secrets and git history, deploy, CI and webroot exposure, and cross-component correlations. Dispatches custom plugins to `wp-plugin-code-audit` and custom themes to `wp-theme-code-audit`, runs the sweeps as parallel subagents, and produces a dated `PROJECT-AUDIT-<yyyy-mm-dd>.md` sectioned by area with a **GO / NO-GO / GO WITH FIXES** verdict for production as deployed. Ships read-only inventory, dependency-audit, vulnerability-lookup and production-check scripts. Requires `wp-plugin-code-audit` and `wp-theme-code-audit`.
+
+**Triggers on:** "audit this project", "audit the whole site", "is this site safe", "check every plugin and theme for vulnerabilities", "vulnerability sweep", "is production compromised", "supply chain check for our plugins".
+
+**[→ Install wp-project-audit](./wp-project-audit/README.md)**
+
 ### [wp-plugin-audit-remediation](./wp-plugin-audit-remediation)
 
 The phase after the audit. Maintains a `REMEDIATION-<yyyy-mm-dd>.md` companion log (per-finding status, what changed, how it was verified, what's still owed by the owner), keeps a frozen copy of the audited version so the report's `file:line` citations stay readable while the code changes, and proves that renames / `phpcbf` runs / mechanical refactors changed no behaviour via a PHP token-stream diff (which also catches an auto-fixer flipping `==` to `===`). Companion to `wp-plugin-code-audit` — run the audit first.

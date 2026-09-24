@@ -25,6 +25,16 @@
       "description": "Verification-first code audit for WordPress plugins: security, performance, standards, wp.org guidelines, cross-plugin integration. Produces a markdown report with severity-sorted findings + GO / NO-GO / GO WITH FIXES verdict."
     },
     {
+      "name": "wp-theme-code-audit",
+      "source": "./wp-theme-code-audit",
+      "description": "Verification-first code audit for WordPress themes (block, classic, child): security, performance, theme review standards, child-theme override diffs. Produces a markdown report with severity-sorted findings + GO / NO-GO / GO WITH FIXES verdict. Requires wp-plugin-code-audit."
+    },
+    {
+      "name": "wp-project-audit",
+      "source": "./wp-project-audit",
+      "description": "Verification-first security and vulnerability audit of a whole WordPress project: inventory, dependency and known-vulnerability sweeps at the production version, vendor compromise, secrets, deploy and exposure, cross-component correlation. Dispatches custom plugins and themes to their component audits. Requires wp-plugin-code-audit and wp-theme-code-audit."
+    },
+    {
       "name": "wp-plugin-audit-remediation",
       "source": "./wp-plugin-audit-remediation",
       "description": "The phase after a plugin audit: a per-finding remediation log, an immutable copy of the audited version so citations stay readable, and a PHP token-diff that proves renames / formatter runs / refactors changed no behaviour."
