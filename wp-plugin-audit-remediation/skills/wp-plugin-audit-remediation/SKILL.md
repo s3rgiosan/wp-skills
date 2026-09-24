@@ -83,6 +83,8 @@ Rules:
 - **Cite both the frozen and current location.** The report's citation points at the frozen copy; the log adds where the code lives now.
 - **The log is the source of truth for "where are we?"** Keep it current as fixes land, so nobody has to reconstruct state from the diff.
 - **Reuse the report's finding IDs exactly; never renumber them.** The IDs are the join key between the two documents (see below).
+- **Review each fix branch before marking it verified (optional).** When Claude Code's built-in `/security-review` is available, run it on the branch that carries the fix. It reviews the diff, which is exactly the fix's scope, and catches a fix that introduced a new issue. Its output is candidates: anything real that the audit didn't report becomes an `N` finding (see below), never a new audit ID.
+- **Implement structural fixes idiomatically.** When a fix reshapes code rather than patching a line, consult `wp-plugin-development` if it is installed. It is not required.
 
 ### Findings discovered during remediation get their own namespace
 
@@ -116,3 +118,4 @@ When remediation is done (or paused), the log tells the owner exactly three thin
 ## Related skills
 
 - `wp-plugin-code-audit` — produces the audit report this skill remediates against. Run it first.
+- `wp-plugin-development` — optional, for implementing structural fixes idiomatically.
