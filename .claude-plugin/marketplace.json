@@ -32,7 +32,7 @@
     {
       "name": "wp-mnemon",
       "source": "./wp-mnemon",
-      "description": "Deep architectural analysis of WordPress plugins — what the plugin does, how it works, what triggers what, and how data flows. 12-phase workflow with structured output."
+      "description": "Deep architectural analysis of WordPress plugins — what the plugin does, how it works, what triggers what, and how data flows. 13-phase workflow with structured output."
     },
     {
       "name": "wp-v0-to-block-theme",

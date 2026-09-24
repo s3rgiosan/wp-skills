@@ -55,20 +55,21 @@ Open any Claude Code session and ask naturally:
 "Walk me through how this plugin bootstraps and what hooks it fires."
 ```
 
-The skill runs a 12-phase analysis:
+The skill runs a 13-phase analysis:
 
-1. Identify plugin source (local path or GitHub URL).
-2. Identify main plugin file + metadata.
-3. Map architecture (classes, namespaces, autoloading).
-4. Trace bootstrap + initialization.
-5. Catalog hooks (registered, exposed, removed).
-6. Map data structures (CPTs, meta, options, DB tables).
-7. Map REST routes + AJAX handlers.
-8. Map admin / frontend UI surfaces.
-9. Identify execution flows per feature (trigger → processing → output).
-10. Identify third-party integrations.
-11. Identify extensibility patterns + extension points.
-12. Synthesize practical examples for extending the plugin.
+0. Determine source — local path or GitHub URL (with API access for the latter).
+1. Identify the plugin — main file, header metadata, constants, stated purpose.
+2. Map the file structure — directory map, architectural pattern, file count.
+3. Architecture & class map — namespaces, autoloading, class hierarchy, traits, singletons.
+4. Bootstrap & initialization flow — load sequence through the WordPress lifecycle hooks.
+5. Scan all hooks — registered, exposed, and removed actions/filters, each with context.
+6. Scan data structures — CPTs, taxonomies, meta keys, options, custom DB tables, transients.
+7. Scan integrations — REST API, shortcodes, blocks, WP-CLI commands, assets, cron, third-party plugins.
+8. Execution flow tracing — trigger → processing → output for each major feature.
+9. Admin & frontend map — admin pages, metaboxes, frontend output, user workflows.
+10. Extensibility patterns — template overrides, class extension, filter/action extension points.
+11. Write memory files — overview, architecture, hooks, data, and extending docs plus the memory index.
+12. Confirm to user — summary of what was analyzed, where memory was written, and key stats.
 
 Output: structured analysis split across overview / architecture / hooks / data / extending.
 
@@ -91,17 +92,18 @@ The skill uses the token in `Authorization: Bearer` for GitHub API requests.
 ```
 wp-skills/
 └── wp-mnemon/
+    ├── .claude-plugin/
+    │   └── plugin.json
     ├── install.sh
     ├── uninstall.sh
     ├── README.md                         ← you are here
-    └── .claude/
-        └── skills/
-            └── wp-mnemon/
-                ├── SKILL.md              ← 12-phase deep analysis instructions
-                └── scripts/
-                    ├── scan_hooks.sh     ← grep all hook patterns (local plugins)
-                    ├── scan_data.sh      ← grep CPTs, meta, options, DB (local plugins)
-                    └── scan_classes.sh   ← grep class architecture (local plugins)
+    └── skills/
+        └── wp-mnemon/
+            ├── SKILL.md              ← 13-phase deep analysis instructions
+            └── scripts/
+                ├── scan_classes.sh   ← grep class architecture (local plugins)
+                ├── scan_hooks.sh     ← grep all hook patterns (local plugins)
+                └── scan_data.sh      ← grep CPTs, meta, options, DB (local plugins)
 ```
 
 ---
