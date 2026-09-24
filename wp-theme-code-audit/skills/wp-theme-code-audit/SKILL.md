@@ -46,7 +46,7 @@ Read these in the plugin skill before the first audit. Only the deltas are state
 | Severity rubric, subscriber-exploitable rule, silent-corruption rule | plugin `SKILL.md` → Severity Rubric | For themes the role question is usually **Contributor / Author**: the theme renders what low-privilege editors write. See Verify below. A theme is rarely the system of record, so the silent-corruption rule applies only when theme code writes data (generators, save hooks, counters). |
 | `[DECISION]` findings | plugin `SKILL.md` → Owner-decision findings | None. |
 | Verdict rules | plugin `SKILL.md` → Verdict Rules | None. |
-| Permanent finding IDs | plugin `SKILL.md` → Finding IDs are permanent | None. |
+| Permanent finding IDs | plugin `SKILL.md` → Finding IDs are permanent | None: IDs are never reused or renumbered, and the report states only each finding's current severity and rationale (no withdrawn, superseded or re-rated history; that lives in the remediation log). |
 | Report location and filename | plugin `SKILL.md` → Report | File is `THEME-AUDIT-<yyyy-mm-dd>.md` (same-day re-audit: `THEME-AUDIT-<yyyy-mm-dd>-<HHMM>.md`). Git-ignore pattern: `THEME-AUDIT-*.md`. Ask where to write, default to `.claude/`, never overwrite. |
 | False-positive traps | plugin `references/false-positive-traps.md` | Plus the theme notes in Verify below. |
 | Remote fetch | plugin `references/remote-fetch.md` | wp.org theme URLs differ; see Discover. |

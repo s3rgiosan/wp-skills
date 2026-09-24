@@ -89,4 +89,4 @@ Sometimes the owner sends files instead of, or as well as, script output (a copy
 | PHP under uploads | Web shell candidate or a plugin's cache | Identify the writer; check execution rules |
 | Orphaned loader on production only | Production has must-use code the repo does not | Ask for the file |
 
-Record each result in the report: findings that the output confirms carry the evidence label "owner's production check (<date>)", or "confirmed on production files" when the cited code was compared; questions it answers change severity in place with a severity note.
+Record each result in the report: findings that the output confirms carry the evidence label "owner's production check (<date>)", or "confirmed on production files" when the cited code was compared; questions it answers update the finding's severity and rationale, with the check cited as evidence (current state only, same ID).

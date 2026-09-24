@@ -24,7 +24,7 @@ Severity guidance for paths that reach the webroot (before webserver rules):
 | What reaches the webroot | Typical rating |
 |---|---|
 | Scripts, configs or dotfiles holding credentials or tokens | High to Critical |
-| Database dumps, archives of licensed code | High to Critical (see the table below) |
+| Database dumps, archives of licensed code (tracked or on production; `inventory.md` §11) | High to Critical (see the table below) |
 | Internal docs (planning, requirements, runbooks) and agent config (`CLAUDE.md`, `AGENTS.md`, `.claude/`, `.cursor/`) | Medium to Low, by what they reveal (hostnames, internal process, security notes) |
 | Lockfiles and dependency manifests | Low |
 | Build and CI config without secrets | Low |
@@ -40,13 +40,13 @@ comm -23 /tmp/tracked-top.txt /tmp/excluded.txt
 git ls-files | grep -Ei '(^|/)(\.env|.*\.sql(\.gz)?|.*\.zip|composer\.(json|lock)|package(-lock)?\.json|.*\.md|\.git[^/]*|phpcs\.xml.*|phpunit\.xml.*|docker-compose\.ya?ml|Makefile|.*\.log|.*\.bak|.*~)$' | head -50
 ```
 
-Check these specifically:
+Local files that are not tracked in git are not deployed by a clean-checkout deploy and are out of scope (`inventory.md` §11, including how to tell when a deploy does not run from a clean checkout). Check these specifically:
 
 | In the webroot | Why it matters | Typical rating |
 |---|---|---|
 | Premium plugin or theme zips | Anyone can download the licensed code, and read it for vulnerabilities offline | Medium; High if the zip holds a licence key |
 | `.env`, config backups, `*.bak`, editor swap files | Credentials | High to Critical |
-| Database dumps | Everything | Critical if served; identify by name only, never open |
+| Database dumps (tracked, in git history, or on production; `inventory.md` §11) | Everything | Critical if served; identify by name only, never open |
 | `composer.json` / `composer.lock` / `package-lock.json` | Exact dependency versions for an attacker | Low |
 | Internal docs (`*.md`, requirement folders, agent instruction files) | Architecture, hostnames, internal process | Low to Medium by content |
 | Test and CI config, `phpunit.xml`, fixtures | Test credentials, internal URLs | Low to Medium |
@@ -67,7 +67,7 @@ grep -nE 'set -x|bash -x|set -o xtrace|printenv|^\s*env\s*$|echo .*\$\{?[A-Z_]*(
 grep -nE 'https?://[^/ :]+:[^@ ]+@' deploy/*.sh .gitlab-ci.yml .github/workflows/*.yml 2>/dev/null
 ```
 
-Rating: credentials that do print in logs readable by more than the deploy owners: **High**. The pattern exists but the owner confirms masking: **Info** (record the answer as a severity note on the finding, keep the ID).
+Rating: credentials that do print in logs readable by more than the deploy owners: **High**. The pattern exists but the owner confirms masking: **Info** (cite the owner's answer as the rationale; keep the ID).
 
 ## 4. Uploads and web-writable paths
 

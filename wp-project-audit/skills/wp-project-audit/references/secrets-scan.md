@@ -60,14 +60,16 @@ If `gitleaks` or `trufflehog` is installed, run it with redaction on (`gitleaks 
 
 ## 4. Database dumps and archives
 
-Identify, never read. `inventory.json` → `database_dumps` lists dumps by name, size and tracked status. For each one:
+Identify, never read. The local artifact rule (`inventory.md` §11) decides which dumps and archives count: `inventory.json` → `project.local_artifact_candidates` lists those tracked in git, in git history (history counts as tracked, as for every secret), or present on production. For each candidate:
 
-- Record the path, size and whether it is tracked, ignored, or inside the webroot.
+- Record the path, size, tracked or history status, and whether it reaches the webroot.
 - Do not open, grep, `head` or import it. It holds user records, hashed passwords, emails, and often plaintext API keys in options.
-- A tracked dump: **High** (everyone with repository access has the user table); **Critical** when the repository is public or the dump is served from the webroot.
-- An untracked dump inside the webroot on a local copy: tell the owner and ask whether production has the same file.
+- A tracked dump, or one in git history: **High** (everyone with repository access has the user table); **Critical** when the repository is public or the dump is served from the webroot.
+- A dump present on production: **High**, **Critical** when it is served.
 
-Archives (`*.zip`, `*.tar.gz`) of plugins or themes may contain licence keys in their config: list them, and open only when the owner asks.
+Untracked local dumps are out of scope and are not mentioned in the report.
+
+Archives (`*.zip`, `*.tar.gz`) of plugins or themes may contain licence keys in their config: list the candidate ones (tracked or on production), and open only when the owner asks.
 
 ## 5. Rating
 
@@ -75,7 +77,7 @@ Archives (`*.zip`, `*.tar.gz`) of plugins or themes may contain licence keys in 
 |---|---|
 | Live secret in a public repository, or served from the webroot | Critical |
 | Live secret in a private repository or in history | High (everyone with repository access, every clone, every CI runner) |
-| Secret for a non-production system, or already rotated (owner confirms) | Low, with the owner's answer as a severity note |
+| Secret for a non-production system, or already rotated (owner confirms) | Low, with the owner's answer as the rationale |
 | Public identifier | not a finding; list under "checked and clean" |
 
 **Fix line:** rotate first, then remove. Removing a secret from the working tree does not revoke it; rewriting history does not reach existing clones. Move the value to environment configuration or the host's secret store. For history, recommend rotation over rewriting unless the owner asks for a rewrite.

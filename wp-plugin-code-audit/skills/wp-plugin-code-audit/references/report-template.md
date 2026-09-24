@@ -76,9 +76,9 @@ One row per finding, by its permanent ID, in severity order. The table is an ind
 - **Dependencies (PHP):** key composer packages
 - **Dependencies (JS):** key npm packages
 - **Tools run:**
-  - PHPCS (WPCS standard): yes — N errors, N warnings — `/tmp/audit-<slug>/phpcs.txt`
-  - PHPStan (level 5): yes — N errors — `/tmp/audit-<slug>/phpstan.txt`
-  - Plugin Check: yes — N issues — `/tmp/audit-<slug>/plugin-check.txt`
+  - PHPCS (WPCS standard): yes, N errors, N warnings
+  - PHPStan (level 5): yes, N errors
+  - Plugin Check: yes, N issues
   - Composer audit: yes — N vulnerable packages
   - npm audit: skipped (no source for `dist/`)
 - **Sections audited:** auth/authz ✓ · nonces ✓ · IDOR ✓ · sanitize/escape ✓ · SQLi ✓ · file-ops ✓ · SSRF ✓ · deserialization ✓ · secrets ✓ · error-disclosure ✓ · ABSPATH ✓ · perf ✓ · standards ✓ · integration ✓ (or n/a — no shared-data companion) · FP-traps ✓
@@ -87,7 +87,7 @@ One row per finding, by its permanent ID, in severity order. The table is an ind
 
 ## Findings
 
-(Numbering convention: severity letter + index — C1, C2, H1, H2, M1, L1, I1. Reference findings by ID in the Top-3 list and Verdict section. **IDs are permanent — allocate once, never renumber or reuse** (see SKILL.md → Finding IDs are permanent): withdrawn and superseded findings keep their number and move to the appendix; a severity change keeps the original ID; new findings take the next unused number even if that leaves gaps. Gaps are information.)
+(Numbering convention: severity letter + index, as in C1, C2, H1, H2, M1, L1, I1. Reference findings by ID in the Top-3 list and Verdict section. **IDs are permanent: allocate once, never renumber or reuse** (see SKILL.md → Finding IDs are permanent). A severity change keeps the original ID; a dropped finding's number stays retired; new findings take the next unused number even if that leaves gaps. Leave gaps silent. The report states each finding's current severity and rationale only; withdrawn, superseded and re-rated history lives in the remediation log.)
 
 <!-- If a section is empty: -->
 ### 🔴 Critical
@@ -160,10 +160,7 @@ One sentence. No fix required (these are suggestions / context for the maintaine
 - `<file>:<line>` — pattern that looked like X but isn't because Y. Listed
   so the next auditor doesn't re-flag it.
 
-Retired IDs also live here — the number stays reserved so the label never means two things:
-
-- **M9 — withdrawn.** Traced properly on re-audit; not exploitable. The finding was wrong; ID retired, never reused.
-- **I3 — superseded.** Was accurate when written ("runtime verification not possible, environment unreachable"); the environment was later reached and the Highs reproduced. The situation moved — not an error. See H1–H4 (Reproduced).
+False positives only: patterns that looked like a bug and are not. Withdrawn or superseded findings are not listed here or anywhere in the report (see SKILL.md → Finding IDs are permanent).
 
 ---
 
@@ -207,6 +204,7 @@ What the audit was based on, so a reader can tell what it did and did not see:
 - Environment: none (static) / local install / staging, and when it was reached.
 - Owner answers: what was asked and when the answers arrived.
 - Data: database export used or not (never its contents).
+- Audit runs: one line per run when there was more than one (date, what it covered: first audit, owner answers, re-audit after fixes).
 
 Name private material by title and date only; never link it.
 
@@ -214,17 +212,19 @@ Name private material by title and date only; never link it.
 
 ## Tooling output
 
-- PHPCS: `/tmp/audit-<slug>/phpcs.txt` — N errors, N warnings
+- PHPCS <version>: N errors, N warnings
   - Top rules: WordPress.Security.EscapeOutput.OutputNotEscaped (N), ...
-- PHPStan: `/tmp/audit-<slug>/phpstan.txt` — level 5, N errors
-- Plugin Check: `/tmp/audit-<slug>/plugin-check.txt` — N issues
-- Composer audit: `/tmp/audit-<slug>/composer-audit.txt`
+- PHPStan <version>: level 5, N errors
+- Plugin Check <version>: N issues
+- `composer audit`: N advisories
+
+Tool names, versions and counts only; the raw output files are working files and are not cited (SKILL.md → Report, rule "Reports describe the method in plain terms").
 
 ---
 
 ## Audit metadata
 
-- Auditor: Claude (wp-plugin-code-audit skill)
+- Auditor: <the person or team who ran the audit>
 - Date: YYYY-MM-DD
 - Hours spent (approximate): N
 - Confidence: high / medium / low (low if source not fully available, or if scope was time-boxed)

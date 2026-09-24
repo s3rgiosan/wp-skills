@@ -1,6 +1,6 @@
 # Report Template
 
-The project report reuses the plugin skill's finding format, severity headings, `[DECISION]` callouts and table, verified-false appendix with withdrawn and superseded IDs, and Recommendation reachability rule (plugin `references/report-template.md`). What changes is the shape: the report is **sectioned by area**, and it is **one self-contained document**. Every component audit (plugin skill or theme skill) is embedded as an annex that carries all of that component's findings; the report never points to another report file.
+The project report reuses the plugin skill's finding format, severity headings, `[DECISION]` callouts and table, verified-false appendix (false positives only), and Recommendation reachability rule (plugin `references/report-template.md`). What changes is the shape: the report is **sectioned by area**, and it is **one self-contained document**. Every component audit (plugin skill or theme skill) is embedded as an annex that carries all of that component's findings; the report never points to another report file.
 
 ---
 
@@ -19,7 +19,7 @@ Plugin skill rules apply (plugin `SKILL.md` → Report: ask first, default `.cla
 
 The report outlives the audit's working folder. Cite evidence by its source: `file:line` in the audited code, "the owner's answers (<date>)", "the production file check (<date>)", or a named tool and its version. Never cite a scratch file name, a temp path, or an internal working document; when tool output matters, say which tool produced it and that the raw output was not retained. **Never cite another report file** by name or path, and never write "see component report": point inside the document instead ("see Annex 2", "see P-acme-forms-H1").
 
-**Plain language only.** The report is read by people who never saw how the audit was run. No process words: no "orchestrator", "scanner", "subagent", brief names, "section file", phase numbers ("phase 6a", "phase 6b"; say "the production file check" or "live-site checks") or tool-pipeline jargon. "Scanner" is fine when it names a real security tool the project uses. Evidence is labelled with the plain labels below.
+**Plain language only.** The report is read by people who never saw how the audit was run. No process words: no "orchestrator", "scanner", "subagent", brief names, "section file", phase numbers ("phase 6a", "phase 6b"; say "the production file check" or "live-site checks") or tool-pipeline jargon, and no model tiers or "single-model run". "Scanner" is fine when it names a real security tool the project uses. Never name the audit skills (`wp-plugin-code-audit`, `wp-theme-code-audit`, `wp-project-audit`, `wp-plugin-audit-remediation`) or their scripts and files (`inventory.sh`, `dep-audit.sh`, `vuln-lookup.sh`, `bundled-libs.sh`, `prod-check.sh`, `live-check.sh`, `candidates.tsv`). Describe the method in plain terms: "a component inventory", "known-vulnerability lookups at production versions", "core files against the official wordpress.org checksums", "a read-only production check the owner ran". External tools and data sources stay named so a reader can rerun or check them: PHPCS/WPCS, PHPStan, Theme Check, Plugin Check, `composer audit`, `npm audit`, WPVulnerability, Wordfence, Patchstack, OSV, the wordpress.org checksum and plugin APIs, php.net. The audited project's own files (its deploy scripts, lockfiles) are evidence and stay. Evidence is labelled with the plain labels below. Untracked local files (local artifact rule, `inventory.md` §11) are not mentioned anywhere in the report: not as findings, not in Verified false, not in Method.
 
 ## Evidence labels
 
@@ -48,12 +48,7 @@ A component audit's own local IDs map one to one onto the prefixed IDs (`P-acme-
 
 **Count once.** The header counts equal the number of distinct finding IDs per severity across the whole document. A finding summarized in the main body and detailed in an annex is one finding.
 
-**Owner answers change severity in place.** When the owner's answer changes a rating (masking confirmed, a role has no members, a site is not production), keep the ID and add a severity note under the heading:
-
-```markdown
-> **Severity note (2026-01-16).** Was High. The owner confirmed the CI variables are masked and protected; the
-> credential does not print. Now Info. ID kept.
-```
+**Current state only.** Each finding states its current severity and the rationale for it. When the owner's answer changes a rating (masking confirmed, a role has no members, a site is not production), rewrite the severity and rationale to match and keep the ID; cite the answer as evidence ("the owner confirmed the CI variables are masked and protected (2026-01-16)"). The report never records how a finding was rated before, and has no severity-change notes, no withdrawn or superseded entries, no mapping to a previous report's IDs, and no reference to a previous report file. That history belongs in the remediation log or the working notes. ID gaps stay silent.
 
 **Evidence** on every Critical and High: one of the labels in Evidence labels above.
 
@@ -204,7 +199,7 @@ Every plugin, theme, must-use plugin and drop-in, including those with no findin
 One line per check that found nothing, with the command or source.
 
 ## Appendix C: Verified false
-Candidates dropped, with the reason. Withdrawn and superseded IDs.
+False positives only: patterns that looked like a bug and are not, with the reason.
 
 ## Appendix D: Open questions for production
 Each question, what it would change, and which finding it holds open.
@@ -218,7 +213,17 @@ Never list other report files here: component audits are in the annexes.
 ## Appendix F: Method
 What was reviewed and how deeply (full audit, focused review of high-risk code, advisory lookup), tools available and
 unavailable, how active status was established (WP-CLI / database / not verified), what was static only, production
-files received and when they were deleted, confidence. Include the evidence-label legend:
+files received and when they were deleted, confidence.
+
+**Audit runs.** One row per run, so the reader knows what the current findings rest on:
+
+| Date | Run | What it covered |
+|---|---|---|
+| 2026-01-12 | First audit | Repository at commit `a1b2c3d`: component inventory, dependency advisories (`composer audit`, `npm audit`), known-vulnerability lookups (WPVulnerability) at local versions, static code review |
+| 2026-01-16 | Owner answers and production check | Production plugin list, read-only production check (core files against the official wordpress.org checksums), owner-authorized live-site checks |
+| 2026-02-03 | Second audit | Repository at commit `d4e5f6a` after fixes; lookups at production versions; production export compared with the repository |
+
+Include the evidence-label legend:
 
 | Label | Meaning |
 |---|---|

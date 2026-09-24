@@ -34,7 +34,7 @@ The `REMEDIATION-<yyyy-mm-dd>.md` companion to an audit report. Write it beside 
 | H2 | 🟠 High | Blocked on owner | — | — | (see Decisions) |
 | M3 | 🟡 Medium | Won't fix (accepted) | — | Owner accepts: legacy option kept for a downstream integration. Accepted by <role>, <date>. | `includes/Options.php:44` |
 | M5 | 🟡 Medium | Open | — | — | — |
-| I3 | ⚪ Info | Superseded | Environment became reachable; Highs reproduced. | Not an error — situation moved. Replaced by the H1–H4 repro captures. | (see report appendix) |
+| I3 | ⚪ Info | Superseded | Environment became reachable; Highs reproduced. | Not an error: the situation moved. Replaced by the H1 to H4 repro captures. | n/a (history kept in this log, not in the report) |
 | N1 | 🟢 Low | Fixed (verified) | Defect spotted while fixing H1; guarded the same input on the sibling path. | Re-read source; input now sanitized on both paths. | `includes/Sync.php:88` |
 
 ## Decisions still owed by the owner

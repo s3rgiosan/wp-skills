@@ -30,7 +30,11 @@ READ-ONLY. You audit; you never change the project.
 - Do not start, stop or restart services (web server, database, containers, local environment). If something you
   need is not running, write it under "Open questions for production" and continue.
 - Write only to your section file in <SCRATCH>/sections/ and to scratch files under <SCRATCH>/work/<your-name>/.
-- Never open database dumps (*.sql, *.sql.gz, *.dump). List them by path and size only.
+- Never open database dumps (*.sql, *.sql.gz, *.dump). List candidate ones by path and size only.
+- Local artifact rule (<SKILL>/references/inventory.md §11): dumps, archives, logs, exports, backups and IDE or OS files
+  are raised only when tracked in git (or in its history), present on production, or copied by a deploy that does not
+  run from a clean checkout. Untracked local files, and scratch tables in a local database, are never raised and never
+  written into the section file.
 - Secrets: record key or variable name, file:line and the first 4 characters of the value followed by "…". Never more,
   in any file you write.
 - wp-config.php and .env: constant or variable names and booleans only. Never values.
@@ -166,7 +170,8 @@ Goal: secrets and sensitive files in tracked files and git history, masked.
 <READ-ONLY block>
 Method: follow <SKILL>/references/secrets-scan.md. Keep only file:line from grep output; open each line yourself and
 write the masked form (name, file:line, first 4 characters + "…"). Separate public identifiers from secrets.
-List database dumps and archives by name and size; never open them.
+List candidate database dumps and archives (inventory.json → project.local_artifact_candidates: tracked, in history or
+on production) by name and size; never open them. Untracked local files are out of scope; leave them out entirely.
 Section file: <SCRATCH>/sections/30-secrets.md. Before finishing, grep your own section file for any run of 12 or more
 characters from a matched value; if found, rewrite the entry.
 ```
@@ -180,7 +185,8 @@ Inputs: inventory.json (deploy_files, ci_files, hosting_hints, orphaned_mu_loade
 Method: follow <SKILL>/references/deploy-and-exposure.md. Start from <SCRATCH>/inventory/webroot-exposure.tsv: every
 path marked "reaches webroot if deployed" is a required input to the exposure finding. Then: exclude-list coverage, CI log leakage
 (set -x, echoed variables, credentials in URLs), PHP under uploads, logs and exports written to web-readable paths,
-must-use loaders and drop-ins, wp-config.php hardening constants (names and booleans only).
+must-use loaders and drop-ins, wp-config.php hardening constants (names and booleans only). Apply the local artifact
+rule: only tracked or production files are exposure candidates; untracked local files are left out entirely.
 Section file: <SCRATCH>/sections/40-deploy-exposure.md
 ```
 
@@ -250,8 +256,9 @@ outside_wp_content, project.database_dumps), prod-check output section 12 if the
 Method: follow <SKILL>/references/access-and-privacy.md: role and super admin counts per site, open registration and
 default role, application passwords, dormant accounts where a log plugin exposes it; development tools active on
 production (confirm what each flagged slug is); activity-log presence (Info when absent); plugins not on the approved
-list; personal data stores in custom code and whether they register personal-data exporters and erasers; dumps and
-un-scrubbed non-production data, described by name and size only.
+list; personal data stores in custom code and whether they register personal-data exporters and erasers; dumps that
+are local artifact candidates (tracked, in history or on production), described by name and size only; data on a remote,
+reachable staging system. Local development databases and untracked local dumps are out of scope; leave them out.
 Section file: <SCRATCH>/sections/45-access-privacy.md
 ```
 
@@ -283,10 +290,11 @@ Steps:
    "verified by orchestrator" or leave "scanner-cited" (never promote without reading the source). In the report, write
    the plain evidence labels (report-template.md → Evidence labels), never the internal statuses.
 3. Correlate (references/correlation.md) across sections and the working reports.
-   When reconciling against a previous report, check the raw script outputs (candidates.tsv, vulns.json, dep-audit.json,
-   bundled-libs.json, inventory.json) before calling any previous finding "missed". A finding present in the raw output
-   but absent from the section files is a scanner omission: restore it. "Missed" is only for findings absent from the raw
-   outputs too.
+   When a previous report exists, compare against it internally, only to catch misses: check the raw script outputs
+   (candidates.tsv, vulns.json, dep-audit.json, bundled-libs.json, inventory.json) before calling any previous finding
+   "missed". A finding present in the raw output but absent from the section files is a scanner omission: restore it.
+   "Missed" is only for findings absent from the raw outputs too. None of this comparison goes into the report: no
+   reconciliation appendix, no mapping to previous IDs, no reference to the previous report file, no re-rating notes.
 4. Allocate final IDs: G- for general and correlations, P-<slug>- and T-<slug>- mapping one to one onto each component
    audit's local IDs (the plugin audit's H1 becomes P-acme-forms-H1). Never renumber.
 5. Build the annexes: one "Annex N: <slug> (plugin | theme | child theme of <parent>)" per working report, carrying every
@@ -296,9 +304,15 @@ Steps:
 6. Write the report from references/report-template.md, sectioned by area. The Plugins and Themes subsections summarize
    each annexed finding in one line with "see Annex N". Never name or link a working report or any other report file,
    never write "see component report", and use no process words (orchestrator, scanner, subagent, brief ids, section
-   file). Header counts are distinct finding IDs per severity across the whole document: a finding in the main body and
+   file, model tiers, "single-model run"). Never name the audit skills or their scripts and files (inventory.sh,
+   dep-audit.sh, vuln-lookup.sh, bundled-libs.sh, prod-check.sh, live-check.sh, candidates.tsv); describe the method in
+   plain terms and name only external tools and data sources (PHPCS/WPCS, PHPStan, Theme Check, Plugin Check,
+   composer audit, npm audit, WPVulnerability, Wordfence, Patchstack, OSV, the wordpress.org APIs, php.net). Header counts are distinct finding IDs per severity across the whole document: a finding in the main body and
    its annex is counted once. Check: every prefixed ID in the annexes appears in the Summary findings table, and the
    header counts equal the number of distinct IDs per severity (grep the finding headings).
+6b. State current severities only. Fill the Method "Audit runs" table (date, run, what it covered) from the runs of
+   this audit; record withdrawn, superseded and re-rated findings in the working notes (or the remediation log), never
+   in the report.
 7. Delete <SCRATCH>/work/ contents that hold copies of project or production files; keep section files and working
    reports until the owner has the report. They are not part of the deliverable.
 ```

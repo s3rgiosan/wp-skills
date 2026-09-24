@@ -48,12 +48,13 @@ Describe where personal data is stored; never read it.
 | Custom tables and options written by custom code | `grep -rnE "\\$wpdb->(insert|replace)|CREATE TABLE|dbDelta" wp-content/plugins/acme-* wp-content/themes/acme-* --include='*.php'` |
 | User meta beyond core fields | `grep -rnE "(add|update)_user_meta\\(" ... --include='*.php'` in custom code |
 | Logs and exports under uploads | `deploy-and-exposure.md` §4 |
-| Database dumps in the repo folder or the webroot | `inventory.json` → `project.database_dumps`, `outside_wp_content.wp_root_extra_entries` (names and sizes only) |
+| Database dumps and exports that are tracked in git or present on production | `inventory.json` → `project.local_artifact_candidates` (names and sizes only; `inventory.md` §11) |
 
 Checks:
 
 - **Exporters and erasers.** Custom code that stores personal data should register `wp_privacy_personal_data_exporters` and `wp_privacy_personal_data_erasers`. Missing: Low or Info, per the plugin skill's `security-checklist.md` §14; mark `[DECISION]` when the owner must decide retention.
-- **Real production data outside production.** A database dump in the repository folder or a local webroot, or a local or staging database that was never scrubbed, means production personal data sits on developer machines and CI runners. Ask whether local and staging data is scrubbed; never open a dump to find out. A tracked dump: see `secrets-scan.md` §4. An untracked dump in a local webroot: **Medium**, with a recommendation to keep dumps outside webroots and repositories and to scrub non-production copies.
+- **Production data where it should not be.** Apply the local artifact rule (`inventory.md` §11): a dump or export is a finding only when it is tracked in git (now or in history), present on production, or copied by a deploy that does not run from a clean checkout. A tracked dump: see `secrets-scan.md` §4. Local development databases and untracked local dumps are out of scope and are not mentioned in the report.
+- **Staging with production data.** Only for a staging environment that is a real, remote and reachable system (a hosted staging site, not a developer machine): ask whether its data is scrubbed. Unscrubbed production personal data on a reachable staging site: **Medium**, higher when staging is less protected than production.
 - **Retention.** Logs and entries kept forever are an owner decision: `[DECISION]` with the current default.
 
 ## 5. Report placement

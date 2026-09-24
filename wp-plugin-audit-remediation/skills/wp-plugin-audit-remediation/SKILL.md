@@ -64,6 +64,8 @@ A companion document to the audit report — usually `REMEDIATION-<yyyy-mm-dd>.m
 
 Its job: one row per finding, each carrying status, what changed, how the change was verified, and — for `[DECISION]` findings — what it's waiting on.
 
+**This is where finding history lives.** Audit reports state only each finding's current severity and rationale (`wp-plugin-code-audit` → Finding IDs are permanent). Withdrawn findings, superseded findings and severity changes (old rating, new rating, date, reason) are recorded here, never in the report.
+
 Full template: `references/remediation-log-template.md`. Status vocabulary:
 
 | Status | Meaning |
@@ -74,7 +76,9 @@ Full template: `references/remediation-log-template.md`. Status vocabulary:
 | **Fixed (unverified)** | Change made but not yet re-checked. A transient state, not a resting one — it must become Fixed (verified) or go back to Open. |
 | **Won't fix (accepted)** | Owner accepts the risk. Record who accepted and the stated reason. |
 | **Blocked on owner** | A `[DECISION]` finding, or any fix gated on an owner choice. Record the exact question and the default-if-unanswered (carry these straight over from the report's "Decisions needed from the owner" table). |
-| **Superseded** | The finding was correct when the audit was written but no longer describes reality — the situation moved, nobody was wrong (e.g. an Info finding "runtime verification not possible" once the environment becomes reachable and the Highs reproduce). Keep the ID; point to what replaced it. Distinct from *withdrawn*, which means the finding was wrong. Carried from the report — see `wp-plugin-code-audit` → Finding IDs are permanent. |
+| **Superseded** | The finding was correct when the audit was written but no longer describes reality: the situation moved, nobody was wrong (e.g. an Info finding "runtime verification not possible" once the environment becomes reachable and the Highs reproduce). Keep the ID; point to what replaced it. Distinct from *withdrawn*, which means the finding was wrong. Recorded here only: the report shows the current state (`wp-plugin-code-audit` → Finding IDs are permanent). |
+| **Withdrawn** | The finding was wrong (traced properly later, not exploitable). Keep the ID retired, never reuse it, and record the reason and date here; the report drops the finding silently. |
+| **Re-rated** | The severity changed (for example after an owner answer). Record the old rating, the new rating, the date and the reason here; the report states only the new severity and its rationale, under the same ID. |
 
 Rules:
 

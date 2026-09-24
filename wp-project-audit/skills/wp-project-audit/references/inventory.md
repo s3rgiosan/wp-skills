@@ -54,6 +54,8 @@ Order of sources:
 3. **Database fallback** (`--db-fallback`). The script reads `DB_NAME`, `DB_USER`, `DB_PASSWORD` and `DB_HOST` from `wp-config.php` (or a Bedrock `.env`) by static parsing: it never executes PHP, accepts only literal strings in single or double quotes, and stops with a clear note when a value is a constant, function call or variable. It writes the credentials to a mode-600 option file in a private temp folder under `--out`, passes only `--defaults-extra-file=<that file>` to the client, and deletes the folder when it finishes or is interrupted. A port or socket in `DB_HOST` (`host:3306`, `host:/path/mysqld.sock`) is honoured; `--db-socket` and `--db-port` override it, and `--mysql-bin` sets the client path. It runs `SHOW TABLES` and `SELECT` only, reading `active_plugins`, `stylesheet`, `template`, registration settings and role counts from every options table and `active_sitewide_plugins` from each network's `sitemeta`.
 4. **Unverified.** When none of these works, every component is marked `unverified`. Say so in the report and rate as if active, with the unverified status in the finding.
 
+**Local database contents are not findings.** Scratch, leftover or test tables seen through the database fallback in a local database describe the developer's machine, not the site. At most, record an open question asking whether the same tables exist on production.
+
 **Never put database credentials on a command line.** Arguments land in shell history, process listings and agent transcripts. The script's option file exists so nobody has to; if a client must be run by hand, use a mode-600 option file the same way.
 
 **Never start services to get an answer.** If the database is down, ask the owner before starting the local environment; do not start it yourself.
@@ -82,7 +84,7 @@ Record, for the report's General / codebase section:
 
 WordPress loads more than plugins and themes. The inventory lists, by name only:
 
-- **Unexpected entries in the WordPress root** (`outside_wp_content.wp_root_extra_entries`, each with a `path` relative to the project root, so a same-named file in the project and in the WordPress root stays distinguishable; database dumps found there are also added to `project.database_dumps` with `location: WordPress root`): anything that is not a core file, `wp-config.php`, `wp-admin/`, `wp-includes/` or `wp-content/`. PHP files there run on request; database dumps there may be served. Ask what each one is.
+- **Unexpected entries in the WordPress root** (`outside_wp_content.wp_root_extra_entries`, each with a `path` relative to the project root, so a same-named file in the project and in the WordPress root stays distinguishable; database dumps found there are also added to `project.database_dumps` with `location: WordPress root`): anything that is not a core file, `wp-config.php`, `wp-admin/`, `wp-includes/` or `wp-content/`. PHP files there run on request. Database dumps, archives and other local artifacts there follow the local artifact rule (§11): outside the repository they are untracked local files and are not assessed unless they are on production.
 - **Drop-ins** in `wp-content/`: the files core loads by name (`_get_dropins()`): `advanced-cache.php`, `db.php`, `db-error.php`, `install.php`, `maintenance.php`, `object-cache.php`, `php-error.php`, `fatal-error-handler.php`, and on multisite `sunrise.php`, `blog-deleted.php`, `blog-inactive.php`, `blog-suspended.php`. Each one belongs to a plugin or the host; one that nobody can attribute is reviewed as custom code.
 
 ## 8. Other signals the inventory records
@@ -108,7 +110,7 @@ bash scripts/inventory.sh --root /path/to/project --out "$OUT/inventory" \
   --approved "$OUT/approved-plugins.txt" --php-version 8.2
 ```
 
-Outputs: `inventory.json` (components, lockfiles, CI and deploy files, hosting hints, database dump names and sizes, orphaned must-use loaders, active status and role counts per site, platform state, code outside `wp-content`, and the signals in §8) and `inventory.tsv` (one row per component). `--out` is refused inside the project.
+Outputs: `inventory.json` (components, lockfiles, CI and deploy files, hosting hints, local artifacts (dumps, archives, logs, backups, exports, IDE and OS files) with tracked status and the candidates the local artifact rule keeps (§11), orphaned must-use loaders, active status and role counts per site, platform state, code outside `wp-content`, and the signals in §8) and `inventory.tsv` (one row per component). `--out` is refused inside the project.
 
 ## 10. Inventory appendix columns
 
@@ -123,3 +125,16 @@ Outputs: `inventory.json` (components, lockfiles, CI and deploy files, hosting h
 | Depth | full audit / hotspot / lookup |
 | Approved | yes / no / no list supplied |
 | Verdict | the annex verdict for fully audited components ("see Annex N"), or "lookup clean", "lookup: see P-<slug>-H1" |
+
+## 11. Local artifact rule
+
+A **local artifact** is a database dump, archive, log, export, backup, IDE or OS file, or any other file found on the local copy of the project. It is a finding **only** when one of these holds:
+
+1. **It is tracked in git**: `git ls-files --error-unmatch <path>` succeeds, or it appears in git history (the secrets-scan rule: history counts as tracked). It then reaches every clone and any deploy built from the repository.
+2. **It is present on production**: seen in a production export (`inventory.sh --production-export`) or in the owner's production file check.
+3. **A deploy copies it from a location that is not a clean checkout.** Rare. Tell by reading the deploy path: a CI job or host integration that clones or checks out the repository deploys only tracked files; a deploy script run from a developer's working copy (for example `rsync ./ host:/path` with no CI step, or "deploy from my laptop" in the owner's answers) copies untracked files too. Only then do untracked local files matter, and only those the exclude list does not remove.
+
+Everything else, meaning untracked or git-ignored files on the local copy, is **out of scope**: not a finding at any severity, not a verified-false item, not an open question, and not mentioned anywhere in the report, the Method appendix included. Never open such files, and never open a candidate artifact either: identify it by path, size and tracked status only.
+
+`inventory.sh` applies the rule: every dump, archive, log, backup, export and IDE or OS file carries `tracked` (`yes` / `no` / `n/a` outside a git repository), `in_git_history`, `location` (`project`, `WordPress root`, or `production` with `--production-export`) and a `status`. Only entries with a `candidate: ...` status appear in `project.local_artifact_candidates`; untracked ones are recorded internally as `ignored: untracked local file` and never leave the scripts' output.
+

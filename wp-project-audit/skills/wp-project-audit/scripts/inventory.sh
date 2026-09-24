@@ -32,6 +32,8 @@
 #   --custom         Slugs the owner confirmed as custom (project-owned).
 #   --custom-prefix  Slug prefix of project-owned components, for example "acme-".
 #   --approved       Approved plugin list from the owner, one slug per line.
+#   --production-export  The root is a copy of production files (not a developer checkout): every local
+#                    artifact found is on production and is a candidate.
 #   --php-version    PHP version production runs (from the owner or the host), for example 8.2.
 #
 # Output: <out>/inventory.json, <out>/inventory.tsv, counts on stdout.
@@ -50,6 +52,7 @@ USE_WPCLI=1
 CUSTOM=""
 CUSTOM_PREFIX=""
 APPROVED=""
+PROD_EXPORT=0
 PHP_VERSION=""
 
 while [ $# -gt 0 ]; do
@@ -66,8 +69,9 @@ while [ $# -gt 0 ]; do
     --custom) CUSTOM="${2:?}"; shift 2 ;;
     --custom-prefix) CUSTOM_PREFIX="${2:?}"; shift 2 ;;
     --approved) APPROVED="${2:?}"; shift 2 ;;
+    --production-export) PROD_EXPORT=1; shift ;;
     --php-version) PHP_VERSION="${2:?}"; shift 2 ;;
-    -h|--help) sed -n '2,41p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,43p' "$0"; exit 0 ;;
     *) echo "Unknown argument: $1" >&2; exit 2 ;;
   esac
 done
@@ -93,7 +97,8 @@ trap 'rm -rf "$OUT"/.db-tmp-* "$PY_FILE" 2>/dev/null' EXIT INT TERM
 cat > "$PY_FILE" <<'PY'
 import json, os, re, shlex, shutil, subprocess, sys
 
-root, out, wp_root_arg, db_fallback, use_wpcli, custom, custom_prefix, approved_file, php_version, mysql_bin, db_socket, db_port = sys.argv[1:13]
+root, out, wp_root_arg, db_fallback, use_wpcli, custom, custom_prefix, approved_file, php_version, mysql_bin, db_socket, db_port, prod_export = sys.argv[1:14]
+prod_export = prod_export == "1"
 db_fallback = db_fallback == "1"
 root = os.path.realpath(root)
 out = os.path.realpath(out)
@@ -171,6 +176,46 @@ def is_tracked(path):
     prefix = path + os.sep
     return any(t.startswith(prefix) for t in tracked)
 
+# Local artifacts (dumps, archives, logs, backups, exports, IDE and OS files). One rule decides whether
+# they are candidates: tracked in git (now or in history), or present on production. Untracked local
+# files are recorded as ignored and never become candidates. Their contents are never read.
+def in_history(path):
+    if not git_root:
+        return False
+    rc, so, _ = run(["git", "-C", git_root, "log", "--all", "-1", "--format=%h", "--", os.path.relpath(os.path.realpath(path), git_root)], timeout=60)
+    return rc == 0 and bool(so.strip())
+
+def artifact(path, kind, location="project", check_history=True):
+    try:
+        size = os.path.getsize(path) if os.path.isfile(path) else None
+    except OSError:
+        size = None
+    trk = is_tracked(path)
+    inside_repo = bool(git_root) and os.path.realpath(path).startswith(os.path.realpath(git_root) + os.sep)
+    tracked = "n/a" if trk is None else ("yes" if trk and inside_repo else "no")
+    hist = "no"
+    if tracked == "no" and inside_repo and check_history and in_history(path):
+        hist = "yes"
+    if prod_export:
+        location, status = "production", "candidate: present on production"
+    elif tracked == "yes":
+        status = "candidate: tracked in git"
+    elif hist == "yes":
+        status = "candidate: in git history (secrets-scan rule)"
+    elif tracked == "n/a":
+        status = "ignored: not a git repository and not a production export (untracked local file)"
+    else:
+        status = "ignored: untracked local file"
+    return {"path": os.path.relpath(path, root), "kind": kind, "bytes": size, "tracked": tracked,
+            "in_git_history": hist, "location": location, "status": status}
+
+ARTIFACT_KINDS = [("log", re.compile(r"\.log(\.\d+)?$", re.I)),
+                  ("backup", re.compile(r"(\.bak|\.old|\.orig|\.save|~|\.swp)$", re.I)),
+                  ("archive", re.compile(r"\.(tar|tar\.gz|tgz|7z|rar|gz)$", re.I)),
+                  ("export", re.compile(r"(^|/)uploads/.*\.(csv|xlsx?)$", re.I)),
+                  ("ide or os file", re.compile(r"(^|/)(\.DS_Store|Thumbs\.db|desktop\.ini)$|(^|/)\.(idea|vscode)/", re.I))]
+artifacts, seen_artifact_dirs = [], set()
+
 # Files on disk, skipping dependency trees
 SKIP_DIRS = {"node_modules", ".git"}
 def walk(base, skip_vendor=False):
@@ -214,9 +259,21 @@ for path in walk(root):
             size = os.path.getsize(path)
         except OSError:
             size = None
-        dumps.append({"path": r, "bytes": size, "tracked": is_tracked(path), "location": "project"})
-    if name.lower().endswith(".zip") and "/vendor/" not in "/" + r:
-        zips.append({"path": r, "tracked": is_tracked(path)})
+        dumps.append(dict(artifact(path, "database dump"), kind="database dump"))
+    elif name.lower().endswith(".zip") and "/vendor/" not in "/" + r:
+        zips.append(artifact(path, "archive"))
+    elif "/vendor/" not in "/" + r and "/node_modules/" not in "/" + r:
+        for kind, rx in ARTIFACT_KINDS:
+            if rx.search(r):
+                m = re.search(r"(^|.*/)\.(idea|vscode)/", r)
+                if m:
+                    d = m.group(0).rstrip("/")
+                    if d not in seen_artifact_dirs:
+                        seen_artifact_dirs.add(d)
+                        artifacts.append(artifact(os.path.join(root, d), kind, check_history=False))
+                else:
+                    artifacts.append(artifact(path, kind, check_history=(kind != "ide or os file")))
+                break
     if "/vendor/" in "/" + r:
         continue
     if MONITORING.search(r):
@@ -474,8 +531,7 @@ if wp_root and os.path.isdir(wp_root):
         root_extra.append({"name": entry, "path": os.path.relpath(p, root), "kind": kind, "bytes": size,
                            "php": entry.lower().endswith((".php", ".phtml", ".phar")), "database_dump": is_dump})
         if is_dump and not any(d["path"] == os.path.relpath(p, root) for d in dumps):
-            dumps.append({"path": os.path.relpath(p, root), "bytes": size, "tracked": is_tracked(p),
-                          "location": "WordPress root"})
+            dumps.append(artifact(p, "database dump", location="WordPress root"))
 
 # Platform: PHP constraints declared by the project, production PHP from the owner
 platform = {"php_production": php_version or None, "php_constraints": [], "core_version": core.get("version"),
@@ -898,7 +954,9 @@ result = {
     "project": {"shape": shape, "content_dir": rel(content_dir), "git": bool(git_root),
                 "ci_files": sorted(ci_files, key=lambda x: x["path"]), "deploy_files": sorted(deploy_files),
                 "hosting_hints": hosting, "database_dumps": dumps,
-                "zip_files": zips, "composer_artifact_dirs": [rel(d) if d.startswith(root) else d for d in artifact_dirs],
+                "zip_files": zips, "local_artifacts": artifacts,
+                "local_artifact_candidates": [a for a in dumps + zips + artifacts if a["status"].startswith("candidate")],
+                "local_artifact_rule": "candidates only when tracked in git (now or in history) or present on production; untracked local files are ignored and never read", "composer_artifact_dirs": [rel(d) if d.startswith(root) else d for d in artifact_dirs],
                 "dependency_monitoring": sorted(set(monitoring)), "existing_scanner_configs": sorted(set(scanners)),
                 "infrastructure_as_code": iac},
     "core": core, "config": config, "platform": platform,
@@ -935,8 +993,11 @@ for kind, buckets in sorted(counts.items()):
     print("%s: %d" % (kind, sum(buckets.values())))
     for b, n in sorted(buckets.items()):
         print("  %-60s %d" % (b, n))
-print("Lockfiles: %d (%d inside dependencies) | CI files: %d | deploy files: %d | database dumps: %d"
-      % (len(lockfiles), sum(1 for l in lockfiles if l["inside_dependency"]), len(ci_files), len(deploy_files), len(dumps)))
+all_art = dumps + zips + artifacts
+print("Lockfiles: %d (%d inside dependencies) | CI files: %d | deploy files: %d"
+      % (len(lockfiles), sum(1 for l in lockfiles if l["inside_dependency"]), len(ci_files), len(deploy_files)))
+print("Local artifacts (dumps, archives, logs, backups, exports, IDE/OS files): %d candidates (tracked, in history or on production) | %d untracked local, ignored"
+      % (sum(1 for a in all_art if a["status"].startswith("candidate")), sum(1 for a in all_art if a["status"].startswith("ignored"))))
 print("Active but missing on disk: %d | orphaned must-use loaders: %d" % (len(missing_active), len(orphaned_loaders)))
 print("Outside wp-content: %d unexpected WordPress-root entries (%d PHP) | drop-ins: %d"
       % (len(root_extra), sum(1 for e in root_extra if e["php"]), sum(1 for c in components if c["type"] == "dropin")))
@@ -955,4 +1016,4 @@ print("PHP (production, as supplied): %s | PHP constraints declared: %d" % (plat
 print("Wrote " + os.path.join(out, "inventory.json") + " and inventory.tsv")
 PY
 
-python3 "$PY_FILE" "$ROOT" "$OUT" "$WP_ROOT" "$DB_FALLBACK" "$USE_WPCLI" "$CUSTOM" "$CUSTOM_PREFIX" "$APPROVED" "$PHP_VERSION" "$MYSQL_BIN" "$DB_SOCKET" "$DB_PORT"
+python3 "$PY_FILE" "$ROOT" "$OUT" "$WP_ROOT" "$DB_FALLBACK" "$USE_WPCLI" "$CUSTOM" "$CUSTOM_PREFIX" "$APPROVED" "$PHP_VERSION" "$MYSQL_BIN" "$DB_SOCKET" "$DB_PORT" "$PROD_EXPORT"

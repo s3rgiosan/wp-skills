@@ -1,6 +1,6 @@
 # Report Template
 
-The theme report is the plugin skill's `report-template.md` with the deltas below. Everything not listed here (summary block, Summary section with its findings table, Sources section, finding format, `[DECISION]` callouts and table, verified-false appendix with withdrawn / superseded IDs, Recommendation reachability rule, Tooling output, Audit metadata, inline chat summary) is used exactly as that template describes.
+The theme report is the plugin skill's `report-template.md` with the deltas below. Everything not listed here (summary block, Summary section with its findings table, Sources section, finding format, `[DECISION]` callouts and table, verified-false appendix (false positives only), Recommendation reachability rule, Tooling output, Audit metadata, inline chat summary) is used exactly as that template describes.
 
 ---
 
@@ -34,7 +34,7 @@ Title and summary block:
 
 Finding headings use exactly the plugin template's format, for example ``### 🟠 HIGH — H1: `parts/header.php:14` — short title`` (append ` [DECISION]` for owner-decision findings). IDs use the same C/H/M/L/I scheme, so `wp-plugin-audit-remediation`'s ID-coverage check works unchanged.
 
-The **Summary** section (plain-language paragraph, findings table, optional glossary) follows the plugin template unchanged. For themes, the table's Area column uses theme areas: `functions.php` / templates / block render / patterns / front-end JS / enqueues / child overrides. The **Sources** section also follows the plugin template; for child themes, name the parent version the overrides were diffed against.
+The **Summary** section (plain-language paragraph, findings table, optional glossary) follows the plugin template unchanged. For themes, the table's Area column uses theme areas: `functions.php` / templates / block render / patterns / front-end JS / enqueues / child overrides. The **Sources** section also follows the plugin template, including one line per audit run when there was more than one; for child themes, name the parent version the overrides were diffed against. The report states current severities only: no withdrawn, superseded or re-rated history (plugin `SKILL.md` → Finding IDs are permanent). Method, Sources and Tooling output describe the method in plain terms and name only external tools (Theme Check, PHPCS/WPCS, PHPStan, `composer audit`, `npm audit`) with versions and counts: never the audit skills, their files or internal paths (plugin `SKILL.md` → Report, rule "Reports describe the method in plain terms").
 
 Scope replaces the plugin template's Surface and System of record lines with these:
 
