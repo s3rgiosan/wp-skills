@@ -109,8 +109,8 @@ Read `.gitignore` and `.distignore` if present. **Skip their excluded paths duri
 List what you skipped in the report's Scope section ("Ignored (gitignore/distignore): …", and note `vendor/`/`node_modules/` skipped) so the reader knows the coverage boundary. If the user wants deps included, scan them and say so in Scope.
 
 ```bash
-test -f .gitignore  && echo "--- .gitignore ---"  && cat .gitignore
-test -f .distignore && echo "--- .distignore ---" && cat .distignore
+if [ -f .gitignore ];  then echo "--- .gitignore ---";  cat .gitignore;  fi
+if [ -f .distignore ]; then echo "--- .distignore ---"; cat .distignore; fi
 ```
 
 For remote audits (wp.org slug, GitHub URL): `references/remote-fetch.md`.
@@ -135,6 +135,8 @@ Details + interpretation: `references/tooling.md`.
 
 > Tools generate **candidates**, not findings. A WPCS warning is a hint to look — not a confirmed bug. Verify (phase 4) before reporting.
 
+**Branch reviews: `/security-review` as an extra candidate source (optional).** When the audit target is a feature branch or a set of pending changes, and Claude Code's built-in `/security-review` is available, run it on the branch. It reviews the diff only and has no WordPress-specific knowledge, so treat its output like any other tool: candidates that go through Verify, cited in the report as `[security-review]`. Skip it for whole-plugin audits, where the diff is not the audit's scope.
+
 ---
 
 ## 3. Manual read
@@ -147,7 +149,7 @@ Tools catch patterns; people catch intent. Read in this order:
 4. **AJAX handlers** — every `wp_ajax_*` and `wp_ajax_nopriv_*`. Capability + nonce + sanitization.
 5. **Admin pages + form handlers** — Settings API or hand-rolled? Nonces, caps, `register_setting()` sanitize callbacks.
 6. **DB queries** — every `$wpdb->query`, `->get_results`, `->get_var`, `->prepare`, `->insert`, `->update`, `->delete`. Trace inputs.
-7. **File ops** — `file_get_contents`, `file_put_contents`, `fopen`, `unlink`, `move_uploaded_file`, `wp_handle_upload`, `wp_upload_bits`. Path traversal? Extension whitelist?
+7. **File ops** — `file_get_contents`, `file_put_contents`, `fopen`, `unlink`, `move_uploaded_file`, `wp_handle_upload`, `wp_upload_bits`. Path traversal? Extension allowlist?
 8. **HTTP egress** — `wp_remote_*`. SSRF if URL is user-controlled.
 9. **Deserialization** — `unserialize`, `maybe_unserialize` on user-controllable or low-trust stored data → object injection.
 10. **Capability checks** — every `current_user_can`. Missing? Wrong cap (`read` instead of `manage_options`)?
@@ -157,7 +159,7 @@ Tools catch patterns; people catch intent. Read in this order:
 
 Apply the five checklists. **Traverse every section of every checklist; don't skim and assume coverage.** A common audit failure is forgetting to read a reference file end-to-end and missing entire categories (secrets storage, IDOR, ABSPATH guards, error-response disclosure).
 
-- `references/security-checklist.md` — auth, nonces, caps, **IDOR**, sanitize, escape, SQLi, CSRF, SSRF, file ops, deserialization, secrets in code, **stored credentials**, **error response & info disclosure**, **direct file access**.
+- `references/security-checklist.md` — auth, nonces, caps, **IDOR**, sanitize, escape, SQLi, CSRF, SSRF, file ops, deserialization, secrets in code, **stored credentials**, **error response & info disclosure**, **direct file access**, **personal data without exporters or erasers**.
 - `references/performance-checklist.md` — autoloaded options, expensive queries, missing indexes, transients without TTL, cache-thrashing hooks, cron storms, enqueue scope, asset weight.
 - `references/standards-checklist.md` — WPCS rules, function/class prefixing, i18n, deprecated APIs, plugin header completeness, GPL compatibility.
 - `references/integration-checklist.md` — cross-plugin coupling invisible from a single plugin: companions writing shared data via direct SQL (hooks never fire), stored foreign IDs vs record-duplicating layers, hook-ordering races, cache staleness, WooCommerce HPOS / Cart-Checkout-Blocks declarations. **Conditional — apply only when a companion touches the same data.**
@@ -173,7 +175,7 @@ For every candidate finding, before adding to the report, run the verification p
 
 | Candidate | Verification |
 |---|---|
-| **SQL injection** | Trace the input. Is it `$wpdb->prepare()`'d? `esc_sql()`'d? Whitelisted via `post_type_exists` / `in_array` against a static list? If yes → not exploitable. Note as "fragile, not exploitable" only if a refactor would break the guard. |
+| **SQL injection** | Trace the input. Is it `$wpdb->prepare()`'d? `esc_sql()`'d? Allowlisted via `post_type_exists` / `in_array` against a static list? If yes → not exploitable. Note as "fragile, not exploitable" only if a refactor would break the guard. |
 | **Missing nonce** | Is the endpoint admin-only with a real capability gate (`manage_options`, not `read`)? Is it a REST route with cookie auth + meaningful `permission_callback`? Verify the threat model before flagging. |
 | **Missing escape** | Confirm the output context (HTML body / attr / URL / JS / CSS). Confirm the value isn't already escaped upstream. Wrong-escape ≠ missing-escape. |
 | **Missing sanitize** | Trace the value to its sink. Sanitization for storage ≠ sanitization for output. Storage sanitization matters when input shape matters or when the sink later doesn't escape. |
@@ -182,7 +184,7 @@ If verification fails, **drop the finding**. Note in the report's appendix: "Ver
 
 **Counts are findings too.** Any number that appears in the report — call sites, occurrences, endpoints, LOC, handlers, queries — must come from a command whose output you captured, not from reading. Counting by eye is how `__()` "called 14 times" ships when it's called six (an accidental tally of the prefix, which happened to occur 17 times). A count is the cheapest thing a reader spot-checks: one wrong number and every other number in the report is suspect. If you can't produce the command that yields the figure, don't put the figure in the report — describe it qualitatively instead ("several", "throughout").
 
-This phase exists because subagents and pattern scanners over-flag in WP. Real audit: a subagent flagged `PostToPost.php:67` as IN-clause SQLi; verified false (`post_type_exists()` in ctor + `esc_sql()` applied). Always re-run findings against source.
+This phase exists because subagents and pattern scanners over-flag in WP. Always verify findings against the source. See `references/false-positive-traps.md`.
 
 Full traps + procedures: `references/false-positive-traps.md`.
 
@@ -220,83 +222,62 @@ Name the report `AUDIT-<yyyy-mm-dd>.md` (e.g. `AUDIT-2026-05-29.md`). Re-audits 
 
 Inline summary in chat: report path + verdict + counts + top-3-to-fix.
 
-Minimum report skeleton (full template + worked examples: `references/report-template.md`):
+**Reports describe the method in plain terms.** A report never names the audit skills (`wp-plugin-code-audit`, `wp-theme-code-audit`, `wp-project-audit`, `wp-plugin-audit-remediation`) or the skills' own scripts and working files, and carries no process notes (model tiers, how the run was split, "single-model run"). Say what was done instead: "a component inventory", "known-vulnerability lookups at production versions", "core files against the official wordpress.org checksums". External tools and data sources the evidence rests on stay named, because a reader can rerun or check them: PHPCS/WPCS, PHPStan, Plugin Check, Theme Check, `composer audit`, `npm audit`, WPVulnerability, Wordfence, Patchstack, OSV, the wordpress.org APIs, php.net. The audited code's own files (its deploy scripts, its `composer.lock`) are evidence and stay. Tool output is cited by tool name, version and counts, never by an internal file path.
 
-```markdown
-# Audit: <plugin-name> <version>
+The Summary's findings table lists every finding by its permanent ID, one row each, in severity order; it is an index into the Findings section, not a second numbering. It has no effort column: effort estimation is out of scope for the audit. Category is security, performance, standards or integration.
 
-**Verdict:** GO / NO-GO / GO WITH FIXES
-**Counts:** 🔴 <C> critical · 🟠 <H> high · 🟡 <M> medium · 🟢 <L> low · ⚪ <I> info
-**Top 3 to fix first:**
-1. ...
-2. ...
-3. ...
-**Decisions needed from the owner:** <D> — see § Decisions needed from the owner (omit this line when D = 0)
+**Every report opens with a TL;DR.** It is the first section, directly under the title and above the verdict and counts block, written so the owner can forward it on its own to stakeholders or a customer. About 20 lines at most:
 
-## Scope
-- Path / source: ...
-- Distribution: wp.org / GitHub / private / commercial · Update channel: ...
-- Author / contact: ...
-- LOC: ... PHP, ... JS
-- Surface: REST endpoints (N), AJAX handlers (N), admin pages (N), CLI commands (N), blocks (N)
-- System of record: yes / no — what authoritative data it owns (stock, entitlements, invoices, backups, …), or "view over <source>"
-- Operating constraints: other writers of this data (…), how changes reach production (VCS+CI / hand-edited on server), what's planned (multilingual / migration / headless / new integration) — or "none reported"
-- Dependencies (PHP): ...
-- Dependencies (JS): ...
-- Tools run: PHPCS (yes/no), PHPStan (yes/no), Plugin Check (yes/no)
-- Ignored (gitignore/distignore): ... · `vendor/` + `node_modules/` skipped (deps out of scope unless requested)
-- Sections audited: security ✓ · performance ✓ · standards ✓ · integration ✓ (or n/a — no shared-data companion) · FP-traps ✓
+- **Overall:** one sentence stating the verdict in plain words.
+- **What needs attention now:** 3 to 5 bullets, the most serious issues in plain language: what is wrong, why it matters, and who could exploit it in plain terms ("anyone on the internet without logging in", "logged-in authors").
+- **What is in good shape:** 2 to 3 bullets, verified positives only.
+- **Recommended next steps:** 3 to 5 numbered actions, containment first.
+- **At a glance:** one line with the counts per severity and where the most serious issues sit.
 
-## Findings
+Writing rules: no finding IDs; no file paths or code identifiers beyond what a non-technical reader needs (a site path such as `/legacy/` is fine); no plugin internals, attack mechanics or payloads; no internal tool, skill or audit-process words. Every claim traces to a verified finding in the report body, and a positive appears only when it was verified. Plain, calm tone, no alarmism. It must stay accurate when forwarded without the rest of the report. The TL;DR is the report's plain-language summary; the Summary section below it does not repeat it.
 
-### 🔴 CRITICAL — C1: `file.php:line` — short title
-Description with the trace through source. Why it's exploitable / what breaks.
-*Fix:* concrete change.
+Full skeleton: `references/report-template.md`.
 
-### 🟠 HIGH — H1: `file.php:line` — short title
-...same format...
+Required section order:
 
-### 🟡 MEDIUM — M1: ...
-### 🟡 MEDIUM — M5: `file.php:line` — short title [DECISION]
+1. `# Audit: <plugin-name> <version>`
+2. `## TL;DR`
+3. `## Summary`
+4. `## Scope`
+5. `## Findings`
+6. `## Verified false (appendix)`
+7. `## Decisions needed from the owner` — omit when there are no `[DECISION]` findings.
+8. `## Recommendation`
+9. `## Sources`
+10. `## Tooling output`
+11. `## Audit metadata`
 
-> **[DECISION] Needs a decision from the owner.** <the question, in one sentence> Default if unanswered: <what current behaviour does>.
+### Fix guidance by ownership
 
-...same format...
-### 🟢 LOW — L1: ...
-### ⚪ INFO — I1: ...
+Report every finding in full, whoever owns the code. The fix line depends on ownership, which Discover already captured as distribution and update channel. For third-party code, never make "edit the plugin's files" the fix: the next update overwrites it.
 
-## Verified false (appendix)
-- `file.php:line` — pattern that looked like X but isn't because Y.
-- M9 — withdrawn: traced properly, not exploitable. ID retired, not reused.
-- I3 — superseded: environment later reached; Highs reproduced. See H1–H4 repro.
+| Ownership | Fix line says |
+|---|---|
+| **Own code** (the owner maintains the plugin) | The code change. |
+| **Third-party, distributed** (wp.org, vendor updater, marketplace, VCS package) | Update to the fixed version when one exists. When none exists: report to the author (see Recommendation for the disclosure path), and mitigate without touching the plugin's files: turn off the affected feature or module, deactivate or remove the plugin, block the route at the edge or WAF, or neutralize it from a site-owned mu-plugin through the plugin's own hooks. Say explicitly that edits to the plugin's files are overwritten on the next update. |
+| **Third-party, committed or already modified** (vendor code checked into the site's repo, or a copy with local changes) | As above, plus: this copy is already outside the vendor's update path. A local patch is possible, but it is a fork that must be re-applied after every vendor update. Recommend returning to a managed source, and record any local patch as a fork. |
+| **Third-party, abandoned or closed** (closed on wp.org, author unreachable, vendor compromised) | Replace or remove; mitigate until then. |
 
-## Decisions needed from the owner
+A temporary local patch to third-party code is acceptable only as a stopgap for a Critical with no update and no other mitigation. The fix line then says it is temporary, names the files touched, and says it is lost on update.
 
-Findings marked `[DECISION]`, collected. Omit the whole section when there are none.
+### Writing fix recommendations
 
-| | Question | Default if unanswered | Consequence / blocks |
-|---|---|---|---|
-| **M5** | ... | ... | free-standing / blocks C1, H2 |
-
-## Recommendation
-- Two-sentence verdict reasoning.
-- If distribution is private and findings require an author fix: who to contact + suggested disclosure path.
-- **Every recommendation must be reachable within the operating constraints captured in Discover.** Where the obvious fix is one the owner has already ruled out (e.g. "put it under version control" when they hand-edit on the server), say what to do *instead* — don't issue advice they can't follow. Unreachable advice makes the whole report read as written for someone else.
-
-## Tooling output
-- PHPCS: `/tmp/audit-<slug>/phpcs.txt` (N errors, N warnings)
-- PHPStan: `/tmp/audit-<slug>/phpstan.txt` (level 5, N errors)
-- Plugin Check: `/tmp/audit-<slug>/plugin-check.txt` (N issues)
-```
+Most fixes are one or two lines and need no extra guidance. When a fix changes structure (moving a hand-rolled settings form to the Settings API, reworking activation and uninstall, splitting a handler into a REST route with a real `permission_callback`), consult `wp-plugin-development` if it is installed, so the recommended fix is idiomatic. It is not required: without it, write the fix from the checklists.
 
 ### Finding IDs are permanent
 
-Findings are numbered within severity — C1, H1, M1, L1, I1. **Allocate an ID once and never reuse or renumber it. IDs are labels, not positions.** The moment anything outside the report references a finding — a generated HTML/PDF, a client's tracking spreadsheet, an email, a ticket, the remediation log — renumbering makes "M11" ambiguous with no way to tell which finding was meant. Reports *do* change (a re-audit, a finding withdrawn after tracing it properly, a section rewritten), and the default behaviour on change is to renumber and let every derived artifact silently disagree.
+Findings are numbered within severity: C1, H1, M1, L1, I1. **Allocate an ID once and never reuse or renumber it. IDs are labels, not positions.** The moment anything outside the report references a finding (a generated HTML or PDF, the owner's tracking spreadsheet, an email, a ticket, the remediation log), renumbering makes "M11" ambiguous with no way to tell which finding was meant. Reports do change (a re-audit, a finding dropped after tracing it properly, a section rewritten), and the default behaviour on change is to renumber and let every derived artifact silently disagree.
 
-- **Withdrawing a finding does not free its number.** Move it to the verified-false appendix and note it: `M9 — withdrawn, see appendix`. The number stays retired.
-- **A finding that changes severity keeps its original ID.** Note the change in the finding; do **not** move it into the new severity's numbering. This is the non-obvious case — the instinct is to renumber, and an ID that survives its own severity change is far more useful than one that reads tidily.
-- **A finding that was correct when written but no longer describes reality is *superseded*, not withdrawn.** Keep the ID, mark it superseded, and point to what replaced it. Withdrawn means the finding was wrong; superseded means the situation moved underneath it. The common case is a phase-5 reversal: an Info finding recording "runtime verification not possible, environment unreachable" that later *becomes* possible and reproduces the Highs — that finding wasn't an error, so `superseded → see <repro>` is accurate where `withdrawn` would read as "we got that wrong".
-- **New findings take the next unused number in their severity, even if that leaves gaps.** Gaps are the point: a gap says "something was here and is now withdrawn/superseded", which is information. Renumbering to close it destroys the ability to reference the report from outside itself.
+- **A dropped finding does not free its number.** The number stays retired and is never reused.
+- **A finding that changes severity keeps its original ID.** It is not moved into the new severity's numbering: an ID that survives its own severity change is far more useful than one that reads tidily.
+- **New findings take the next unused number in their severity, even if that leaves gaps.** Leave gaps silent: never renumber to close them, and never explain them in the report.
+
+**The report states the current state only.** Each finding carries its current severity with its rationale. How the report got there does not appear in it: no severity-change notes ("was High, now Critical", "ID kept"), no withdrawn or superseded entries, no mapping to a previous version's IDs, no reference to a previous report file, no "overridden" or "corrections made during review". That history (withdrawn, superseded and re-rated findings, with dates and reasons) is recorded in the remediation log (`wp-plugin-audit-remediation`) or the auditor's working notes. The report may list the audit runs themselves (date and what each run covered), because that tells the reader what the findings are based on.
 
 Remediation-discovered findings get their own namespace, not the next audit number — see `wp-plugin-audit-remediation`.
 
@@ -415,8 +396,8 @@ The report is the start of the work, not the end — findings get fixed, the own
 ## Related skills
 
 - `wp-plugin-audit-remediation` — the phase after this one: remediation log, immutable audited copy, behaviour-neutrality proof for fixes. Hand off once the report is written.
-- `wp-plugin-development` — building plugins (forward-looking patterns the audit checks for).
+- `wp-plugin-development` — building plugins (forward-looking patterns the audit checks for). Optional at report time for structural fix recommendations; see Report → Writing fix recommendations.
 - `wp-plugin-directory-guidelines` — wp.org submission rules (used in the standards checklist).
 - `wp-phpstan` — PHPStan setup for WP projects (deepens the static analysis step).
 - `wp-performance` — performance investigation when audit findings need deeper triage.
-- `wp-project-triage` / `10up-project-triage` — repo-shape inspection (useful in Discover phase).
+- `wp-project-triage` — repo-shape inspection (useful in Discover phase).

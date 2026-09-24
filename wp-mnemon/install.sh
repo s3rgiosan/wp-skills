@@ -19,7 +19,6 @@ echo ""
 mkdir -p "$CLAUDE_CONFIG_DIR/skills"
 rm -rf "$CLAUDE_CONFIG_DIR/skills/$SKILL_NAME"
 cp -r "$SKILL_SRC" "$CLAUDE_CONFIG_DIR/skills/$SKILL_NAME"
-chmod +x "$CLAUDE_CONFIG_DIR/skills/$SKILL_NAME/scripts/"*.sh
 echo "  ✓ Installed → $CLAUDE_CONFIG_DIR/skills/$SKILL_NAME"
 
 echo ""

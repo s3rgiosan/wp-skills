@@ -21,6 +21,27 @@ Full `AUDIT-<yyyy-mm-dd>.md` skeleton plus a worked example showing the level of
 ````markdown
 # Audit: <Plugin Name> <Version>
 
+## TL;DR
+
+(First section, shareable on its own; contract in SKILL.md → Report, "Every report opens with a TL;DR". Worked example further below.)
+
+**Overall:** <the verdict in one plain sentence>
+
+**What needs attention now**
+- <most serious issue in plain language: what is wrong, why it matters, who could exploit it>
+- ...
+
+**What is in good shape**
+- <a verified positive>
+- ...
+
+**Recommended next steps**
+1. <containment first>
+2. ...
+3. ...
+
+**At a glance:** <C> critical · <H> high · <M> medium · <L> low · <I> info; most serious issues in <area>.
+
 **Verdict:** GO WITH FIXES
 **Counts:** 🔴 0 critical · 🟠 2 high · 🟡 4 medium · 🟢 3 low · ⚪ 2 info
 **Top 3 to fix first:**
@@ -28,6 +49,23 @@ Full `AUDIT-<yyyy-mm-dd>.md` skeleton plus a worked example showing the level of
 2. `<file>:<line>` — short title.
 3. `<file>:<line>` — short title.
 **Decisions needed from the owner:** 1 — see § Decisions needed from the owner (omit this line when there are none)
+
+---
+
+## Summary
+
+| Finding | Area | Category | Recommendation | Priority |
+|---|---|---|---|---|
+| H1 · Unauthenticated search returns private titles | REST | security | Require `edit_posts` in the route's `permission_callback` | High |
+| H2 · No activation hook | data | standards | Create tables on activation and on new sites | High |
+| M1 · Uncached query on every page load | front end | performance | Cache the result in a transient | Medium |
+
+One row per finding, by its permanent ID, in severity order. The table is an index into Findings: IDs, severities and titles match the headings exactly. No effort column.
+
+**Glossary** (optional): one line per term the TL;DR could not avoid.
+
+- *Nonce:* a one-time token that proves a request came from the site's own form.
+- *Capability:* a named permission WordPress checks before an action (for example `edit_posts`).
 
 ---
 
@@ -57,18 +95,19 @@ Full `AUDIT-<yyyy-mm-dd>.md` skeleton plus a worked example showing the level of
 - **Dependencies (PHP):** key composer packages
 - **Dependencies (JS):** key npm packages
 - **Tools run:**
-  - PHPCS (WPCS standard): yes — N errors, N warnings — `/tmp/audit-<slug>/phpcs.txt`
-  - PHPStan (level 5): yes — N errors — `/tmp/audit-<slug>/phpstan.txt`
-  - Plugin Check: yes — N issues — `/tmp/audit-<slug>/plugin-check.txt`
+  - PHPCS (WPCS standard): yes, N errors, N warnings
+  - PHPStan (level 5): yes, N errors
+  - Plugin Check: yes, N issues
   - Composer audit: yes — N vulnerable packages
   - npm audit: skipped (no source for `dist/`)
+- **Ignored (gitignore/distignore):** …, vendor/node_modules skipped
 - **Sections audited:** auth/authz ✓ · nonces ✓ · IDOR ✓ · sanitize/escape ✓ · SQLi ✓ · file-ops ✓ · SSRF ✓ · deserialization ✓ · secrets ✓ · error-disclosure ✓ · ABSPATH ✓ · perf ✓ · standards ✓ · integration ✓ (or n/a — no shared-data companion) · FP-traps ✓
 
 ---
 
 ## Findings
 
-(Numbering convention: severity letter + index — C1, C2, H1, H2, M1, L1, I1. Reference findings by ID in the Top-3 list and Verdict section. **IDs are permanent — allocate once, never renumber or reuse** (see SKILL.md → Finding IDs are permanent): withdrawn and superseded findings keep their number and move to the appendix; a severity change keeps the original ID; new findings take the next unused number even if that leaves gaps. Gaps are information.)
+(Numbering convention: severity letter + index, as in C1, C2, H1, H2, M1, L1, I1. Reference findings by ID in the Top-3 list and Verdict section. **IDs are permanent: allocate once, never renumber or reuse** (see SKILL.md → Finding IDs are permanent). A severity change keeps the original ID; a dropped finding's number stays retired; new findings take the next unused number even if that leaves gaps. Leave gaps silent. The report states each finding's current severity and rationale only; withdrawn, superseded and re-rated history lives in the remediation log.)
 
 <!-- If a section is empty: -->
 ### 🔴 Critical
@@ -141,10 +180,7 @@ One sentence. No fix required (these are suggestions / context for the maintaine
 - `<file>:<line>` — pattern that looked like X but isn't because Y. Listed
   so the next auditor doesn't re-flag it.
 
-Retired IDs also live here — the number stays reserved so the label never means two things:
-
-- **M9 — withdrawn.** Traced properly on re-audit; not exploitable. The finding was wrong; ID retired, never reused.
-- **I3 — superseded.** Was accurate when written ("runtime verification not possible, environment unreachable"); the environment was later reached and the Highs reproduced. The situation moved — not an error. See H1–H4 (Reproduced).
+False positives only: patterns that looked like a bug and are not. Withdrawn or superseded findings are not listed here or anywhere in the report (see SKILL.md → Finding IDs are permanent).
 
 ---
 
@@ -180,22 +216,65 @@ If the site owner cannot wait for an upstream fix, list the safest interim mitig
 
 ---
 
+## Sources
+
+What the audit was based on, so a reader can tell what it did and did not see:
+
+- Code: repository URL and commit SHA / wp.org slug and version / archive name and checksum; branch.
+- Environment: none (static) / local install / staging, and when it was reached.
+- Owner answers: what was asked and when the answers arrived.
+- Data: database export used or not (never its contents).
+- Audit runs: one line per run when there was more than one (date, what it covered: first audit, owner answers, re-audit after fixes).
+
+Name private material by title and date only; never link it.
+
+---
+
 ## Tooling output
 
-- PHPCS: `/tmp/audit-<slug>/phpcs.txt` — N errors, N warnings
+- PHPCS <version>: N errors, N warnings
   - Top rules: WordPress.Security.EscapeOutput.OutputNotEscaped (N), ...
-- PHPStan: `/tmp/audit-<slug>/phpstan.txt` — level 5, N errors
-- Plugin Check: `/tmp/audit-<slug>/plugin-check.txt` — N issues
-- Composer audit: `/tmp/audit-<slug>/composer-audit.txt`
+- PHPStan <version>: level 5, N errors
+- Plugin Check <version>: N issues
+- `composer audit`: N advisories
+
+Tool names, versions and counts only; the raw output files are working files and are not cited (SKILL.md → Report, rule "Reports describe the method in plain terms").
 
 ---
 
 ## Audit metadata
 
-- Auditor: Claude (wp-plugin-code-audit skill)
+- Auditor: <the person or team who ran the audit>
 - Date: YYYY-MM-DD
 - Hours spent (approximate): N
 - Confidence: high / medium / low (low if source not fully available, or if scope was time-boxed)
+````
+
+---
+
+## Worked example: TL;DR (fabricated)
+
+````markdown
+# Audit: Acme Events 2.3.0
+
+## TL;DR
+
+**Overall:** The plugin is safe to keep running once two problems are fixed; neither needs the site taken offline.
+
+**What needs attention now**
+- Anyone on the internet, without logging in, can see the titles of unpublished and private events. That can reveal plans before they are announced.
+- A settings screen can be changed by tricking a logged-in administrator into clicking a crafted link. An attacker could switch off the event notifications.
+
+**What is in good shape**
+- Event data is stored and read safely: no way was found to inject database commands.
+- Visitor input shown on event pages is cleaned before display.
+
+**Recommended next steps**
+1. Restrict the public event search to published events (a small code change).
+2. Add the missing request check to the settings screen.
+3. Re-test both after the change, then schedule the smaller clean-ups.
+
+**At a glance:** 0 critical · 2 high · 3 medium · 1 low · 2 info; the two most serious issues are in the public event search and the settings screen.
 ````
 
 ---

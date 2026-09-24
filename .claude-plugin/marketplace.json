@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Claude Code skills for WordPress developers",
-    "version": "1.2.0"
+    "version": "1.3.0"
   },
   "allowCrossMarketplaceDependenciesOn": ["s3rgiosan-wp-agents"],
   "plugins": [
@@ -32,7 +32,7 @@
     {
       "name": "wp-mnemon",
       "source": "./wp-mnemon",
-      "description": "Deep architectural analysis of WordPress plugins — what the plugin does, how it works, what triggers what, and how data flows. 12-phase workflow with structured output."
+      "description": "Deep architectural analysis of WordPress plugins — what the plugin does, how it works, what triggers what, and how data flows. 13-phase workflow with structured output."
     },
     {
       "name": "wp-v0-to-block-theme",

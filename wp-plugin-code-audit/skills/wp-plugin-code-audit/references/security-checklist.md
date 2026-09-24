@@ -61,7 +61,7 @@ For each callsite, trace the ID to its sink. Examples that need a record-level c
 **Fix patterns:**
 - Check ownership explicitly: `if ( $order->get_customer_id() !== get_current_user_id() ) wp_die(403);`.
 - Use map-meta-cap with a per-record capability: `current_user_can( 'edit_post', $post_id )` (note the second arg — this is the correct way to call it for record-scoped caps).
-- For custom CPTs with per-record permissions, see [[wp-record-level-capability-scoping]] pattern (custom `capability_type` + `map_meta_cap` filter reading post meta).
+- For custom CPTs with per-record permissions, use a custom `capability_type` and `map_meta_cap` filter that reads post meta to determine access per record.
 
 **Severity:** IDOR with destructive impact is at least **High**; if the record holds sensitive data (PII / financial / private), **Critical** when reachable by Subscriber.
 
@@ -169,17 +169,17 @@ grep -RnE "\\\$wpdb->(query|get_results|get_var|get_row|get_col)\(" --include="*
 
 For each, confirm:
 - `$wpdb->prepare()` wraps any interpolation, OR
-- Identifiers (table / column names) come from a static whitelist (e.g. `post_type_exists( $type )` then interpolation), OR
+- Identifiers (table / column names) come from a static allowlist (e.g. `post_type_exists( $type )` then interpolation), OR
 - Value is an integer cast via `absint()` / `(int)` (low-risk, but flag as fragile).
 
-**Verify before flagging:** `false-positive-traps.md` §1. Don't flag `esc_sql()`-wrapped interpolations that go through a whitelist.
+**Verify before flagging:** `false-positive-traps.md` §1. Don't flag `esc_sql()`-wrapped interpolations that go through an allowlist.
 
 ### 5.2 `prepare()` misuse
 
 **Bad:** `$wpdb->prepare( "SELECT * FROM $table WHERE id = $id" )` — interpolation happens before `prepare()` sees it.
 **Bad:** `$wpdb->prepare( "SELECT * FROM %s WHERE id = %d", $table, $id )` — `%s` quotes table name, breaking the query and not actually escaping it as an identifier.
 
-Table / column names: interpolate from a whitelisted constant (`$wpdb->prefix . 'foo'`), never from `prepare()`.
+Table / column names: interpolate from an allowlisted constant (`$wpdb->prefix . 'foo'`), never from `prepare()`.
 
 ### 5.3 LIKE wildcards
 
@@ -375,6 +375,21 @@ defined( 'ABSPATH' ) || exit;
 - **`call_user_func()` / `call_user_func_array()`** with user-controlled callable → arbitrary function call.
 - **Misspelled filenames that WP relies on** — e.g. `unistall.php` instead of `uninstall.php` → uninstall hook never fires → orphaned options / tables (call out as **Low** if no destructive logic; **Medium** if cleanup code is in there but unreachable; **High** if uninstall is supposed to remove credentials and they remain).
 - **Misspelled constants** — e.g. `WP_UNISTALL_PLUGIN` vs `WP_UNINSTALL_PLUGIN` → guard never triggers. Same severity logic.
+
+---
+
+## 14. Personal data without exporters or erasers
+
+Code that stores personal data (form entries, contact details, IP addresses, order or booking details, user meta beyond core's own fields, custom tables, files under uploads) should let the site answer export and erasure requests through WordPress's privacy tools.
+
+```bash
+grep -RnE "wp_privacy_personal_data_(exporters|erasers)" --include="*.php" .
+grep -RnE "(\$wpdb->insert|update_user_meta|add_user_meta|update_post_meta|fputcsv|file_put_contents)\(" --include="*.php" . | grep -iE "email|phone|ip|address|name|user_agent" | head -20
+```
+
+**Severity.** **Low** when personal data is stored and neither filter is registered; **Info** when the data is incidental. Higher only when the owner confirms a compliance scope (GDPR, CCPA and similar) that makes erasure a requirement. How long the data is kept is often an owner call: mark the finding `[DECISION]` with the retention question and the current default (kept forever).
+
+**Fix.** Register an exporter and an eraser for each data type (`wp_privacy_personal_data_exporters`, `wp_privacy_personal_data_erasers`), and add a retention setting or scheduled cleanup where the owner wants one.
 
 ---
 
