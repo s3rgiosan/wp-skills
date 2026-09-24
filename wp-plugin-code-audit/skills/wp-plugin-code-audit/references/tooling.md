@@ -2,7 +2,7 @@
 
 PHPCS, PHPStan, Plugin Check, Composer audit, npm audit. Commands + interpretation. The skill works without any of these (pure-read fallback); they make the candidate-set richer.
 
-Store all tool output under `/tmp/audit-<slug>/` so it's referable from `AUDIT.md` and disposable.
+Store all tool output under `/tmp/audit-<slug>/` as disposable working files. The report cites each tool by name, version and counts, never these paths.
 
 ```bash
 SLUG=my-plugin              # plugin folder name

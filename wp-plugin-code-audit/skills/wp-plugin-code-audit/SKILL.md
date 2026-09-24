@@ -222,6 +222,8 @@ Name the report `AUDIT-<yyyy-mm-dd>.md` (e.g. `AUDIT-2026-05-29.md`). Re-audits 
 
 Inline summary in chat: report path + verdict + counts + top-3-to-fix.
 
+**Reports describe the method in plain terms.** A report never names the audit skills (`wp-plugin-code-audit`, `wp-theme-code-audit`, `wp-project-audit`, `wp-plugin-audit-remediation`) or the skills' own scripts and working files, and carries no process notes (model tiers, how the run was split, "single-model run"). Say what was done instead: "a component inventory", "known-vulnerability lookups at production versions", "core files against the official wordpress.org checksums". External tools and data sources the evidence rests on stay named, because a reader can rerun or check them: PHPCS/WPCS, PHPStan, Plugin Check, Theme Check, `composer audit`, `npm audit`, WPVulnerability, Wordfence, Patchstack, OSV, the wordpress.org APIs, php.net. The audited code's own files (its deploy scripts, its `composer.lock`) are evidence and stay. Tool output is cited by tool name, version and counts, never by an internal file path.
+
 The Summary's findings table lists every finding by its permanent ID, one row each, in severity order; it is an index into the Findings section, not a second numbering. It has no effort column: effort estimation is out of scope for the audit. Category is security, performance or standards.
 
 Minimum report skeleton (full template + worked examples: `references/report-template.md`):
@@ -281,8 +283,6 @@ Description with the trace through source. Why it's exploitable / what breaks.
 
 ## Verified false (appendix)
 - `file.php:line` — pattern that looked like X but isn't because Y.
-- M9 — withdrawn: traced properly, not exploitable. ID retired, not reused.
-- I3 — superseded: environment later reached; Highs reproduced. See H1–H4 repro.
 
 ## Decisions needed from the owner
 
@@ -298,12 +298,12 @@ Findings marked `[DECISION]`, collected. Omit the whole section when there are n
 - **Every recommendation must be reachable within the operating constraints captured in Discover.** Where the obvious fix is one the owner has already ruled out (e.g. "put it under version control" when they hand-edit on the server), say what to do *instead* — don't issue advice they can't follow. Unreachable advice makes the whole report read as written for someone else.
 
 ## Sources
-- What the audit was based on: repository URL and commit (or wp.org slug and version, or archive name), branch, environment reached (none / local / staging), owner answers and when received. Name the material; never link private documents.
+- What the audit was based on: repository URL and commit (or wp.org slug and version, or archive name), branch, environment reached (none / local / staging), owner answers and when received, and one line per audit run when there was more than one (date, what it covered). Name the material; never link private documents.
 
 ## Tooling output
-- PHPCS: `/tmp/audit-<slug>/phpcs.txt` (N errors, N warnings)
-- PHPStan: `/tmp/audit-<slug>/phpstan.txt` (level 5, N errors)
-- Plugin Check: `/tmp/audit-<slug>/plugin-check.txt` (N issues)
+- PHPCS <version> (WordPress, WordPress-VIP-Go): N errors, N warnings
+- PHPStan <version> (level 5): N errors
+- Plugin Check <version>: N issues
 ```
 
 ### Fix guidance by ownership
@@ -325,12 +325,13 @@ Most fixes are one or two lines and need no extra guidance. When a fix changes s
 
 ### Finding IDs are permanent
 
-Findings are numbered within severity — C1, H1, M1, L1, I1. **Allocate an ID once and never reuse or renumber it. IDs are labels, not positions.** The moment anything outside the report references a finding — a generated HTML/PDF, a client's tracking spreadsheet, an email, a ticket, the remediation log — renumbering makes "M11" ambiguous with no way to tell which finding was meant. Reports *do* change (a re-audit, a finding withdrawn after tracing it properly, a section rewritten), and the default behaviour on change is to renumber and let every derived artifact silently disagree.
+Findings are numbered within severity: C1, H1, M1, L1, I1. **Allocate an ID once and never reuse or renumber it. IDs are labels, not positions.** The moment anything outside the report references a finding (a generated HTML or PDF, the owner's tracking spreadsheet, an email, a ticket, the remediation log), renumbering makes "M11" ambiguous with no way to tell which finding was meant. Reports do change (a re-audit, a finding dropped after tracing it properly, a section rewritten), and the default behaviour on change is to renumber and let every derived artifact silently disagree.
 
-- **Withdrawing a finding does not free its number.** Move it to the verified-false appendix and note it: `M9 — withdrawn, see appendix`. The number stays retired.
-- **A finding that changes severity keeps its original ID.** Note the change in the finding; do **not** move it into the new severity's numbering. This is the non-obvious case — the instinct is to renumber, and an ID that survives its own severity change is far more useful than one that reads tidily.
-- **A finding that was correct when written but no longer describes reality is *superseded*, not withdrawn.** Keep the ID, mark it superseded, and point to what replaced it. Withdrawn means the finding was wrong; superseded means the situation moved underneath it. The common case is a phase-5 reversal: an Info finding recording "runtime verification not possible, environment unreachable" that later *becomes* possible and reproduces the Highs — that finding wasn't an error, so `superseded → see <repro>` is accurate where `withdrawn` would read as "we got that wrong".
-- **New findings take the next unused number in their severity, even if that leaves gaps.** Gaps are the point: a gap says "something was here and is now withdrawn/superseded", which is information. Renumbering to close it destroys the ability to reference the report from outside itself.
+- **A dropped finding does not free its number.** The number stays retired and is never reused.
+- **A finding that changes severity keeps its original ID.** It is not moved into the new severity's numbering: an ID that survives its own severity change is far more useful than one that reads tidily.
+- **New findings take the next unused number in their severity, even if that leaves gaps.** Leave gaps silent: never renumber to close them, and never explain them in the report.
+
+**The report states the current state only.** Each finding carries its current severity with its rationale. How the report got there does not appear in it: no severity-change notes ("was High, now Critical", "ID kept"), no withdrawn or superseded entries, no mapping to a previous version's IDs, no reference to a previous report file, no "overridden" or "corrections made during review". That history (withdrawn, superseded and re-rated findings, with dates and reasons) is recorded in the remediation log (`wp-plugin-audit-remediation`) or the auditor's working notes. The report may list the audit runs themselves (date and what each run covered), because that tells the reader what the findings are based on.
 
 Remediation-discovered findings get their own namespace, not the next audit number — see `wp-plugin-audit-remediation`.
 
