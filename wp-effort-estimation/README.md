@@ -107,14 +107,17 @@ integrations, accessibility, tests, and i18n.
 ```
 wp-skills/
 └── wp-effort-estimation/
+    ├── .claude-plugin/
+    │   └── plugin.json
     ├── install.sh
     ├── uninstall.sh
     ├── README.md                        ← you are here
-    └── .claude/
-        └── skills/
-            └── wp-effort-estimation/
-                ├── SKILL.md             ← estimation process + output template
-                └── references/
-                    ├── wordpress.md     ← WP task taxonomy + risks
-                    └── react.md         ← React-in-WP task taxonomy + risks
+    └── skills/
+        └── wp-effort-estimation/
+            ├── SKILL.md                 ← estimation process + output template
+            └── references/
+                ├── wordpress.md         ← WP task taxonomy + risks
+                ├── react.md             ← React-in-WP task taxonomy + risks
+                ├── multipliers.md       ← stacking multipliers formula
+                └── codebase-sizing.md   ← optional repo scan to sharpen estimates
 ```

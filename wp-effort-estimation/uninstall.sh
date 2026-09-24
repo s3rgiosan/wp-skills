@@ -14,9 +14,13 @@ echo ""
 echo "Uninstalling $SKILL_NAME..."
 echo ""
 
-rm -rf "$CLAUDE_CONFIG_DIR/skills/$SKILL_NAME"
-echo "  ✓ Removed → $CLAUDE_CONFIG_DIR/skills/$SKILL_NAME"
+if [ -d "$CLAUDE_CONFIG_DIR/skills/$SKILL_NAME" ]; then
+  rm -rf "$CLAUDE_CONFIG_DIR/skills/$SKILL_NAME"
+  echo "  ✓ Removed → $CLAUDE_CONFIG_DIR/skills/$SKILL_NAME"
+else
+  echo "  - Not installed in $CLAUDE_CONFIG_DIR/skills/$SKILL_NAME"
+fi
 
 echo ""
-echo "Done."
+echo "Done!"
 echo ""
