@@ -21,6 +21,12 @@ Title and summary block:
 ````markdown
 # Theme audit: <Theme Name> <Version>
 
+## TL;DR
+
+**Overall:** ...
+**What needs attention now** (3 to 5 bullets) · **What is in good shape** (2 to 3, verified only) ·
+**Recommended next steps** (3 to 5, containment first) · **At a glance:** counts per severity, where the worst sit
+
 **Verdict:** GO / NO-GO / GO WITH FIXES
 **Counts:** 🔴 <C> critical · 🟠 <H> high · 🟡 <M> medium · 🟢 <L> low · ⚪ <I> info
 **Top 3 to fix first:**
@@ -34,7 +40,7 @@ Title and summary block:
 
 Finding headings use exactly the plugin template's format, for example ``### 🟠 HIGH — H1: `parts/header.php:14` — short title`` (append ` [DECISION]` for owner-decision findings). IDs use the same C/H/M/L/I scheme, so `wp-plugin-audit-remediation`'s ID-coverage check works unchanged.
 
-The **Summary** section (plain-language paragraph, findings table, optional glossary) follows the plugin template unchanged. For themes, the table's Area column uses theme areas: `functions.php` / templates / block render / patterns / front-end JS / enqueues / child overrides. The **Sources** section also follows the plugin template, including one line per audit run when there was more than one; for child themes, name the parent version the overrides were diffed against. The report states current severities only: no withdrawn, superseded or re-rated history (plugin `SKILL.md` → Finding IDs are permanent). Method, Sources and Tooling output describe the method in plain terms and name only external tools (Theme Check, PHPCS/WPCS, PHPStan, `composer audit`, `npm audit`) with versions and counts: never the audit skills, their files or internal paths (plugin `SKILL.md` → Report, rule "Reports describe the method in plain terms").
+The **Summary** section (findings table, optional glossary; the plain-language summary is the TL;DR) follows the plugin template unchanged. For themes, the table's Area column uses theme areas: `functions.php` / templates / block render / patterns / front-end JS / enqueues / child overrides. The **Sources** section also follows the plugin template, including one line per audit run when there was more than one; for child themes, name the parent version the overrides were diffed against. The report states current severities only: no withdrawn, superseded or re-rated history (plugin `SKILL.md` → Finding IDs are permanent). Method, Sources and Tooling output describe the method in plain terms and name only external tools (Theme Check, PHPCS/WPCS, PHPStan, `composer audit`, `npm audit`) with versions and counts: never the audit skills, their files or internal paths (plugin `SKILL.md` → Report, rule "Reports describe the method in plain terms").
 
 Scope replaces the plugin template's Surface and System of record lines with these:
 
@@ -86,6 +92,29 @@ Parent audit: recommended (third-party, unreviewed) / not needed (<reason>).
 The Recommendation section names a separate parent audit when `child-theme-review.md` §6 applies.
 
 ---
+
+The **TL;DR** follows the plugin skill's contract (plugin `SKILL.md` → Report, "Every report opens with a TL;DR"): first section, shareable on its own, no IDs, paths or process words. Fabricated example:
+
+````markdown
+## TL;DR
+
+**Overall:** The theme can stay live, but one issue should be fixed this week.
+
+**What needs attention now**
+- Logged-in contributors and authors can add hidden scripts to posts. If an editor previews such a post, the script runs with the editor's access.
+- Password-protected pages show their content without asking for the password on one page layout.
+
+**What is in good shape**
+- The theme's own blocks clean every value before showing it.
+- No outside scripts are loaded from untrusted sources.
+
+**Recommended next steps**
+1. Remove the setting that lets contributors add scripts, and check existing posts for any.
+2. Restore the password check on the affected page layout.
+3. Review contributor and author accounts that are no longer needed.
+
+**At a glance:** 0 critical · 2 high · 3 medium · 2 low · 1 info; the serious issues are in post content handling and one page layout.
+````
 
 ## Worked example: one High finding
 

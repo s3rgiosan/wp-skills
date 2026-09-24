@@ -226,10 +226,39 @@ Inline summary in chat: report path + verdict + counts + top-3-to-fix.
 
 The Summary's findings table lists every finding by its permanent ID, one row each, in severity order; it is an index into the Findings section, not a second numbering. It has no effort column: effort estimation is out of scope for the audit. Category is security, performance or standards.
 
+**Every report opens with a TL;DR.** It is the first section, directly under the title and above the verdict and counts block, written so the owner can forward it on its own to stakeholders or a customer. About 20 lines at most:
+
+- **Overall:** one sentence stating the verdict in plain words.
+- **What needs attention now:** 3 to 5 bullets, the most serious issues in plain language: what is wrong, why it matters, and who could exploit it in plain terms ("anyone on the internet without logging in", "logged-in authors").
+- **What is in good shape:** 2 to 3 bullets, verified positives only.
+- **Recommended next steps:** 3 to 5 numbered actions, containment first.
+- **At a glance:** one line with the counts per severity and where the most serious issues sit.
+
+Writing rules: no finding IDs; no file paths or code identifiers beyond what a non-technical reader needs (a site path such as `/legacy/` is fine); no plugin internals, attack mechanics or payloads; no internal tool, skill or audit-process words. Every claim traces to a verified finding in the report body, and a positive appears only when it was verified. Plain, calm tone, no alarmism. It must stay accurate when forwarded without the rest of the report. The TL;DR is the report's plain-language summary; the Summary section below it does not repeat it.
+
 Minimum report skeleton (full template + worked examples: `references/report-template.md`):
 
 ```markdown
 # Audit: <plugin-name> <version>
+
+## TL;DR
+
+**Overall:** <the verdict in one plain sentence>
+
+**What needs attention now**
+- <most serious issue in plain language: what is wrong, why it matters, who could exploit it>
+- ...
+
+**What is in good shape**
+- <a verified positive>
+- ...
+
+**Recommended next steps**
+1. <containment first>
+2. ...
+3. ...
+
+**At a glance:** <C> critical · <H> high · <M> medium · <L> low · <I> info; most serious issues in <area>.
 
 **Verdict:** GO / NO-GO / GO WITH FIXES
 **Counts:** 🔴 <C> critical · 🟠 <H> high · 🟡 <M> medium · 🟢 <L> low · ⚪ <I> info
@@ -241,13 +270,11 @@ Minimum report skeleton (full template + worked examples: `references/report-tem
 
 ## Summary
 
-**In plain language.** Two to four sentences for a reader who does not write code: what the plugin does for the site, what the worst problem means for the business (who could do what), and what happens next.
-
 | Finding | Area | Category | Recommendation | Priority |
 |---|---|---|---|---|
 | H1 · short title | REST / AJAX / admin / front end / data / build | security / performance / standards | one line | High |
 
-Optional glossary: one line per technical term the plain-language summary could not avoid (for example "nonce", "capability").
+Optional glossary: one line per technical term the TL;DR could not avoid (for example "nonce", "capability").
 
 ## Scope
 - Path / source: ...

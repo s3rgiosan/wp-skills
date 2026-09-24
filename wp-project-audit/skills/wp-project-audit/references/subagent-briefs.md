@@ -301,7 +301,10 @@ Steps:
    finding (all severities: location, precondition, impact, evidence with its plain label, fix) under its prefixed ID,
    the verified-false items, a short checked-and-clean list and the sections-audited list. Move each component's open
    questions to Appendix D and its owner decisions to the Decisions table.
-6. Write the report from references/report-template.md, sectioned by area. The Plugins and Themes subsections summarize
+6. Write the report from references/report-template.md, sectioned by area. Write the TL;DR last and place it first:
+   Overall, What needs attention now (3 to 5), What is in good shape (2 to 3, verified only), Recommended next steps
+   (3 to 5, containment first), At a glance. Check every TL;DR claim against a verified finding in the body; no IDs,
+   file paths, plugin internals, attack mechanics, tool, skill or process words; it must read correctly if forwarded alone. The Plugins and Themes subsections summarize
    each annexed finding in one line with "see Annex N". Never name or link a working report or any other report file,
    never write "see component report", and use no process words (orchestrator, scanner, subagent, brief ids, section
    file, model tiers, "single-model run"). Never name the audit skills or their scripts and files (inventory.sh,

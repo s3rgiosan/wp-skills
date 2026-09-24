@@ -59,6 +59,25 @@ A component audit's own local IDs map one to one onto the prefixed IDs (`P-acme-
 ````markdown
 # Project audit: <project name>
 
+## TL;DR
+
+**Overall:** <the verdict for production as deployed, in one plain sentence>
+
+**What needs attention now**
+- <3 to 5 bullets across all areas: what is wrong, why it matters, who could exploit it in plain terms>
+
+**What is in good shape**
+- <2 to 3 verified positives>
+
+**Recommended next steps**
+1. <containment first>
+2. ...
+
+**At a glance:** <C> critical · <H> high · <M> medium · <L> low · <I> info; most serious issues in <areas, in plain words>.
+
+(Contract: plugin `SKILL.md` → Report, "Every report opens with a TL;DR". Shareable on its own: no IDs, no paths beyond a
+site path, no process or tool names, every claim backed by a verified finding.)
+
 **Verdict (production as deployed):** GO / NO-GO / GO WITH FIXES
 **Counts:** 🔴 <C> critical · 🟠 <H> high · 🟡 <M> medium · 🟢 <L> low · ⚪ <I> info
 **By area:** General <n> · Plugins <n> (custom <n>, committed third-party <n>, managed third-party <n>) · Themes <n>
@@ -72,9 +91,7 @@ A component audit's own local IDs map one to one onto the prefixed IDs (`P-acme-
 
 ## Summary
 
-**In plain language.** Three to five sentences for a reader who does not write code: what the site is, whether it is safe to keep running as it is, the one or two problems that matter most in business terms (who could do what), and what happens next. No file names, no IDs, no jargon.
-
-**For the technical reader.** Two to four sentences: what was audited, the verdict reasoning, and what drives it.
+Two to four sentences for the technical reader (the plain-language summary is the TL;DR above): what was audited, the verdict reasoning, and what drives it.
 
 | Area | 🔴 | 🟠 | 🟡 | 🟢 | ⚪ |
 |---|---|---|---|---|---|
@@ -95,7 +112,7 @@ area sections: IDs, severities and titles match the headings exactly. No effort 
 
 Category is security, performance or standards.
 
-**Glossary** (optional): one line per technical term the plain-language summary could not avoid.
+**Glossary** (optional): one line per technical term the TL;DR could not avoid.
 
 ---
 
@@ -274,6 +291,30 @@ The project, components, versions, counts and dates below are fabricated.
 ````markdown
 # Project audit: Acme Corp marketing site
 
+## TL;DR
+
+**Overall:** The site should not stay as it is: one problem needs containment today, and it can be contained without
+taking the site offline.
+
+**What needs attention now**
+- Anyone on the internet, without logging in, can read the site's private configuration, including its database
+  password, through an add-on that shows image sliders. The add-on's maker has not released a fix yet.
+- Paid add-on files, including a licence key, can be downloaded by anyone from the public site.
+- Logged-in subscribers can download every form submission, including names and email addresses.
+
+**What is in good shape**
+- WordPress itself is on a supported, up-to-date version.
+- No signs of tampering: production files match the repository and the official WordPress release.
+
+**Recommended next steps**
+1. Block the vulnerable slider path at the edge today, and change the database password afterwards.
+2. Remove the paid add-on files from the public site and replace the licence key.
+3. Restrict the form export to administrators.
+4. Ask the slider's maker for a fixed release, or plan to replace the add-on.
+
+**At a glance:** 1 critical · 3 high · 4 medium · 2 low · 3 info; the most serious issues are in a third-party slider
+add-on and in what the deploy publishes.
+
 **Verdict (production as deployed):** NO-GO
 **Counts:** 🔴 1 critical · 🟠 3 high · 🟡 4 medium · 🟢 2 low · ⚪ 3 info
 **By area:** General 5 · Plugins 6 (custom 3, committed third-party 2, managed third-party 1) · Themes 2
@@ -284,12 +325,7 @@ The project, components, versions, counts and dates below are fabricated.
 
 ## Summary
 
-**In plain language.** The site should not stay as it is. One add-on that shows image sliders lets anyone on the
-internet read the site's private configuration, including its database password, and the company that makes it has
-not fixed it yet. We can block that path today without waiting for them. Paid add-on files are also downloadable by
-anyone; that takes one change to the deploy.
-
-**For the technical reader.** Multisite with one production site and one legacy site on the same origin. The committed premium slider carries an
+Multisite with one production site and one legacy site on the same origin. The committed premium slider carries an
 unauthenticated file read with no vendor fix, and the deploy excludes miss the premium package folder. NO-GO until
 `P-acme-slider-pro-C1` is mitigated.
 
