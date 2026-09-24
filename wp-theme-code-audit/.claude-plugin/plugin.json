@@ -1,0 +1,14 @@
+{
+  "name": "wp-theme-code-audit",
+  "version": "1.0.0",
+  "description": "Verification-first code audit for WordPress themes (block, classic, child): security, performance, theme review standards, child-theme override diffs. Produces a markdown report with severity-sorted findings + GO / NO-GO / GO WITH FIXES verdict. Requires wp-plugin-code-audit.",
+  "author": {
+    "name": "Sérgio Santos",
+    "url": "https://github.com/s3rgiosan"
+  },
+  "homepage": "https://github.com/s3rgiosan/wp-skills/tree/main/wp-theme-code-audit",
+  "repository": "https://github.com/s3rgiosan/wp-skills",
+  "license": "MIT",
+  "dependencies": ["wp-plugin-code-audit"],
+  "keywords": ["wordpress", "theme", "block-theme", "child-theme", "audit", "security", "performance", "theme-review"]
+}
