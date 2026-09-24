@@ -27,7 +27,7 @@ bash "$SKILL_DIR/scripts/live-check.sh" --url https://example.com --authorized -
 ```
 
 - `--authorized` is required; the script refuses without it.
-- One request per second by default (`--delay`), about 25 requests in total.
+- One request per second by default (`--delay`), 19 requests in total.
 - Bodies are saved to a temp directory only long enough to test for markers, then deleted. The output prints status codes, content types, header presence and yes/no markers: never bodies, header values, user slugs or file contents.
 - For a multisite with several domains, or a same-origin secondary site under a subdirectory, run it once per site URL the owner authorized.
 

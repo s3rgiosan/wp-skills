@@ -598,6 +598,8 @@ if use_wpcli and wp_root and shutil.which("wp"):
         if config.get("multisite"):
             rcs2, sos2, _ = wp(["super-admin", "list", "--format=count"])
             access["super_admins"] = int(sos2.strip()) if rcs2 == 0 and sos2.strip().isdigit() else None
+            rcr2, sor2, _ = wp(["site", "option", "get", "registration"])
+            access["network_registration"] = sor2.strip() if rcr2 == 0 else None
         rcx, sox, _ = wp(["db", "prefix"])
         if rcx == 0 and sox.strip():
             rca, soa, _ = wp(["db", "query", "SELECT COUNT(DISTINCT user_id) FROM %susermeta WHERE meta_key='_application_passwords'" % sox.strip(), "--skip-column-names"])
@@ -713,6 +715,8 @@ if active_source == "unverified" and db_fallback:
             if meta in tables:
                 rows = q("SELECT meta_value FROM `%s` WHERE meta_key='site_admins'" % meta)
                 access.setdefault("super_admins_per_network", {})[n] = len(re.findall(r's:\d+:"[^"]*"', rows[0][0])) if rows else 0
+                rows = q("SELECT meta_value FROM `%s` WHERE meta_key='registration'" % meta)
+                access.setdefault("network_registration_per_network", {})[n] = rows[0][0] if rows else None
             if (n + "usermeta") in tables:
                 rows = q("SELECT COUNT(DISTINCT user_id) FROM `%susermeta` WHERE meta_key='_application_passwords'" % n)
                 access.setdefault("users_with_application_passwords_per_users_table", {})[n + "users"] = int(rows[0][0]) if rows else 0

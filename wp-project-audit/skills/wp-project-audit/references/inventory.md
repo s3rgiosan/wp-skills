@@ -34,8 +34,10 @@ Every plugin and theme lands in exactly one bucket. The bucket decides the depth
 | **Managed third-party: wp.org** | `wpackagist-plugin/*` or `wpackagist-theme/*` in `composer.lock`, or installed from wp.org on the server | lookups only | update, report, mitigate |
 | **Managed third-party: premium artifact** | `composer.lock` dist pointing at a local zip in an `artifact` repository | lookups (free and premium slugs), deployment check | update, report, mitigate |
 | **Managed third-party: VCS** | `composer.lock` source of type `git` | lookups; review if the repository is private and unreviewed | update, report, mitigate |
+| **Managed third-party: Composer (other)** | `composer.lock` dist that is neither wpackagist, a local zip artifact nor a `git`/`hg`/`svn` source (a private Composer repository, or an unrecognised dist) | lookups; confirm the source and channel with the owner | update, report, mitigate |
 | **Core** | `wp-includes/version.php` | version lookup, checksums | update core |
 | **Must-use and drop-ins** | files in `mu-plugins/`, `advanced-cache.php`, `object-cache.php`, `db.php`, `sunrise.php` | always loaded: review custom ones in full, check loaders point at existing files | as for the owning bucket |
+| **Unknown (no git)** | the project is not a git repository, so tracked/untracked status cannot be established | classify manually (custom, third-party, managed) before choosing a depth | as for the bucket it is classified into |
 
 The script's `bucket_guess` is a guess. `committed (confirm custom or third-party)` always needs an answer from the owner; ask once, for the whole list, and pass the answer back with `--custom` or `--custom-prefix` on a rerun.
 

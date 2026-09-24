@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # live-check.sh: owner-authorized, read-only HTTP checks against a live WordPress site.
 #
-# Sends a small, rate-limited set of GET and HEAD requests (about 25) and reports
+# Sends a small, rate-limited set of GET and HEAD requests (19) and reports
 # status codes, header presence and yes/no markers. It never prints response bodies,
 # header values beyond a detected label, user names or file contents, and it never
 # submits forms, logs in, or retries a login.

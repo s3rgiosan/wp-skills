@@ -31,7 +31,7 @@ Outputs `candidates.tsv` (every advisory whose Ships value is not a plain "no": 
 | npm runtime (`dependencies`) | lockfile `packages[...].dev` is false | the package is imported by code that is bundled into built assets: check the entry points before rating |
 | npm dev (`devDependencies`) | lockfile `packages[...].dev` is true | `node_modules/` deploys (check the deploy excludes) or a dev server runs in production |
 
-The script fills a **Ships** column with one of: `yes (runtime dependency)`, `yes: dev package committed in vendor/`, `check: build installs require-dev at <file:line>`, `on disk from local development only` (dev package present on disk, no build step installing require-dev found for this lockfile: check that the deploy copies a clean build, not a working copy), `frontend if bundled into built assets`, `no (dev only)`, `no (build tooling), unless node_modules deploys`. Anything starting with `check` needs a human answer before rating.
+The script fills a **Ships** column with one of: `yes (runtime dependency)`, `yes: dev package committed in vendor/`, `check: build installs require-dev at <file:line>`, `on disk from local development only` (dev package present on disk, no build step installing require-dev found for this lockfile: check that the deploy copies a clean build, not a working copy), `frontend if bundled into built assets`, `no (dev only)`, `no (build tooling), unless node_modules deploys`, `check: lockfile has no per-package dev flag` (an npm advisory whose nodes the lockfile does not mark dev or runtime). Anything starting with `check` needs a human answer before rating.
 
 ## 3. Build-flag checks
 

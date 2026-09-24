@@ -137,7 +137,7 @@ The sweeps and component audits run as parallel subagents with model tiers (stro
 | **`scripts/prod-check.sh`** | Owner-run, read-only production check (including users and access counts); manifest generator |
 | **`scripts/live-check.sh`** | Owner-authorized, rate-limited, read-only HTTP checks; prints status codes and header presence only |
 
-All scripts are read-only on the audited project and write to the directory passed with `--out` (default: a new temp dir); a path inside the project is refused.
+All scripts are read-only on the audited project. `inventory.sh`, `dep-audit.sh` and `bundled-libs.sh` take `--root <project>` and refuse an `--out` path inside it; `prod-check.sh` takes `--root` as the production webroot and refuses `--out` inside that. `vuln-lookup.sh` takes no project root: it reads only inventory.json and prior script output, and queries public advisory APIs. `live-check.sh` also takes no project root and requires `--authorized`: it makes read-only HTTP requests against a live site the owner has authorized. Every script writes to the directory passed with `--out` (default: a new temp dir).
 
 ---
 

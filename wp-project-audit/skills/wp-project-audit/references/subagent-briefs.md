@@ -157,6 +157,9 @@ Method: follow <SKILL>/references/component-vuln-lookup.md and vendor-compromise
   the untraced rest under open questions.
 - For each third-party vendor: update endpoint hosts, closed plugins by the same author, supply-chain advisories.
 - "No data" components: list them; they are not clean.
+- Read the "## PHP" section of vulns.md (the `php` field of vulns.json): an unsupported or end-of-life production PHP
+  version is a finding under the report's Core and PHP section. When no PHP version was supplied, note that instead of
+  a finding.
 - Completeness: every row of <SCRATCH>/vulns/candidates.tsv and <SCRATCH>/libs/candidates.tsv appears in the section file,
   as a candidate or under Verified false with a reason, including Medium and Low "assumed shared code" rows. Run the
   coverage check for both lists against 20-vulnerabilities.md before handing back; zero missing.
