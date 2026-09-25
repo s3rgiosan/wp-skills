@@ -1,6 +1,6 @@
 {
   "name": "wp-migration-playbook",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Opinionated, production-tested playbook for WordPress content migrations — WP→WP and other-system→WP.",
   "author": {
     "name": "Sérgio Santos",
