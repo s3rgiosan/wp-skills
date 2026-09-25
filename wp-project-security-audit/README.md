@@ -91,12 +91,12 @@ The sweeps and component audits run as parallel subagents with model tiers (stro
 **By area:** General 5 · Plugins 6 (custom 3, committed third-party 2, managed third-party 1) · Themes 2
 **Top 3 to fix first:**
 1. `P-acme-slider-pro-C1` unauthenticated file read through the slider's preview route
-2. `G-H1` premium zips with a licence key served from the webroot
+2. `G-H1` environment backup with a mail API key served from the webroot
 3. `P-acme-forms-H1` subscriber-readable entries export
 
 ## General / codebase
 ### Deploy, CI and exposure
-### 🟠 HIGH — G-H1: `deploy/excludes.txt` — Premium zips and a licence key are served from the webroot
+### 🟠 HIGH — G-H1: `.distignore` — An environment backup with a mail API key is served from the webroot
 ...
 
 ## Plugins

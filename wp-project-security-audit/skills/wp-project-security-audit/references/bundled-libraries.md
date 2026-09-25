@@ -1,6 +1,6 @@
 # Bundled Libraries
 
-Phase 2 sweep, across **every** component: custom, committed third-party and managed third-party alike. Plugins and themes ship their own copies of JavaScript and PHP libraries, and nothing updates those copies but the component's vendor. A lookup-only component (a premium plugin, a wp.org plugin) can carry an old PDF viewer or jQuery copy with a public advisory that no WordPress vulnerability database lists under the plugin's slug.
+Phase 2 sweep, across **every** component: custom, committed third-party and managed third-party alike. Plugins and themes ship their own copies of JavaScript and PHP libraries, and nothing updates those copies but the component's vendor. A lookup-only component (a premium plugin, a wp.org plugin) can carry an old jQuery or viewer copy with a public advisory that no WordPress vulnerability database lists under the plugin's slug.
 
 ```bash
 bash "$SKILL_DIR/scripts/bundled-libs.sh" --root /path/to/project --inventory "$OUT/inventory/inventory.json" --out "$OUT/libs" --osv
@@ -26,7 +26,7 @@ Findings go under the owning component (`P-<slug>-` / `T-<slug>-`). The fix foll
 The script reads this table. Add a row to cover a new library: `File pattern` and `Version pattern` are Python regular expressions (escape `|` as `\|` inside the table), the version pattern's first group is the version, and `Package` is the name used for the OSV lookup (`npm:<name>` or `packagist:<vendor/name>`; `-` for none).
 
 <!-- signatures:start -->
-File patterns are matched against each path twice: as found, and with a version segment removed from the file name (`pdf-3.0.1.js` is also tried as `pdf.js`), so patterns do not need to allow for versioned names.
+File patterns are matched against each path twice: as found, and with a version segment removed from the file name (`library-1.2.3.js` is also tried as `library.js`), so patterns do not need to allow for versioned names.
 
 | Library | Package | File pattern | Version pattern |
 |---|---|---|---|

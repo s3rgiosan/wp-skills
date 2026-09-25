@@ -25,7 +25,7 @@ A manifest is a SHA-256 list of every file in a trusted copy of a component at t
 #   the premium artifact at a commit that predates any compromise window,
 #   the wp.org SVN tag for free plugins, or the repo at the deployed commit for custom code.
 mkdir -p /tmp/acme-manifests && cd /tmp/acme-manifests
-unzip -q ~/Downloads/acme-slider-pro-2.4.0.zip -d trusted/
+unzip -q /path/to/vendor-zips/acme-slider-pro-2.4.0.zip -d trusted/
 bash /path/to/scripts/prod-check.sh manifest trusted/acme-slider-pro plugin-acme-slider-pro.sha256
 bash /path/to/scripts/prod-check.sh manifest /path/to/project/mu-plugins mu-plugins.sha256
 ```
@@ -46,7 +46,7 @@ From the advisory or the vendor-compromise sweep, one entry per line:
 ```bash
 # On production, from the WordPress root. Changes nothing.
 bash prod-check.sh check --manifests ./manifests --ioc-names ioc-names.txt --ioc-strings ioc-strings.txt \
-  --since 2026-01-01 --out ~/prod-check-output
+  --since 2026-05-01 --out ~/prod-check-output
 ```
 
 Sections of the output:

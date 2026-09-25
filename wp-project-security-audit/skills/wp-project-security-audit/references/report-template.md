@@ -48,7 +48,7 @@ A component audit's own local IDs map one to one onto the prefixed IDs (`P-acme-
 
 **Count once.** The header counts equal the number of distinct finding IDs per severity across the whole document. A finding summarized in the main body and detailed in an annex is one finding.
 
-**Current state only.** Each finding states its current severity and the rationale for it. When the owner's answer changes a rating (masking confirmed, a role has no members, a site is not production), rewrite the severity and rationale to match and keep the ID; cite the answer as evidence ("the owner confirmed the CI variables are masked and protected (2026-01-16)"). The report never records how a finding was rated before, and has no severity-change notes, no withdrawn or superseded entries, no mapping to a previous report's IDs, and no reference to a previous report file. That history belongs in the remediation log or the working notes. ID gaps stay silent.
+**Current state only.** Each finding states its current severity and the rationale for it. When the owner's answer changes a rating (masking confirmed, a role has no members, a site is not production), rewrite the severity and rationale to match and keep the ID; cite the answer as evidence ("the owner confirmed the CI variables are masked and protected (2026-06-01)"). The report never records how a finding was rated before, and has no severity-change notes, no withdrawn or superseded entries, no mapping to a previous report's IDs, and no reference to a previous report file. That history belongs in the remediation log or the working notes. ID gaps stay silent.
 
 **Evidence** on every Critical and High: one of the labels in Evidence labels above.
 
@@ -107,7 +107,7 @@ area sections: IDs, severities and titles match the headings exactly. No effort 
 | Finding | Area | Category | Recommendation | Priority |
 |---|---|---|---|---|
 | `P-acme-slider-pro-C1` · Unauthenticated file read | Plugins: committed third-party | security | Block the route at the edge until the vendor ships a fix | Critical |
-| `G-H1` · Premium zips served from the webroot | General | security | Exclude the folder from the deploy; rotate the licence key | High |
+| `G-H1` · Environment backup served from the webroot | General | security | Exclude the file from the deploy; rotate the API key | High |
 | `G-M4` · Front page runs an uncached remote call | General | performance | Cache the response | Medium |
 
 Category is security, performance or standards.
@@ -153,7 +153,7 @@ Best-practice findings (standards category) may cite 10up's public Engineering B
 ### Custom plugins
 
 #### acme-forms
-**Identity:** 3.2.1 (production 3.2.1) · custom · owned by the project · update channel: deploy from repo, `Update URI: false` ·
+**Identity:** 3.2.0 (production 3.2.0) · custom · owned by the project · update channel: deploy from repo, `Update URI: false` ·
 active: site 1 active, site 2 inactive · full audit: see Annex 1 (verdict GO WITH FIXES)
 
 One line per finding, by prefixed ID, each detailed in the annex:
@@ -171,7 +171,7 @@ no update channel (committed copy, outside the vendor's updater) · active: site
 ### Managed third-party plugins
 
 #### acme-gallery
-**Identity:** 4.1.3 (lockfile 4.2.0, production 4.1.3) · wp.org via Composer · example-vendor · updates through Composer ·
+**Identity:** 4.1.0 (lockfile 4.2.0, production 4.1.0) · wp.org via Composer · example-vendor · updates through Composer ·
 active: site 1, site 2 · lookup only
 
 ---
@@ -236,9 +236,9 @@ files received and when they were deleted, confidence.
 
 | Date | Run | What it covered |
 |---|---|---|
-| 2026-01-12 | First audit | Repository at commit `a1b2c3d`: component inventory, dependency advisories (`composer audit`, `npm audit`), known-vulnerability lookups (WPVulnerability) at local versions, static code review |
-| 2026-01-16 | Owner answers and production check | Production plugin list, read-only production check (core files against the official wordpress.org checksums), owner-authorized live-site checks |
-| 2026-02-03 | Second audit | Repository at commit `d4e5f6a` after fixes; lookups at production versions; production export compared with the repository |
+| 2026-05-29 | First audit | Repository at commit `a1b2c3d`: component inventory, dependency advisories (`composer audit`, `npm audit`), known-vulnerability lookups (WPVulnerability) at local versions, static code review |
+| 2026-06-01 | Owner answers and production check | Production plugin list, read-only production check (core files against the official wordpress.org checksums), owner-authorized live-site checks |
+| 2026-06-15 | Second audit | Repository at commit `d4e5f6a` after fixes; lookups at production versions; production export compared with the repository |
 
 Include the evidence-label legend:
 
@@ -299,7 +299,7 @@ taking the site offline.
 **What needs attention now**
 - Anyone on the internet, without logging in, can read the site's private configuration, including its database
   password, through an add-on that shows image sliders. The add-on's maker has not released a fix yet.
-- Paid add-on files, including a licence key, can be downloaded by anyone from the public site.
+- A backup of the site's settings, including a key for the mail service, can be downloaded by anyone from the public site.
 - Logged-in subscribers can download every form submission, including names and email addresses.
 
 **What is in good shape**
@@ -308,7 +308,7 @@ taking the site offline.
 
 **Recommended next steps**
 1. Block the vulnerable slider path at the edge today, and change the database password afterwards.
-2. Remove the paid add-on files from the public site and replace the licence key.
+2. Remove the settings backup from the public site and replace the mail service key.
 3. Restrict the form export to administrators.
 4. Ask the slider's maker for a fixed release, or plan to replace the add-on.
 
@@ -320,19 +320,19 @@ add-on and in what the deploy publishes.
 **By area:** General 5 · Plugins 6 (custom 3, committed third-party 2, managed third-party 1) · Themes 2
 **Top 3 to fix first:**
 1. `P-acme-slider-pro-C1` unauthenticated file read through the slider's preview route (committed third-party)
-2. `G-H1` premium zips with a licence key served from the webroot (general)
+2. `G-H1` environment backup with a mail API key served from the webroot (general)
 3. `P-acme-forms-H1` subscriber-readable entries export (custom)
 
 ## Summary
 
-Multisite with one production site and one legacy site on the same origin. The committed premium slider carries an
-unauthenticated file read with no vendor fix, and the deploy excludes miss the premium package folder. NO-GO until
+Multisite with two production sites. The committed premium slider carries an unauthenticated file read with no
+vendor fix, and the deploy publishes a tracked environment backup. NO-GO until
 `P-acme-slider-pro-C1` is mitigated.
 
 | Finding | Area | Category | Recommendation | Priority |
 |---|---|---|---|---|
 | `P-acme-slider-pro-C1` · Unauthenticated file read through the preview route | Plugins: committed third-party | security | Block the route at the edge; report to example-vendor | Critical |
-| `G-H1` · Premium zips and a licence key served from the webroot | General | security | Exclude the folder from the deploy; rotate the key | High |
+| `G-H1` · Environment backup with a mail API key served from the webroot | General | security | Exclude the file from the deploy; rotate the key | High |
 | `P-acme-forms-H1` · Subscriber-readable entries export | Plugins: custom | security | Require `manage_options` on the export route | High |
 | ... | | | | |
 
@@ -340,21 +340,19 @@ unauthenticated file read with no vendor fix, and the deploy excludes miss the p
 
 ### Deploy, CI and exposure
 
-### 🟠 HIGH — G-H1: `deploy/excludes.txt` — Premium zips and a licence key are served from the webroot
+### 🟠 HIGH — G-H1: `.distignore` — An environment backup with a mail API key is served from the webroot
 
-**Severity rationale.** Unauthenticated download of licensed code and a live licence key. Not Critical: the key
-grants update downloads only, no site access.
+**Severity rationale.** Unauthenticated download of a live API key for the mail service. Not Critical: the key
+sends mail only and grants no site access.
 
-**Description.** The deploy copies the repository root to `wp-content/` and excludes `.git`, `node_modules` and
-`tests`. `artifacts/` is tracked (3 zips, `git ls-files artifacts | wc -l`) and not excluded, so it
-lands at `https://example.com/wp-content/artifacts/`. One zip contains `config/license.php` with a key
-(`ACME_LICENSE_KEY`, `artifacts/acme-slider-pro.zip:config/license.php:4`, `a1b2…`).
+**Description.** The deploy copies the repository root to `wp-content/` and excludes what `.distignore` lists
+(`.git`, `node_modules`). `.env.backup` is tracked and not excluded, so it lands at
+`https://example.com/wp-content/.env.backup`. It holds `MAIL_API_KEY` (`.env.backup:2`, `a1b2…`).
 
-**Verified.** Read `deploy/deploy.sh:22-31` and the exclude list. Owner confirmed the webserver has no deny rule for
-the folder. Evidence: independently re-checked in source.
+**Verified.** Read `bin/deploy.sh:10-20` and `.distignore`. Owner confirmed the webserver has no deny rule for
+dotfiles. Evidence: independently re-checked in source.
 
-**Fix.** Add `artifacts/` to the exclude list; rotate the licence key with the vendor; move artifacts to a
-private package repository.
+**Fix.** Add `.env*` to `.distignore`; remove the file from the repository; rotate the key with the mail provider.
 
 ## Plugins
 
@@ -364,14 +362,14 @@ private package repository.
 **Identity:** 2.4.0 (production 2.4.0) · committed premium · example-vendor · no update channel (committed copy) ·
 active: site 1 · focused review of high-risk code + advisory lookup (no advisories on record; free slug has 2, version line differs: not applied)
 
-### 🔴 CRITICAL — P-acme-slider-pro-C1: `includes/Preview.php:58` — Unauthenticated file read through the preview route
+### 🔴 CRITICAL — P-acme-slider-pro-C1: `includes/Preview.php:60` — Unauthenticated file read through the preview route
 
 **Severity rationale.** Network-exploitable, no authentication; reads `wp-config.php`.
 
 **Description.** `register_rest_route( 'acme-slider/v1', '/preview', ... )` with `permission_callback` `__return_true`
 passes `$request['template']` to `file_get_contents( ACME_SLIDER_DIR . $template )` with no path normalization.
 
-**Verified.** Read `includes/Preview.php:40-72`; no `realpath` or allowlist on the path. Evidence: independently
+**Verified.** Read `includes/Preview.php:40-80`; no `realpath` or allowlist on the path. Evidence: independently
 re-checked in source.
 
 **Fix.** No fixed version exists. Report to example-vendor (security contact in the plugin header). Until a fix ships,
@@ -385,17 +383,17 @@ the next vendor update, and this copy is committed: any local patch is a fork to
 ````markdown
 ## Annex 1: acme-forms (plugin)
 
-**Identity:** 3.2.1 (production 3.2.1) · custom · owned by the project · deploy from repo · active: site 1 ·
+**Identity:** 3.2.0 (production 3.2.0) · custom · owned by the project · deploy from repo · active: site 1 ·
 **Verdict:** GO WITH FIXES
 
 ### Findings
 
-### 🟠 HIGH — P-acme-forms-H1: `includes/rest/Entries.php:41` — Subscriber-readable entries export
+### 🟠 HIGH — P-acme-forms-H1: `includes/rest/Entries.php:40` — Subscriber-readable entries export
 
 **Precondition.** Any logged-in account; registration is open, so any visitor can get one.
 **Impact.** Downloads every form entry (names, emails, messages) as CSV.
 **Description.** The export route's `permission_callback` checks `is_user_logged_in()` only.
-**Evidence.** Read `includes/rest/Entries.php:36-58`. Evidence: independently re-checked in source.
+**Evidence.** Read `includes/rest/Entries.php:30-60`. Evidence: independently re-checked in source.
 **Fix.** Require `manage_options` in the `permission_callback`.
 
 ### 🟢 LOW — P-acme-forms-L1: `acme-forms.php:12` — Text domain loaded after `init`

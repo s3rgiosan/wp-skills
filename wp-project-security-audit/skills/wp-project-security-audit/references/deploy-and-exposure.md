@@ -34,7 +34,7 @@ Group the result into one `G-` finding per category, citing the count from the T
 ```bash
 # Tracked top-level entries and dotfiles, against the exclude list
 git ls-files | cut -d/ -f1 | sort -u > /tmp/tracked-top.txt
-grep -vE '^\s*(#|$)' deploy/excludes.txt | sed 's#^/##; s#/$##' | sort -u > /tmp/excluded.txt
+grep -vE '^\s*(#|$)' <exclude-file> | sed 's#^/##; s#/$##' | sort -u > /tmp/excluded.txt
 comm -23 /tmp/tracked-top.txt /tmp/excluded.txt
 # Files that should never reach a webroot, wherever they are
 git ls-files | grep -Ei '(^|/)(\.env|.*\.sql(\.gz)?|.*\.zip|composer\.(json|lock)|package(-lock)?\.json|.*\.md|\.git[^/]*|phpcs\.xml.*|phpunit\.xml.*|docker-compose\.ya?ml|Makefile|.*\.log|.*\.bak|.*~)$' | head -50

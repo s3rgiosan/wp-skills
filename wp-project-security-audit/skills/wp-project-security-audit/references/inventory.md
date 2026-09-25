@@ -19,7 +19,7 @@ Phase 1. Every later phase reads the inventory, so a wrong bucket or a wrong act
 Ask, and confirm from config:
 
 - **Multisite?** `MULTISITE` in `wp-config.php` (the script reads the boolean only). On multisite, "installed" and "active" are different questions per site.
-- **Table prefixes.** One database can hold several installs with different prefixes (a current site, a legacy site, abandoned test installs). The database fallback lists every `*options` table and labels each as a network site or a single install.
+- **Table prefixes.** One database can hold several installs with different prefixes (for example an older install or a test install). The database fallback lists every `*options` table and labels each as a network site or a single install.
 - **Which sites are production and which are legacy?** Only the owner knows. A legacy site served from the same origin as production (a subdirectory, or a reverse-proxied path) shares cookies with it: see `correlation.md` rule 6.
 - **Hosting.** The script reports hints (managed-host mu-plugins, platform config files, container files). Ask the owner to confirm the host and whether the host adds its own must-use plugins, caching or WAF.
 
@@ -56,7 +56,7 @@ Order of sources:
 3. **Database fallback** (`--db-fallback`). The script reads `DB_NAME`, `DB_USER`, `DB_PASSWORD` and `DB_HOST` from `wp-config.php` (or a Bedrock `.env`) by static parsing: it never executes PHP, accepts only literal strings in single or double quotes, and stops with a clear note when a value is a constant, function call or variable. It writes the credentials to a mode-600 option file in a private temp folder under `--out`, passes only `--defaults-extra-file=<that file>` to the client, and deletes the folder when it finishes or is interrupted. A port or socket in `DB_HOST` (`host:3306`, `host:/path/mysqld.sock`) is honoured; `--db-socket` and `--db-port` override it, and `--mysql-bin` sets the client path. It runs `SHOW TABLES` and `SELECT` only, reading `active_plugins`, `stylesheet`, `template`, registration settings and role counts from every options table and `active_sitewide_plugins` from each network's `sitemeta`.
 4. **Unverified.** When none of these works, every component is marked `unverified`. Say so in the report and rate as if active, with the unverified status in the finding.
 
-**Local database contents are not findings.** Scratch, leftover or test tables seen through the database fallback in a local database describe the developer's machine, not the site. At most, record an open question asking whether the same tables exist on production.
+**Local database contents are not findings.** Tables seen through the database fallback only in a local database describe the developer's machine, not the site. At most, record an open question asking whether the same tables exist on production.
 
 **Never put database credentials on a command line.** Arguments land in shell history, process listings and agent transcripts. The script's option file exists so nobody has to; if a client must be run by hand, use a mode-600 option file the same way.
 

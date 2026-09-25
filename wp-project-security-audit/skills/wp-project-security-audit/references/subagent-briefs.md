@@ -33,7 +33,7 @@ READ-ONLY. You audit; you never change the project.
 - Never open database dumps (*.sql, *.sql.gz, *.dump). List candidate ones by path and size only.
 - Local artifact rule (<SKILL>/references/inventory.md §11): dumps, archives, logs, exports, backups and IDE or OS files
   are raised only when tracked in git (or in its history), present on production, or copied by a deploy that does not
-  run from a clean checkout. Untracked local files, and scratch tables in a local database, are never raised and never
+  run from a clean checkout. Untracked local files, and tables that exist only in a local database, are never raised and never
   written into the section file.
 - Secrets: record key or variable name, file:line and the first 4 characters of the value followed by "…". Never more,
   in any file you write.

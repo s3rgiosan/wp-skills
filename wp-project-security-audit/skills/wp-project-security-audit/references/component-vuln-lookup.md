@@ -21,7 +21,7 @@ bash scripts/vuln-lookup.sh --inventory "$OUT/inventory/inventory.json" \
   --prod-versions "$OUT/prod-versions.txt" --out "$OUT/vulns"
 ```
 
-`prod-versions.txt` holds the owner's production list, one line per component: `plugin acme-forms 3.2.1`, `theme acme-theme 2.0.0`, `core wordpress 6.8.2`. Raw responses are cached in `<out>/raw/`, so a rerun does not hit the APIs again. `<out>/candidates.tsv` is the authoritative candidate list (every affecting hit and every supply-chain signal, sorted by severity): every row must end up as a finding or under Verified false with a reason (`subagent-briefs.md` → Completeness).
+`prod-versions.txt` holds the owner's production list, one line per component: `plugin acme-forms 3.2.0`, `theme acme-theme 2.0.0`, `core wordpress 6.8.0`. Raw responses are cached in `<out>/raw/`, so a rerun does not hit the APIs again. `<out>/candidates.tsv` is the authoritative candidate list (every affecting hit and every supply-chain signal, sorted by severity): every row must end up as a finding or under Verified false with a reason (`subagent-briefs.md` → Completeness).
 
 ## 2. Matching a version against a range
 
@@ -65,7 +65,7 @@ find wp-content/plugins wp-content/themes -type f \( -name 'pdf.js' -o -name 'pd
   -not -path '*/node_modules/*'
 ```
 
-Look each library and version up in the ecosystem's advisory source (the library's GitHub security advisories, or `npm audit` on a scratch `package.json` outside the project that pins that exact version). Rate by reachability: a vulnerable PDF viewer that renders user-uploaded files on the front end is not the same as one used only in an admin preview. The theme skill's `references/theme-security-checklist.md` §15 covers bundled libraries inside themes.
+Look each library and version up in the ecosystem's advisory source (the library's GitHub security advisories, or `npm audit` on a scratch `package.json` outside the project that pins that exact version). Rate by reachability: a vulnerable viewer or lightbox that renders user-uploaded files on the front end is not the same as one used only in an admin preview. The theme skill's `references/theme-security-checklist.md` §15 covers bundled libraries inside themes.
 
 ## 6. Staleness, closed plugins, slug ownership
 

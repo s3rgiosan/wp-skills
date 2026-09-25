@@ -89,7 +89,7 @@ for kind, slug, bucket, path in components:
         for f in files:
             full = os.path.join(d, f)
             relp = os.path.relpath(full, root)
-            # Vendors often put the version in the file name (pdf-3.0.1.js, swiper-9.1.0.min.js);
+            # Vendors often put the version in the file name (library-1.2.3.js, slider-2.0.0.min.js);
             # match the signature against the name with that segment removed as well.
             bare = os.path.join(os.path.dirname(relp), re.sub(r"[-_.]v?[0-9]+(?:\.[0-9]+)+", "", os.path.basename(relp)))
             for sig in sigs:

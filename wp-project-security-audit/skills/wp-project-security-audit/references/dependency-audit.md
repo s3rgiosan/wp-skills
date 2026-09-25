@@ -75,6 +75,6 @@ In **General / codebase → Dependencies**:
 |---|---|---|---|---|---|
 | `composer.lock` | project | 1 / 3 | runtime yes; dev no | none | G-M2 |
 | `themes/acme-theme/composer.lock` | acme-theme | 0 / 2 | **yes: build installs require-dev** | `bin/build.sh:14` | G-M3 |
-| `themes/acme-theme/package-lock.json` | acme-theme | 1 / 41 | runtime: bundled; dev no | n/a | T-acme-theme-L2, G-I1 |
+| `themes/acme-theme/package-lock.json` | acme-theme | 1 / 40 | runtime: bundled; dev no | n/a | T-acme-theme-L2, G-I1 |
 
 Advisories in lockfiles owned by third-party components are reported under that component (`P-<slug>-` or `T-<slug>-`) with the vendor fix path.

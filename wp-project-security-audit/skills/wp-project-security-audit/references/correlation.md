@@ -25,19 +25,19 @@ All examples below are fabricated.
 
 **Shape:** the deploy exclude list misses a path (deploy-and-exposure §2) **and** that path holds something sensitive.
 
-**Example.** `deploy/excludes.txt` excludes `.git` and `node_modules` but not `artifacts/`. The repo commits licensed zips there, one with a licence key in its config file. Result: the zips and key are downloadable from `https://example.com/wp-content/artifacts/`: **High**, `G-H1`, citing the exclude file and the zip paths.
+**Example.** The deploy's exclude file (`.distignore`) lists `.git` and `node_modules` but not `packages/`, and the repository commits licensed vendor zips there. Result: the zips are downloadable from `https://example.com/wp-content/packages/`: **High**, citing the exclude file and the zip paths.
 
 ## Rule 3. Lockfile vs disk vs production drift
 
 **Shape:** a component's version differs between `composer.lock`, the header on disk, and the owner's production list, **and** an advisory affects one of those versions but not another.
 
-**Example.** `composer.lock` pins `acme-gallery` 4.2.0 (fixed), the committed directory says 4.1.3 (affected by an unauthenticated file-read advisory), and production reports 4.1.3. The lockfile audit is clean; production is not. `P-acme-gallery-H1` is the advisory; `G-M5` records the drift and the deploy path that let the committed copy win.
+**Example.** `composer.lock` pins `acme-gallery` 4.2.0 (fixed), the committed directory says 4.1.0 (affected by an unauthenticated file-read advisory), and production reports 4.1.0. The lockfile audit is clean; production is not. `P-acme-gallery-H1` is the advisory; `G-M5` records the drift and the deploy path that let the committed copy win.
 
 ## Rule 4. Widened kses or capability filters x meta or REST exposure x role counts
 
 **Shape:** one component widens what low roles can store (theme skill security checklist §1, or a `user_has_cap` / `map_meta_cap` filter in a plugin), another exposes or renders that data, **and** the role actually has members.
 
-**Example.** `T-acme-theme-H1`: `wp_kses_allowed_html` gated on `edit_posts` allows `<script>`. `P-acme-events-M2`: a plugin registers event meta with `show_in_rest` and no `auth_callback`, rendered raw by the plugin's single-event template. Role counts from the inventory environment: 4 contributors, 11 authors. Together: every contributor can plant script in both post content and event meta, rendered to editors in previews and to visitors after publish: **High** (Contributor stored XSS reaching admins), `G-H3`.
+**Example.** `T-acme-theme-H1`: `wp_kses_allowed_html` gated on `edit_posts` allows `<script>`. `P-acme-events-M2`: a plugin registers event meta with `show_in_rest` and no `auth_callback`, rendered raw by the plugin's single-event template. Role counts from the inventory environment: 5 contributors, 10 authors. Together: every contributor can plant script in both post content and event meta, rendered to editors in previews and to visitors after publish: **High** (Contributor stored XSS reaching admins), `G-H3`.
 
 **Check:** run `wp user list --role=<role> --format=count` (or the owner's answer) for every role the chain depends on. Zero today lowers likelihood, not severity.
 
@@ -45,13 +45,13 @@ All examples below are fabricated.
 
 **Shape:** a third-party plugin stores a field that a lower role can write, **and** a custom theme or plugin renders it without escaping.
 
-**Example.** `example-profile-box` (managed, wp.org) stores a "tagline" user meta field editable by every user on their own profile screen, sanitized with `sanitize_text_field` only on its own settings page, not on the profile save path. `themes/acme-theme/template-parts/author-card.php:22` echoes it raw. The theme report rated it High on the assumption that authors write it; the plugin's write path shows subscribers can. With open registration on the site: **Critical** (auto-granted role, stored XSS on every author page), `G-C1`, citing `T-acme-theme-H4` and the plugin's save hook `file:line`. Fix line: escape at the sink in the custom theme (custom code); nothing in the third-party plugin needs editing.
+**Example.** `example-profile-box` (managed, wp.org) stores a "tagline" user meta field editable by every user on their own profile screen, sanitized with `sanitize_text_field` only on its own settings page, not on the profile save path. `themes/acme-theme/template-parts/author-card.php:20` echoes it raw. The theme report rated it High on the assumption that authors write it; the plugin's write path shows subscribers can. With open registration on the site: **Critical** (auto-granted role, stored XSS on every author page), `G-C1`, citing `T-acme-theme-H4` and the plugin's save hook `file:line`. Fix line: escape at the sink in the custom theme (custom code); nothing in the third-party plugin needs editing.
 
 ## Rule 6. Same-origin legacy site x any XSS
 
 **Shape:** a legacy, staging or secondary site is served from the same origin as production (a subdirectory, or a proxied path on the same host) **and** any XSS exists on it.
 
-**Example.** `https://example.com/archive/` runs an old install with a reflected XSS in an unmaintained theme search template (`T-acme-archive-M1`, Medium on its own because the legacy site has no logged-in users). Production at `https://example.com/` shares the origin, so the script runs with production's cookies for any path the cookies cover, and can read production's REST nonces from same-origin pages. Together: a one-click path to production admin actions: **High**, `G-H4`. Fix line: move the legacy site to its own origin, or retire it; fix the template only as a stopgap.
+**Example.** `https://example.com/old-section/` runs an old install with a reflected XSS in an unmaintained theme search template (`T-acme-old-theme-M1`, Medium on its own because the legacy site has no logged-in users). Production at `https://example.com/` shares the origin, so the script runs with production's cookies for any path the cookies cover, and can read production's REST nonces from same-origin pages. Together: a one-click path to production admin actions: **High**, `G-H4`. Fix line: move the legacy site to its own origin, or retire it; fix the template only as a stopgap.
 
 **Check:** cookie `path` and domain on production, and whether the legacy site sets its own cookies under the same names.
 
@@ -65,13 +65,13 @@ All examples below are fabricated.
 
 **Shape:** production runs a plugin or theme that the repository does not contain (inventory §4: active but missing on disk, or the owner's production list) **and** it has an advisory at the production version.
 
-**Example.** The owner's production list includes `acme-backup-tools` 1.9.0, which is not in the repository and not in `composer.lock`. The lookup finds an unauthenticated backup-download advisory fixed in 1.9.4. No deploy ever updates it. `P-acme-backup-tools-C1` for the advisory; `G-M6` for the unmanaged install and the missing update path.
+**Example.** The owner's production list includes `acme-backup-tools` 1.9.0, which is not in the repository and not in `composer.lock`. The lookup finds an unauthenticated backup-download advisory fixed in 2.0.0. No deploy ever updates it. `P-acme-backup-tools-C1` for the advisory; `G-M6` for the unmanaged install and the missing update path.
 
 ## Rule 9. Inactive-but-deployed code with public endpoints
 
 **Shape:** a component is inactive on every production site **but** its files are deployed, **and** it contains a PHP file that runs when requested directly (no `ABSPATH` guard, its own bootstrap such as `require '../../../wp-load.php'`), or a must-use loader loads it anyway.
 
-**Example.** `acme-migrator` (custom, inactive everywhere) ships `tools/export.php`, which bootstraps WordPress itself and streams a CSV of users when called with a `key` parameter compared against a hardcoded string. Deactivation does not stop direct requests. The component audit rated it as dead code (Info) because the plugin is inactive; the correlation with the deployed files makes it **High**, `G-H6`. Fix line: remove the plugin from the deploy, or block the directory at the webserver.
+**Example.** `acme-tools` (custom, inactive everywhere) ships `debug/status.php`, which loads `wp-load.php` and lists every user's email address without a capability check. Deactivation does not stop direct requests. The component audit rated it as dead code (Info) because the plugin is inactive; the correlation with the deployed files makes it **High**, `G-H6`. Fix line: remove the plugin from the deploy, or block the directory at the webserver.
 
 **Check:** `grep -rLE "defined\(\s*'ABSPATH'" --include='*.php'` over the inactive component, and every `wp-load.php` bootstrap in it.
 
@@ -82,13 +82,13 @@ All examples below are fabricated.
 ````markdown
 ### 🟠 HIGH — G-H5: File editing enabled turns Contributor stored XSS into code execution
 
-**Parts.** `T-acme-theme-H1` (`inc/kses.php:18`, Contributor `<script>` in post content) · production `wp-config.php`: `DISALLOW_FILE_EDIT = false` (prod-check §7, owner-run 2026-01-15).
+**Parts.** `T-acme-theme-H1` (`inc/kses.php:20`, Contributor `<script>` in post content) · production `wp-config.php`: `DISALLOW_FILE_EDIT = false` (prod-check §7, owner-run 2026-05-29).
 
 **Chain.** A Contributor saves a draft with a script. An Administrator opens the preview. The script posts to the theme file editor with the admin's nonce and writes PHP into the active theme.
 
-**Severity rationale.** End-to-end precondition is a Contributor account (4 on production per the owner); impact is code execution. High under the rubric; not Critical because no integration auto-grants Contributor.
+**Severity rationale.** End-to-end precondition is a Contributor account (5 on production per the owner); impact is code execution. High under the rubric; not Critical because no integration auto-grants Contributor.
 
-**Verified.** Read `inc/kses.php:12-31` (see Annex 2). File editor reachable: `wp-admin/theme-editor.php` is not blocked by any must-use plugin (`grep -rn "theme-editor" wp-content/mu-plugins` returns nothing). Evidence: independently re-checked in source.
+**Verified.** Read `inc/kses.php:10-30` (see Annex 2). File editor reachable: `wp-admin/theme-editor.php` is not blocked by any must-use plugin (`grep -rn "theme-editor" wp-content/mu-plugins` returns nothing). Evidence: independently re-checked in source.
 
 **Fix.** Set `define( 'DISALLOW_FILE_EDIT', true );` in production `wp-config.php` (config). Fix `T-acme-theme-H1` (custom code change, see Annex 2).
 ````
