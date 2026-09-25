@@ -25,9 +25,9 @@ Each retired URL prefix on the source site needs a fallback target. Example shap
 
 ```php
 private const FALLBACK_RULES = [
-    [ 'rule_id' => 2,  'match' => '#^/industries/healthcare#', 'target' => '/business/industries/healthcare/' ],
-    [ 'rule_id' => 8,  'match' => '#^/resource/ebook/#',       'target' => '/ebooks/' ],
-    [ 'rule_id' => 26, 'match' => '#^/resource/webinar/#',     'target' => '/webinars/' ],
+    [ 'rule_id' => 1, 'match' => '#^/old-section/#',     'target' => '/new-section/' ],
+    [ 'rule_id' => 2, 'match' => '#^/news/archive/#',    'target' => '/news/' ],
+    [ 'rule_id' => 3, 'match' => '#^/products/legacy/#', 'target' => '/products/' ],
     // … one rule per legacy URL prefix
 ];
 ```
@@ -71,7 +71,7 @@ location = /old-path/ { return 301 /new-path/; }
 Or with pattern matching:
 
 ```
-location ~ ^/resource/ebook/(.+)$ { return 301 /ebooks/$1; }
+location ~ ^/old-section/(.+)$ { return 301 /new-section/$1; }
 ```
 
 ### Generic CSV (human review / audit)

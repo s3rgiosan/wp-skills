@@ -203,7 +203,7 @@ Two-sentence verdict reasoning. State the verdict explicitly and which findings 
 **If distribution is private / no auto-update channel:** name the author / vendor and the suggested disclosure path. Examples:
 
 - "Private plugin, no `Update URI` set. Report findings C1–C3 to the author (Acme Plugins / security@acme.example) before deploying."
-- "Source is private GitHub repo `acme/foo`; open an issue with severity tag or email the maintainer at security@acme.com."
+- "Source is private GitHub repo `acme/foo`; open an issue with severity tag or email the maintainer at security@acme.example."
 - "Plugin is on wp.org. Critical findings should be reported via wp.org's plugins@wordpress.org with a copy to the author through the plugin's support forum."
 
 If the site owner cannot wait for an upstream fix, list the safest interim mitigations (deactivate the plugin, block the affected endpoint via mu-plugin, restrict capability).

@@ -33,7 +33,7 @@ Three counters, all returned from the command and printed in the summary:
 
 ## Skip reasons
 
-Surface skip reasons as a short kebab-case string. Examples from real plugins:
+Surface skip reasons as a short kebab-case string. Examples:
 
 - `already-exists` (idempotent skip — record already in target state)
 - `empty-content` (post_content is empty / nothing to do)

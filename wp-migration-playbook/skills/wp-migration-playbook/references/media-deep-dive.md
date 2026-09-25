@@ -93,7 +93,7 @@ Inline `<img>` tags pointing at external CDNs (Cloudinary, Fastly, custom image 
 2. For each unique URL, `media_sideload_image()` downloads the file, inserts an attachment, returns the new ID.
 3. Rewrite the inline `<img src>` to point at the new uploads URL.
 
-**Provider quirks:** decode provider-specific URL encodings before sideload (e.g. Cloudinary base64 IDs — site-scoped `39:000…` or numeric forms). Keep these in per-source handlers.
+**Provider quirks:** decode provider-specific URL encodings before sideload (e.g. Cloudinary IDs that arrive base64-encoded or in numeric form). Keep these in per-source handlers.
 
 **Filename collisions:** `media_sideload_image()` appends `-1`, `-2`, … when two sideloads share a basename. The rewriter must look up the *actual* new path from the inserted attachment row — never derive it from the source URL.
 

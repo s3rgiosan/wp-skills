@@ -59,7 +59,7 @@ done
 | Diff shows | Verdict |
 |---|---|
 | **Empty** | No significant tokens changed. A `phpcbf` / formatter run that only touched whitespace and comments — **safe to accept as formatting-only.** |
-| **Only renamed identifiers** (`T_STRING`, `T_CONSTANT_ENCAPSED_STRING`, `T_VARIABLE` values changing from old name to new) | A true rename. Confirm every removal/addition is explainable by the rename in a sentence — e.g. "1 token removed, 231 added, the removal is the old class name." **Neutral.** |
+| **Only renamed identifiers** (`T_STRING`, `T_CONSTANT_ENCAPSED_STRING`, `T_VARIABLE` values changing from old name to new) | A true rename. Confirm every removal/addition is explainable by the rename in a sentence — e.g. "12 tokens removed, 12 added, each removal the old name of its addition." **Neutral.** |
 | **A changed operator / keyword / call** — `==` → `===`, `&&` → `and`, a reordered call, an altered default, an added/removed argument | **Not neutral.** A behaviour change wearing a formatting change's clothes (the classic auto-fixer `==`→`===`). Treat it as a real code change: re-verify it against the finding it claims to fix, and log it as a code change, not a rename. |
 
 ## Notes
