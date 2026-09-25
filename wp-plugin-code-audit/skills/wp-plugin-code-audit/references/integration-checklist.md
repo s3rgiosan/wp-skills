@@ -146,4 +146,4 @@ Note: WooCommerce only validates Cart/Checkout Blocks compatibility for extensio
 - **Category is `integration`.** Findings from this checklist use the `integration` category in the Summary table, alongside security, performance and standards.
 - **Cite both sides.** A cross-plugin finding needs the companion `file:line` *and* the audited-plugin `file:line`. A claim about code the reader hasn't been pointed to is unverifiable.
 - **Positive and negative both go in the body.** "Silently bypassed, here's why" and "cannot happen, here's why" are equally load-bearing.
-- **Severity follows impact, not privilege.** A silently-never-fired recalculation on system-of-record data can be High or Critical via the silent-corruption rule (SKILL.md), even though nothing is "exploitable."
+- **Severity follows impact, not privilege.** A silently-never-fired recalculation on system-of-record data can be High or Critical via the silent-corruption rule (`shared-conventions.md`), even though nothing is "exploitable."
