@@ -61,4 +61,4 @@ Carried from the report's "Decisions needed from the owner" table; kept here unt
 - **"Verified how" is mandatory for any Fixed row.** If you can't say how it was confirmed, it's Fixed (unverified) at best — a transient state, not a resting one.
 - **Owner-blocked and accepted findings never disappear.** They stay in the table with their reason/question so the history is honest about what was chosen versus fixed.
 - **New defects found while fixing are `N`-prefixed and declared at the top**, never given the next audit number — an `L10` in this log invents a finding the reader's frozen report doesn't have.
-- **Run the ID-coverage diff on every update** (`references/id-coverage-check.md`). A 34-row table scans as complete when it isn't; the both-ways diff catches the finding silently dropped and the ID that shouldn't exist.
+- **Run the ID-coverage diff on every update** (`references/id-coverage-check.md`). A 30-row table scans as complete when it isn't; the both-ways diff catches the finding silently dropped and the ID that shouldn't exist.

@@ -1,6 +1,6 @@
 {
   "name": "wp-plugin-audit-remediation",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "The phase after a plugin audit: a per-finding remediation log, an immutable copy of the audited version so citations stay readable, and a PHP token-diff that proves renames / formatter runs / refactors changed no behaviour.",
   "author": {
     "name": "Sérgio Santos",

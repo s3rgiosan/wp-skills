@@ -172,7 +172,7 @@ Use the same flags across every subcommand so muscle memory transfers:
 
 ### Unify when sibling tables share ~80% of columns
 
-If the legacy schema has several "resource-like" types with mostly-overlapping fields (Blog / Customer Story / eBook / Webinar / Event style, or marketplace catalogs with several similar listings), collapse into a single CPT plus a taxonomy of types. Reasons:
+If the legacy schema has several "resource-like" types with mostly-overlapping fields (Article / Case Study / Guide / Event style, or marketplace catalogs with several similar listings), collapse into a single CPT plus a taxonomy of types. Reasons:
 
 - One editor list view, not N.
 - Unified URL pattern.
@@ -204,7 +204,7 @@ When collapsing multiple legacy taxonomies into a smaller set on the new site:
 ### Common collapse patterns
 
 - **Custom roles → standard roles.** Multisite consolidations often need a stack of custom roles collapsed to plain Author + Editor + Administrator.
-- **Generic owner user for posts** when authorship lives in a separate taxonomy. Assign all posts to a single editorial user; frontend byline reads from an `author` taxonomy via plugin filters (Parse.ly, Yoast, AuthorSEO JSON-LD, etc.).
+- **Generic owner user for posts** when authorship lives in a separate taxonomy. Assign all posts to a single editorial user; frontend byline reads from an `author` taxonomy via plugin filters (Yoast, Parse.ly and other JSON-LD output).
 
 ### When NOT to migrate users 1:1
 

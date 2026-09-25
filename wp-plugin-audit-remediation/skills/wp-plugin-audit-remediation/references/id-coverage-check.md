@@ -14,7 +14,7 @@ Remediation-discovered findings use the `N` prefix (`N1`, `N2`, …) and are exp
 ```bash
 #!/usr/bin/env bash
 # id-coverage.sh — diff finding-ID sets between an audit report and its remediation log.
-# Usage: bash id-coverage.sh AUDIT-2026-08-28.md REMEDIATION-2026-08-28.md
+# Usage: bash id-coverage.sh AUDIT-2026-05-29.md REMEDIATION-2026-05-29.md
 set -euo pipefail
 
 report="${1:?usage: id-coverage.sh <report.md> <log.md>}"

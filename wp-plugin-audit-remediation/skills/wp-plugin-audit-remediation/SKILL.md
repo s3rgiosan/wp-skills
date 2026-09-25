@@ -98,7 +98,7 @@ Give remediation-discovered findings an **`N` prefix** (`N1`, `N2`, …), declar
 
 ### IDs are the join key — verify coverage mechanically
 
-Once the log references findings by ID, the ID set is an *interface* between report and log. Do not assume it matches — a 34-row table looks complete on a scan even when rows are silently missing, and scanning does not catch it. **Diff the two ID sets both ways** (see `references/id-coverage-check.md`):
+Once the log references findings by ID, the ID set is an *interface* between report and log. Do not assume it matches — a 30-row table looks complete on a scan even when rows are silently missing, and scanning does not catch it. **Diff the two ID sets both ways** (see `references/id-coverage-check.md`):
 
 - in the report but **not** tracked in the log → a coverage gap (a finding nobody is remediating).
 - in the log but **not** in the report → an **invented ID** (an `N`-finding that forgot its prefix, or a renumbered one — the exact failure permanent IDs exist to prevent).

@@ -209,7 +209,7 @@ wp <migration-plugin> cleanup restore-attachments --analyze
 Browser-check the worst-affected pages. Confirm `_wp_attachment_metadata` was regenerated (sizes count > 0) for restored IDs:
 
 ```sh
-wp eval 'foreach ([47, 176, 274] as $id) {
+wp eval 'foreach ([101, 102, 103] as $id) {
     $m = get_post_meta($id, "_wp_attachment_metadata", true);
     echo "ID=$id sizes=" . count((array) ($m["sizes"] ?? [])) . "\n";
 }'
