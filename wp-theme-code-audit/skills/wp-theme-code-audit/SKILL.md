@@ -16,7 +16,7 @@ description: >
 
 Opinionated, verification-first audit workflow for WordPress themes. Produces a markdown report with findings sorted by risk, a fix recommendation per finding, owner-decision (`[DECISION]`) questions only the owner can answer, an optional reproduction step, and a final **GO / NO-GO / GO WITH FIXES** verdict. Covers security, performance, theme review standards, and the template overrides a child theme makes against its parent.
 
-> **Requires `wp-plugin-code-audit`.** This skill is the theme counterpart of `wp-plugin-code-audit` and builds on it: the severity rubric (including the subscriber-exploitable and silent-corruption rules), `[DECISION]` markers, verdict rules, permanent finding IDs, report location and filename rules, and `false-positive-traps.md` all live there and apply here unchanged. Theme PHP that registers REST routes, AJAX handlers, admin pages, meta, cron or DB queries is audited with that skill's `security-checklist.md` and `performance-checklist.md`. Install both, and load `wp-plugin-code-audit` alongside this skill. "The plugin skill" means `wp-plugin-code-audit`; "plugin `references/<file>`" means a file in its `references/` folder. Locate it by layout: after `install.sh`, `../wp-plugin-code-audit/references/` from this skill's folder; in a repo checkout, `../../../wp-plugin-code-audit/skills/wp-plugin-code-audit/references/`; after a marketplace install, find the installed `wp-plugin-code-audit` skill folder (do not guess a cache path).
+> **Requires `wp-plugin-code-audit`.** This skill is the theme counterpart of `wp-plugin-code-audit` and reads files from that skill's `references/` folder: `shared-conventions.md` (verification, reproduction, report rules, permanent finding IDs, the severity rubric with its subscriber-exploitable and silent-corruption rules, `[DECISION]` markers, verdict rules) and `false-positive-traps.md` apply here with the deltas below. Theme PHP that registers REST routes, AJAX handlers, admin pages, meta, cron or DB queries is audited with that folder's `security-checklist.md` and `performance-checklist.md`. Install both. Read those files directly and do not invoke `wp-plugin-code-audit` as a skill: its workflow, filename and report layout are for plugins. "The plugin skill" means `wp-plugin-code-audit`; "plugin `references/<file>`" means a file in its `references/` folder. Locate it by layout: after `install.sh`, `../wp-plugin-code-audit/references/` from this skill's folder; in a repo checkout, `../../../wp-plugin-code-audit/skills/wp-plugin-code-audit/references/`; after a marketplace install, find the installed `wp-plugin-code-audit` skill folder (do not guess a cache path).
 
 > **Scope:** one WordPress theme at a time: block, classic, hybrid or child. Local checkout (directory path), targeted file / function, or remote (wp.org theme slug, GitHub URL). For a child theme, the child is audited in full and each parent template it overrides is diffed; the whole parent is out of scope (see `references/child-theme-review.md`). Not plugins (use `wp-plugin-code-audit`). Not whole-site sweeps.
 
@@ -37,17 +37,17 @@ If the goal is "is this theme safe / good enough / mergeable", this is the right
 
 ---
 
-## Shared conventions (from `wp-plugin-code-audit`)
+## Shared conventions
 
-Read these in the plugin skill before the first audit. Only the deltas are stated here.
+Read plugin `references/shared-conventions.md` before the first audit. Only the deltas are stated here.
 
 | Convention | Where | Delta for themes |
 |---|---|---|
-| Severity rubric, subscriber-exploitable rule, silent-corruption rule | plugin `SKILL.md` → Severity Rubric | For themes the role question is usually **Contributor / Author**: the theme renders what low-privilege editors write. See Verify below. A theme is rarely the system of record, so the silent-corruption rule applies only when theme code writes data (generators, save hooks, counters). |
-| `[DECISION]` findings | plugin `SKILL.md` → Owner-decision findings | None. |
-| Verdict rules | plugin `SKILL.md` → Verdict Rules | None. |
-| Permanent finding IDs | plugin `SKILL.md` → Finding IDs are permanent | None: IDs are never reused or renumbered, and the report states only each finding's current severity and rationale (no withdrawn, superseded or re-rated history; that lives in the remediation log). |
-| Report location and filename | plugin `SKILL.md` → Report | File is `THEME-AUDIT-<yyyy-mm-dd>.md` (same-day re-audit: `THEME-AUDIT-<yyyy-mm-dd>-<HHMM>.md`). Git-ignore pattern: `THEME-AUDIT-*.md`. Ask where to write, default to `.claude/`, never overwrite. |
+| Severity rubric, subscriber-exploitable rule, silent-corruption rule | `shared-conventions.md` → Severity Rubric | For themes the role question is usually **Contributor / Author**: the theme renders what low-privilege editors write. See Verify below. A theme is rarely the system of record, so the silent-corruption rule applies only when theme code writes data (generators, save hooks, counters). |
+| `[DECISION]` findings | `shared-conventions.md` → Owner-decision findings | None. |
+| Verdict rules | `shared-conventions.md` → Verdict Rules | None. |
+| Permanent finding IDs | `shared-conventions.md` → Finding IDs are permanent | None: IDs are never reused or renumbered, and the report states only each finding's current severity and rationale (no withdrawn, superseded or re-rated history; that lives in the remediation log). |
+| Report location and filename | `shared-conventions.md` → Report | File is `THEME-AUDIT-<yyyy-mm-dd>.md` (same-day re-audit: `THEME-AUDIT-<yyyy-mm-dd>-<HHMM>.md`). Git-ignore pattern: `THEME-AUDIT-*.md`. Ask where to write, default to `.claude/`, never overwrite. |
 | False-positive traps | plugin `references/false-positive-traps.md` | Plus the theme notes in Verify below. |
 | Remote fetch | plugin `references/remote-fetch.md` | wp.org theme URLs differ; see Discover. |
 | Standards checklist (header fields, prefixing, i18n, plugin territory, deprecated APIs) | plugin `references/standards-checklist.md` | `references/theme-standards-checklist.md` cites this directly for the shared rules and adds theme-specific sections (`style.css` header, block theme hygiene, classic theme requirements, enqueues). |
@@ -91,7 +91,7 @@ A custom theme with no update channel has the same amplifier as a private plugin
 
 ### Capture operating constraints
 
-Ask the same three questions as the plugin skill (plugin `SKILL.md` → Discover → Capture operating constraints), phrased for a theme:
+The owner holds these answers; the code does not. Ask, and record the answers in Scope:
 
 | Question | Why it changes a theme audit |
 |---|---|
@@ -165,7 +165,7 @@ Apply the checklists. **Traverse every section of every checklist; don't skim.**
 
 ## 4. Verify (mandatory)
 
-Use the plugin skill's verification table (plugin `SKILL.md` → Verify) and `references/false-positive-traps.md` for SQLi, nonce, escape and sanitize candidates. The "counts are findings too" rule applies: every number in the report (templates, patterns, call sites, users per role) comes from a captured command over the scoped file list. Role-to-severity reference points are in `references/theme-security-checklist.md` (table at the top); that table is the one to rate against.
+Use the verification table in plugin `references/shared-conventions.md` → Verify and `references/false-positive-traps.md` for SQLi, nonce, escape and sanitize candidates. The "counts are findings too" rule applies: every number in the report (templates, patterns, call sites, users per role) comes from a captured command over the scoped file list. Role-to-severity reference points are in `references/theme-security-checklist.md` (table at the top); that table is the one to rate against.
 
 Theme-specific verification:
 
@@ -174,7 +174,7 @@ Theme-specific verification:
 - **Core-stored fields are often kses-filtered at save; check before rating an unescaped echo.** For users without `unfiltered_html`, `kses_init_filters()` hooks `wp_filter_kses` on `title_save_pre` and `wp_filter_post_kses` on `content_save_pre`, `excerpt_save_pre` and `content_filtered_save_pre`, so post titles, content and excerpts are filtered on save for every post type, including nav menu items (menu item titles are `post_title`). Term names and descriptions (`pre_term_name`, `pre_term_description`) and user bio, display name and name fields (`pre_user_description`, `pre_user_display_name`, `pre_user_first_name`, `pre_user_last_name`, `pre_user_nickname`) get `wp_filter_kses` for every user. The realistic writers of unfiltered values in those fields are users **with** `unfiltered_html` (Editors and Administrators on single site, Super Admins), which usually makes an unescaped echo Low or Info (still escape at output). **The opposite trap:** post, term and user meta, custom options, theme mods and third-party plugin fields are **not** kses-filtered by core; this shortcut applies to core-stored fields only.
 - **"Only admins set this" is weaker on multisite.** Per-site Administrators do not have `unfiltered_html` (only Super Admins do). A meta field or option (not kses-filtered, per above) rendered raw "because only admins edit it" is stored XSS from a site admin into visitors and Super Admins. Check `is_multisite()` in Discover.
 - **Third-party data needs its write path traced before rating.** An unescaped `get_field( 'bio' )` or profile-plugin field is only as severe as the lowest role that can write it. Open the supplying plugin, find the save path and its capability (profile fields are often user-writable, meaning Subscriber), and state plugin, path and capability in the finding. If it cannot be determined, say so and rate for the lowest plausible role.
-- **Chains are one finding.** When two single-pattern findings chain (for example Contributor-writable raw meta plus a generator that publishes with kses off), rate the chain by its end-to-end precondition and impact under the plugin skill's rubric, record it as one finding citing both locations, and do not list the parts separately unless each is independently exploitable. Do not escalate for the number of patterns involved: escalate only when the rubric's clause (for example an auto-granted triggering role) applies, and cite it.
+- **Chains are one finding.** When two single-pattern findings chain (for example Contributor-writable raw meta plus a generator that publishes with kses off), rate the chain by its end-to-end precondition and impact under the severity rubric (plugin `references/shared-conventions.md`), record it as one finding citing both locations, and do not list the parts separately unless each is independently exploitable. Do not escalate for the number of patterns involved: escalate only when the rubric's clause (for example an auto-granted triggering role) applies, and cite it.
 - **Pervasive patterns are one finding.** When a category matches most or all files in scope (missing ABSPATH guards, a missing text domain), report one finding with the count from a captured command and a few representative `file:line` examples.
 - **Block markup in `templates/` and `parts/` is not a sink by itself**; findings live in the theme's blocks, render files, patterns and PHP. **`theme.json` CSS written by the theme author is trusted**; the surface is CSS a user can set without `edit_css`.
 
@@ -184,13 +184,13 @@ If verification fails, drop the finding and record it in the verified-false appe
 
 ## 5. Reproduce (optional, high value)
 
-Same rules as the plugin skill (plugin `SKILL.md` → Reproduce). Theme delta: **reproduce with the lowest role the finding claims.** Create a Contributor (or Author) on the test install, plant the payload through the path you traced (the post editor, the REST meta endpoint, the profile screen), and load the front-end page as a logged-out visitor and as an Administrator. Put the user role, the exact request or field, and the rendered result in the report. Never run payloads against a production site.
+Same rules as plugin `references/shared-conventions.md` → Reproduce. Theme delta: **reproduce with the lowest role the finding claims.** Create a Contributor (or Author) on the test install, plant the payload through the path you traced (the post editor, the REST meta endpoint, the profile screen), and load the front-end page as a logged-out visitor and as an Administrator. Put the user role, the exact request or field, and the rendered result in the report. Never run payloads against a production site.
 
 ---
 
 ## 6. Report
 
-Follow the plugin skill's report rules (plugin `SKILL.md` → Report): ask where to write, default to `.claude/`, check the git-ignore status, keep a dated history, never overwrite, inline summary in chat (path + verdict + counts + top 3).
+Follow the report rules in plugin `references/shared-conventions.md` → Report: ask where to write, default to `.claude/`, check the git-ignore status, keep a dated history, never overwrite, inline summary in chat (path + verdict + counts + top 3).
 
 Deltas:
 
@@ -202,7 +202,7 @@ Deltas:
 - **Sections audited** lists every theme-security section with its finding IDs or "checked, none" (Manual read → traversal rule).
 - **Unknowns get a stated reason**, in the same form as the plugin template's "skipped (not available)": for example `Roles in use: not available (no environment reached, owner not asked)`.
 
-**Fix guidance by ownership.** Follow the plugin skill's Report → Fix guidance by ownership table. For themes: a distributed theme (wp.org, marketplace such as ThemeForest, vendor updater) is overwritten on update exactly like a plugin, so its fix line is update, report to the author, or mitigate from a child theme or a site-owned mu-plugin, never "edit the theme's files". A child theme is the supported place to override a parent template or remove a parent hook, so a finding in a third-party parent can often be mitigated there; say so in the fix line and name the override.
+**Fix guidance by ownership.** Follow the Fix guidance by ownership table in plugin `references/shared-conventions.md` → Report. For themes: a distributed theme (wp.org, marketplace such as ThemeForest, vendor updater) is overwritten on update exactly like a plugin, so its fix line is update, report to the author, or mitigate from a child theme or a site-owned mu-plugin, never "edit the theme's files". A child theme is the supported place to override a parent template or remove a parent hook, so a finding in a third-party parent can often be mitigated there; say so in the fix line and name the override.
 
 **Writing fix recommendations.** For structural fixes (moving logic into a block, replacing a hand-built context attribute, restructuring templates or `theme.json`), consult `wp-block-themes`, `wp-block-development` or `wp-interactivity-api`, if installed. None is required.
 
@@ -226,7 +226,7 @@ Remediation works exactly as for plugins: hand off to **`wp-plugin-audit-remedia
 - **Reporting on `dist/` when `src/` exists.** Audit source. Audit built output only when it is all that ships, and downgrade confidence.
 - **Ignoring vendored libraries because they are "not theme code".** They ship to every visitor and nothing updates them but the theme.
 - **Treating plugin-territory code as a standards nit only.** A CPT or meta API in a theme is also attack surface; audit it with the plugin checklists.
-- **No verdict, or a top-3 list with seven items.** Same rules as the plugin skill.
+- **No verdict, or a top-3 list with seven items.** Same rules as plugin `references/shared-conventions.md` → Verdict Rules.
 
 ---
 
@@ -238,15 +238,15 @@ Remediation works exactly as for plugins: hand off to **`wp-plugin-audit-remedia
 - `references/child-theme-review.md`: parent identification, override enumeration, diff procedure, parent drift.
 - `references/tooling.md`: PHPCS/WPCS, PHPStan, Theme Check, Composer and npm audit for themes.
 - `references/report-template.md`: `THEME-AUDIT-<yyyy-mm-dd>.md` deltas and a worked example.
-- Plugin skill `references/security-checklist.md`, `references/performance-checklist.md`, `references/standards-checklist.md`, `references/false-positive-traps.md`, `references/remote-fetch.md`, `references/tooling.md`, `references/report-template.md`: shared material this skill builds on.
+- Plugin skill `references/shared-conventions.md`, `references/security-checklist.md`, `references/performance-checklist.md`, `references/standards-checklist.md`, `references/false-positive-traps.md`, `references/remote-fetch.md`, `references/tooling.md`, `references/report-template.md`: shared material this skill builds on.
 
 ---
 
 ## Related skills
 
-- `wp-plugin-code-audit` (**required**): shared rubric, verdict rules, report rules, checklists and false-positive traps.
+- `wp-plugin-code-audit` (**required**): its `references/` folder supplies the shared conventions, checklists and false-positive traps.
 - `wp-plugin-audit-remediation`: the phase after the audit; works on theme reports unchanged.
 - `wp-block-themes`: `theme.json`, templates, parts, patterns, style variations (forward-looking patterns this audit checks for).
 - `wp-block-development`: `block.json`, render files, `viewScriptModule`.
 - `wp-interactivity-api`: stores, directives, server-side state and context.
-- `wp-project-audit`: whole-project audits that dispatch each theme to this skill and each plugin to `wp-plugin-code-audit`.
+- `wp-project-security-audit`: whole-project audits that dispatch each theme to this skill and each plugin to `wp-plugin-code-audit`.

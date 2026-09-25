@@ -40,7 +40,7 @@ Title and summary block:
 
 Finding headings use exactly the plugin template's format, for example ``### 🟠 HIGH — H1: `parts/header.php:14` — short title`` (append ` [DECISION]` for owner-decision findings). IDs use the same C/H/M/L/I scheme, so `wp-plugin-audit-remediation`'s ID-coverage check works unchanged.
 
-The **Summary** section (findings table, optional glossary; the plain-language summary is the TL;DR) follows the plugin template unchanged. For themes, the table's Area column uses theme areas: `functions.php` / templates / block render / patterns / front-end JS / enqueues / child overrides. The **Sources** section also follows the plugin template, including one line per audit run when there was more than one; for child themes, name the parent version the overrides were diffed against. The report states current severities only: no withdrawn, superseded or re-rated history (plugin `SKILL.md` → Finding IDs are permanent). Method, Sources and Tooling output describe the method in plain terms and name only external tools (Theme Check, PHPCS/WPCS, PHPStan, `composer audit`, `npm audit`) with versions and counts: never the audit skills, their files or internal paths (plugin `SKILL.md` → Report, rule "Reports describe the method in plain terms").
+The **Summary** section (findings table, optional glossary; the plain-language summary is the TL;DR) follows the plugin template unchanged. For themes, the table's Area column uses theme areas: `functions.php` / templates / block render / patterns / front-end JS / enqueues / child overrides. The **Sources** section also follows the plugin template, including one line per audit run when there was more than one; for child themes, name the parent version the overrides were diffed against. The report states current severities only: no withdrawn, superseded or re-rated history (plugin `references/shared-conventions.md` → Finding IDs are permanent). Method, Sources and Tooling output describe the method in plain terms and name only external tools (Theme Check, PHPCS/WPCS, PHPStan, `composer audit`, `npm audit`) with versions and counts: never the audit skills, their files or internal paths (plugin `references/shared-conventions.md` → Report → Plain terms).
 
 Scope is restructured for themes: it drops **Audience** and **LOC** (not meaningful for a theme), replaces **Surface** with a **Theme shape** block (type, parent, `theme.json` version, template/part/pattern/block counts, build pipeline, bundled libraries), replaces **System of record** with **Data-supplying plugins** (which plugins write the data the theme renders, and who can write it) and **Roles in use**, and merges the plugin template's separate PHP and JS **Dependencies** lines into one table with a ships-to-frontend / runtime / dev rating column. Everything else in Scope (Source, version, Requires, Distribution, Update channel, Author/contact, Operating constraints, Tools run) follows the plugin template unchanged:
 
@@ -93,7 +93,7 @@ The Recommendation section names a separate parent audit when `child-theme-revie
 
 ---
 
-The **TL;DR** follows the plugin skill's contract (plugin `SKILL.md` → Report, "Every report opens with a TL;DR"): first section, shareable on its own, no IDs, paths or process words. Fabricated example:
+The **TL;DR** follows the contract in plugin `references/shared-conventions.md` → Report → TL;DR: first section, shareable on its own, no IDs, paths or process words. Fabricated example:
 
 ````markdown
 ## TL;DR

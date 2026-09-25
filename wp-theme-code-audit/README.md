@@ -135,7 +135,7 @@ Shared material used from `wp-plugin-code-audit`: severity rubric, verdict rules
 - `wp-plugin-code-audit` (required): shared rubric, report rules and checklists.
 - `wp-plugin-audit-remediation`: remediation log and behaviour-neutrality checks after the audit; works on theme reports.
 - `wp-block-themes`, `wp-block-development`, `wp-interactivity-api`: the forward-looking patterns this audit checks for.
-- `wp-project-audit`: whole-project audits that dispatch to this skill and to `wp-plugin-code-audit`.
+- `wp-project-security-audit`: whole-project audits that dispatch to this skill and to `wp-plugin-code-audit`.
 
 ---
 

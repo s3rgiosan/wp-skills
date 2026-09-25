@@ -6,7 +6,7 @@ Theme-specific audit categories with detection patterns, verification, typical s
 
 **Reachability first.** A hit only counts if the code runs: the file is loaded, the class is instantiated or registered, any `can_register()`-style guard passes in the relevant context, and the hook is actually added. Code that never runs is **Info** ("dead code, would be <severity> if enabled"). See SKILL.md → Verify for the procedure and the module-registry commands.
 
-Severity follows the plugin skill's rubric. The recurring theme question is **which role can write the value this code renders or trusts**, answered from the capability that gates the write path (see SKILL.md → Verify). This table is the authoritative reference point for every section below; section-level severity notes refine it, they do not replace it:
+Severity follows the rubric in plugin `references/shared-conventions.md`. The recurring theme question is **which role can write the value this code renders or trusts**, answered from the capability that gates the write path (see SKILL.md → Verify). This table is the authoritative reference point for every section below; section-level severity notes refine it, they do not replace it:
 
 | Lowest role that reaches the sink | Typical rating for stored XSS / content integrity |
 |---|---|
