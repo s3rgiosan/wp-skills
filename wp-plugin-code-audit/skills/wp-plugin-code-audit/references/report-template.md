@@ -6,7 +6,7 @@ Full `AUDIT-<yyyy-mm-dd>.md` skeleton plus a worked example showing the level of
 
 ## Where to write it
 
-**Always ask the user where to write the report** (see SKILL.md → Report → "Where to write the report"). The report contains vulnerability details — never default it into a git-tracked project root where it could be committed to a public repo.
+**Always ask the user where to write the report** (see `shared-conventions.md` → Report → "Where to write the report"). The report contains vulnerability details — never default it into a git-tracked project root where it could be committed to a public repo.
 
 - Name the file `AUDIT-<yyyy-mm-dd>.md` (e.g. `AUDIT-2026-05-29.md`) so each run keeps a dated history instead of overwriting the last. Second audit the same day → append a time suffix: `AUDIT-<yyyy-mm-dd>-<HHMM>.md`.
 - Preferred location: `.claude/` (commonly git-excluded), a path outside the repo, or — only if confirmed git-ignored — the CWD.
@@ -23,7 +23,7 @@ Full `AUDIT-<yyyy-mm-dd>.md` skeleton plus a worked example showing the level of
 
 ## TL;DR
 
-(First section, shareable on its own; contract in SKILL.md → Report, "Every report opens with a TL;DR". Worked example further below.)
+(First section, shareable on its own; contract in `shared-conventions.md` → Report → TL;DR. Worked example further below.)
 
 **Overall:** <the verdict in one plain sentence>
 
@@ -107,7 +107,7 @@ One row per finding, by its permanent ID, in severity order. The table is an ind
 
 ## Findings
 
-(Numbering convention: severity letter + index, as in C1, C2, H1, H2, M1, L1, I1. Reference findings by ID in the Top-3 list and Verdict section. **IDs are permanent: allocate once, never renumber or reuse** (see SKILL.md → Finding IDs are permanent). A severity change keeps the original ID; a dropped finding's number stays retired; new findings take the next unused number even if that leaves gaps. Leave gaps silent. The report states each finding's current severity and rationale only; withdrawn, superseded and re-rated history lives in the remediation log.)
+(Numbering convention: severity letter + index, as in C1, C2, H1, H2, M1, L1, I1. Reference findings by ID in the Top-3 list and Verdict section. **IDs are permanent: allocate once, never renumber or reuse** (see `shared-conventions.md` → Finding IDs are permanent). A severity change keeps the original ID; a dropped finding's number stays retired; new findings take the next unused number even if that leaves gaps. Leave gaps silent. The report states each finding's current severity and rationale only; withdrawn, superseded and re-rated history lives in the remediation log.)
 
 <!-- If a section is empty: -->
 ### 🔴 Critical
@@ -159,7 +159,7 @@ if ( isset( $_POST['save'] ) ) {
 
 > **[DECISION] Needs a decision from the owner.** Should the plugin overrule the explicit setting the user chose, or refuse and surface an error? Default if unanswered: current behaviour silently overrides.
 
-(An owner-decision finding — see SKILL.md → Owner-decision findings. It keeps its severity emoji and ID; the `[DECISION]` token and the callout are the only additions. The code isn't wrong — a defensible alternative exists and only the owner can pick. Every one states its default and, in the collected table, what it blocks.)
+(An owner-decision finding — see `shared-conventions.md` → Owner-decision findings. It keeps its severity emoji and ID; the `[DECISION]` token and the callout are the only additions. The code isn't wrong — a defensible alternative exists and only the owner can pick. Every one states its default and, in the collected table, what it blocks.)
 
 ---
 
@@ -180,7 +180,7 @@ One sentence. No fix required (these are suggestions / context for the maintaine
 - `<file>:<line>` — pattern that looked like X but isn't because Y. Listed
   so the next auditor doesn't re-flag it.
 
-False positives only: patterns that looked like a bug and are not. Withdrawn or superseded findings are not listed here or anywhere in the report (see SKILL.md → Finding IDs are permanent).
+False positives only: patterns that looked like a bug and are not. Withdrawn or superseded findings are not listed here or anywhere in the report (see `shared-conventions.md` → Finding IDs are permanent).
 
 ---
 
@@ -238,7 +238,7 @@ Name private material by title and date only; never link it.
 - Plugin Check <version>: N issues
 - `composer audit`: N advisories
 
-Tool names, versions and counts only; the raw output files are working files and are not cited (SKILL.md → Report, rule "Reports describe the method in plain terms").
+Tool names, versions and counts only; the raw output files are working files and are not cited (`shared-conventions.md` → Report → Plain terms).
 
 ---
 
