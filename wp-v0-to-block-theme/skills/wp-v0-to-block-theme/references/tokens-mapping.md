@@ -74,7 +74,11 @@ Per-size `fluid` takes effect only when `settings.typography.fluid: true` is als
 - Map only the colors the design **uses**, not every Tailwind default. A palette of 8–15 named entries beats dumping the full scale.
 - shadcn semantic variables come in two shapes:
   - A bare channel triple (`--primary: 222 47% 11%`), consumed via `hsl(var(--primary))` — compute it to a concrete hex/hsl value for the palette.
-  - A full color function value (`oklch(0.205 0 0)`, `hsl(...)`, `rgb(...)`, common in recent shadcn/v4 exports) — already complete; carry it into the palette as-is (or convert to the project's preferred color space), not as channels needing a wrapper.
+  - A full color function value (`oklch(0.205 0 0)`, `hsl(...)`, `rgb(...)`, common in recent shadcn/v4 exports) — already complete, not channels needing a wrapper. Carry `hsl()`/`rgb()` as-is; convert `oklch()`/`oklab()` to hex (below).
+- Palette values must be hex, `rgb()` or `hsl()`, never `oklch()`, `oklab()`, `lab()`, `lch()` or `color()`. The block editor's contrast checker parses colors with colord, which has no OKLCH support, so an OKLCH palette makes it flag every text/background pairing as low contrast, even 13:1 ones, and editors learn to ignore the warning. `scripts/tokens.mjs` converts `oklch()`/`oklab()` to sRGB hex (`#rrggbbaa` when translucent) and warns about any value the checker still cannot read. Revisit once core's contrast checker reads OKLCH.
+  - The hex is the same color: the conversion follows CSS Color 4, and browsers may differ by ±1 per channel from rounding.
+  - A value outside sRGB is clipped per channel, as browsers render it on sRGB screens, and the script warns. Check it against the design capture.
+  - OKLCH stays fine in stylesheets: the relative color syntax below works on hex presets.
 - Give every palette entry a human `name` — it shows in the editor color picker.
 - `scripts/tokens.mjs` emits only the colors that `@theme` names (resolving their `:root` values). A `:root` variable that no `@theme` entry aliases, but that components use directly (`bg-[var(--brand)]`), is not emitted. Hand-add it if the design uses it.
 - Tailwind v4's default font sizes (`text-sm` … `text-9xl`) are not declared in `globals.css`, so the script cannot see them. Add the sizes the design uses from the markup or `computed-*.json`.

@@ -64,6 +64,9 @@ An `aria-*`, `data-*`, or `role` attribute was written by hand onto a core block
 ### Dead CSS against markup a block never emits
 A selector targets an inner class the block does not output, so the rule silently does nothing. Read the block's `render.php` / save output first and target only classes it emits; add the class server-side with a `render_block` filter if the design needs one.
 
+### Editor flags every color pairing as low contrast
+Every block with a text and background color shows the "low contrast" warning in the editor, even for pairings far above 4.5:1. Cause: the palette holds `oklch()` values, which the editor's contrast checker (colord) cannot parse. Fix: hex palette values, which `scripts/tokens.mjs` emits (see `tokens-mapping.md`). Check in the editor: a passing pairing shows no warning, a failing one does.
+
 ### Every section sits a little lower than the design
 All sections are offset by the same amount, and the offset adds up down the page. Cause: core's default `blockGap` adds a top margin between top-level blocks, which the design does not have. Fix: set `styles.spacing.blockGap` to the design's rhythm, or `0` when sections carry their own padding (see `tokens-mapping.md`).
 
