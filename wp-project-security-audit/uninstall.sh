@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# uninstall.sh: removes wp-project-audit skill from a Claude config dir
+# uninstall.sh: removes wp-project-security-audit skill from a Claude config dir
 #
 # Usage:
 #   bash uninstall.sh                              # → ~/.claude (default)
@@ -7,7 +7,7 @@
 
 set -euo pipefail
 
-SKILL_NAME="wp-project-audit"
+SKILL_NAME="wp-project-security-audit"
 CLAUDE_CONFIG_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 
 echo ""

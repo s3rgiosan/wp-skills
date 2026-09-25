@@ -52,7 +52,7 @@ Indicators to collect from the advisory before the comparison: dropper file name
 | Vendor closed or abandoned, no compromise | per `component-vuln-lookup.md` §6 | Replace or remove; mitigate until then |
 | Update host unexpected, no other signal | **Medium** open question | Ask the vendor; block the host at the edge if it cannot be explained |
 
-These are third-party findings: the fix line follows the plugin skill's Fix guidance by ownership table, "abandoned or closed" row, and never tells the owner to edit the vendor's files as the remedy.
+These are third-party findings: the fix line follows the Fix guidance by ownership table (plugin `references/shared-conventions.md` → Report), "abandoned or closed" row, and never tells the owner to edit the vendor's files as the remedy.
 
 ## 5. Report placement
 

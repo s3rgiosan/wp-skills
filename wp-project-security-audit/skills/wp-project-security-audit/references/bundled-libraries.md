@@ -17,7 +17,7 @@ The script's OSV result is a starting point, not the answer:
 1. Confirm the version from the file itself (banner comment, version constant); a renamed or patched copy can carry a misleading banner.
 2. Check the library's own advisories: its GitHub security advisories page, its changelog's security notes, and OSV or the GitHub Advisory Database for the npm (or Packagist) package named in the table.
 3. Confirm reachability: is the file enqueued on the front end, in the admin only, or not loaded at all (grep the component for the file name and the handle that enqueues it)? For a PDF viewer, does it render files that users can upload?
-4. Rate under the plugin skill's rubric by who reaches the vulnerable path. A vulnerable viewer that renders visitor-supplied files on the front end can be High or Critical; the same copy loaded only in an admin preview is Medium or Low.
+4. Rate under the severity rubric (plugin `references/shared-conventions.md`) by who reaches the vulnerable path. A vulnerable viewer that renders visitor-supplied files on the front end can be High or Critical; the same copy loaded only in an admin preview is Medium or Low.
 
 Findings go under the owning component (`P-<slug>-` / `T-<slug>-`). The fix follows the ownership table: for third-party components, update to a vendor release that ships a fixed copy, or report to the vendor and mitigate (dequeue the script from a project-owned must-use plugin, disable the feature). Replacing the vendor's copy by hand is a fork.
 

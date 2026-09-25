@@ -25,7 +25,7 @@ Ask, and confirm from config:
 
 ## 3. Buckets
 
-Every plugin and theme lands in exactly one bucket. The bucket decides the depth of review and the fix line (plugin skill `SKILL.md` → Report → Fix guidance by ownership).
+Every plugin and theme lands in exactly one bucket. The bucket decides the depth of review and the fix line (plugin `references/shared-conventions.md` → Report → Fix guidance by ownership).
 
 | Bucket | Signals | Depth | Fix line |
 |---|---|---|---|
@@ -104,7 +104,7 @@ WordPress loads more than plugins and themes. The inventory lists, by name only:
 ## 9. Running it
 
 ```bash
-OUT=/tmp/project-audit-acme; mkdir -p "$OUT"
+OUT=/tmp/project-security-audit-acme; mkdir -p "$OUT"
 bash scripts/inventory.sh --root /path/to/project --out "$OUT/inventory"
 # With the database fallback (credentials read from wp-config.php), and the owner's answer on custom code:
 bash scripts/inventory.sh --root /path/to/project --out "$OUT/inventory" \

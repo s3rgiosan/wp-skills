@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# install.sh: installs wp-project-audit skill into a Claude config dir
+# install.sh: installs wp-project-security-audit skill into a Claude config dir
 #
 # Usage:
 #   bash install.sh                              # → ~/.claude (default)
@@ -8,7 +8,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SKILL_NAME="wp-project-audit"
+SKILL_NAME="wp-project-security-audit"
 SKILL_SRC="$SCRIPT_DIR/skills/$SKILL_NAME"
 CLAUDE_CONFIG_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 

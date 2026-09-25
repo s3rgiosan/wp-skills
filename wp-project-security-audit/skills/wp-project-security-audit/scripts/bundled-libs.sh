@@ -34,7 +34,7 @@ command -v python3 >/dev/null 2>&1 || { echo "python3 is required" >&2; exit 2; 
 SIGNATURES="$(cd "$(dirname "$0")/.." && pwd)/references/bundled-libraries.md"
 [ -f "$SIGNATURES" ] || { echo "Signature table not found: $SIGNATURES" >&2; exit 2; }
 if [ -z "$OUT" ]; then
-  OUT="$(mktemp -d "${TMPDIR:-/tmp}/wp-project-audit.XXXXXX")"
+  OUT="$(mktemp -d "${TMPDIR:-/tmp}/wp-project-security-audit.XXXXXX")"
 fi
 OUT_PARENT="$(cd "$(dirname "$OUT")" 2>/dev/null && pwd -P)" || { echo "The parent of --out must exist" >&2; exit 2; }
 OUT="$OUT_PARENT/$(basename "$OUT")"
@@ -120,7 +120,7 @@ if osv:
             body = json.dumps({"package": {"name": name, "ecosystem": {"npm": "npm", "packagist": "Packagist"}.get(eco, eco)},
                                "version": item["version"]}).encode()
             req = urllib.request.Request("https://api.osv.dev/v1/query", data=body,
-                                         headers={"Content-Type": "application/json", "User-Agent": "wp-project-audit/1.0"})
+                                         headers={"Content-Type": "application/json", "User-Agent": "wp-project-security-audit/1.0"})
             try:
                 with urllib.request.urlopen(req, timeout=25) as r:
                     vulns = json.load(r).get("vulns") or []
@@ -130,7 +130,7 @@ if osv:
             time.sleep(0.3)
         item["osv"] = cache[key]
 
-json.dump({"tool": "wp-project-audit/bundled-libs.sh", "libraries": found}, open(os.path.join(out, "bundled-libs.json"), "w"), indent=2)
+json.dump({"tool": "wp-project-security-audit/bundled-libs.sh", "libraries": found}, open(os.path.join(out, "bundled-libs.json"), "w"), indent=2)
 with open(os.path.join(out, "bundled-libs.md"), "w") as f:
     f.write("# Bundled libraries\n\nCandidates: confirm the version in the file, check the library's own advisories, and confirm the file is loaded before rating.\n\n")
     f.write("| Library | Version | Component | Bucket | Path | OSV advisories |\n|---|---|---|---|---|---|\n")

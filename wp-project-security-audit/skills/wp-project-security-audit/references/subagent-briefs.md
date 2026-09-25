@@ -64,7 +64,7 @@ What was scanned (paths, lockfiles, components), what was skipped and why, tools
 - Trace: source to sink, or the lookup record (source, range, production version)
 - Precondition: the lowest role or condition that reaches it
 - Status: scanner-cited
-- Fix line: per the ownership table (plugin SKILL.md → Report → Fix guidance by ownership)
+- Fix line: per the ownership table (plugin references/shared-conventions.md → Report → Fix guidance by ownership)
 
 ## Checked and clean
 One line per check that produced nothing, with the command.
@@ -220,8 +220,8 @@ for the annex; the project report never names it.
 Goal: a full wp-theme-code-audit of <PROJECT>/<path-to-theme>, written as a working report that the merge embeds as an
 annex of the project report.
 <READ-ONLY block>
-Load wp-theme-code-audit from <THEME_SKILL> (it loads wp-plugin-code-audit from <PLUGIN_SKILL>) and follow it end to
-end. Fixed answers as in S6, with report path <WORK_REPORTS>/themes/<slug>/THEME-AUDIT-<DATE>.md.
+Load wp-theme-code-audit from <THEME_SKILL> and follow it end to end; it reads its shared conventions and
+checklists from <PLUGIN_SKILL>/references/. Fixed answers as in S6, with report path <WORK_REPORTS>/themes/<slug>/THEME-AUDIT-<DATE>.md.
 For a child theme, name the parent and its bucket; the parent is audited separately only if it is custom.
 Data-supplying plugins: from the inventory (active plugins whose fields the templates render).
 Section file: <SCRATCH>/sections/6x-theme-<slug>.md in the same short form as S6.
@@ -280,7 +280,7 @@ authorization line.
 ## M. Merge (strongest model, normally the orchestrator)
 
 ```text
-Goal: one self-contained PROJECT-AUDIT-<DATE>.md from the section files and the component audits' working reports.
+Goal: one self-contained PROJECT-SECURITY-AUDIT-<DATE>.md from the section files and the component audits' working reports.
 Inputs: every file in <SCRATCH>/sections/, every working report under <WORK_REPORTS>, the inventory, and the raw
 candidate lists <SCRATCH>/vulns/candidates.tsv, <SCRATCH>/deps/candidates.tsv, <SCRATCH>/libs/candidates.tsv.
 Steps:

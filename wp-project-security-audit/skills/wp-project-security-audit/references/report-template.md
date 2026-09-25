@@ -6,11 +6,11 @@ The project report reuses the plugin skill's finding format, severity headings, 
 
 ## Where to write it
 
-Plugin skill rules apply (plugin `SKILL.md` → Report: ask first, default `.claude/`, check git-ignore status, never overwrite). Deltas:
+Plugin skill rules apply (plugin `references/shared-conventions.md` → Report: ask first, default `.claude/`, check git-ignore status, never overwrite). Deltas:
 
-- Project report: `PROJECT-AUDIT-<yyyy-mm-dd>.md`; same-day rerun `PROJECT-AUDIT-<yyyy-mm-dd>-<HHMM>.md`.
+- Project report: `PROJECT-SECURITY-AUDIT-<yyyy-mm-dd>.md`; same-day rerun `PROJECT-SECURITY-AUDIT-<yyyy-mm-dd>-<HHMM>.md`.
 - **The deliverable is that one file.** Component audits run with the plugin and theme skills, and their working reports may be written to the audit's working folder while the audit runs (outside the project, never next to the deliverable). They are merged into the report as annexes and are not part of the deliverable; the report never names or links them.
-- Git-ignore pattern to check and offer: `PROJECT-AUDIT-*.md`.
+- Git-ignore pattern to check and offer: `PROJECT-SECURITY-AUDIT-*.md`.
 - Never inside the audited project's tracked tree unless the owner confirms it is ignored.
 
 ---
@@ -19,7 +19,7 @@ Plugin skill rules apply (plugin `SKILL.md` → Report: ask first, default `.cla
 
 The report outlives the audit's working folder. Cite evidence by its source: `file:line` in the audited code, "the owner's answers (<date>)", "the production file check (<date>)", or a named tool and its version. Never cite a scratch file name, a temp path, or an internal working document; when tool output matters, say which tool produced it and that the raw output was not retained. **Never cite another report file** by name or path, and never write "see component report": point inside the document instead ("see Annex 2", "see P-acme-forms-H1").
 
-**Plain language only.** The report is read by people who never saw how the audit was run. No process words: no "orchestrator", "scanner", "subagent", brief names, "section file", phase numbers ("phase 6a", "phase 6b"; say "the production file check" or "live-site checks") or tool-pipeline jargon, and no model tiers or "single-model run". "Scanner" is fine when it names a real security tool the project uses. Never name the audit skills (`wp-plugin-code-audit`, `wp-theme-code-audit`, `wp-project-audit`, `wp-plugin-audit-remediation`) or their scripts and files (`inventory.sh`, `dep-audit.sh`, `vuln-lookup.sh`, `bundled-libs.sh`, `prod-check.sh`, `live-check.sh`, `candidates.tsv`). Describe the method in plain terms: "a component inventory", "known-vulnerability lookups at production versions", "core files against the official wordpress.org checksums", "a read-only production check the owner ran". External tools and data sources stay named so a reader can rerun or check them: PHPCS/WPCS, PHPStan, Theme Check, Plugin Check, `composer audit`, `npm audit`, WPVulnerability, Wordfence, Patchstack, OSV, the wordpress.org checksum and plugin APIs, php.net. The audited project's own files (its deploy scripts, lockfiles) are evidence and stay. Evidence is labelled with the plain labels below. Untracked local files (local artifact rule, `inventory.md` §11) are not mentioned anywhere in the report: not as findings, not in Verified false, not in Method.
+**Plain language only.** The report is read by people who never saw how the audit was run. No process words: no "orchestrator", "scanner", "subagent", brief names, "section file", phase numbers ("phase 6a", "phase 6b"; say "the production file check" or "live-site checks") or tool-pipeline jargon, and no model tiers or "single-model run". "Scanner" is fine when it names a real security tool the project uses. Never name the audit skills (`wp-plugin-code-audit`, `wp-theme-code-audit`, `wp-project-security-audit`, `wp-plugin-audit-remediation`) or their scripts and files (`inventory.sh`, `dep-audit.sh`, `vuln-lookup.sh`, `bundled-libs.sh`, `prod-check.sh`, `live-check.sh`, `candidates.tsv`). Describe the method in plain terms: "a component inventory", "known-vulnerability lookups at production versions", "core files against the official wordpress.org checksums", "a read-only production check the owner ran". External tools and data sources stay named so a reader can rerun or check them: PHPCS/WPCS, PHPStan, Theme Check, Plugin Check, `composer audit`, `npm audit`, WPVulnerability, Wordfence, Patchstack, OSV, the wordpress.org checksum and plugin APIs, php.net. The audited project's own files (its deploy scripts, lockfiles) are evidence and stay. Evidence is labelled with the plain labels below. Untracked local files (local artifact rule, `inventory.md` §11) are not mentioned anywhere in the report: not as findings, not in Verified false, not in Method.
 
 ## Evidence labels
 
@@ -44,7 +44,7 @@ A Critical or High reported with only "traced in source (single review)" blocks 
 | Plugin | `P-<slug>-` | `P-acme-forms-H1` | the plugin's subsection, or its annex when it had a full audit |
 | Theme | `T-<slug>-` | `T-acme-theme-M3` | the theme's subsection, or its annex when it had a full audit |
 
-A component audit's own local IDs map one to one onto the prefixed IDs (`P-acme-forms-H1` is the audit's `H1`); never renumber when merging. Components without a full audit (managed or committed third-party, advisory lookup or focused review only) still get `P-<slug>-` / `T-<slug>-` IDs, allocated in the report. IDs follow the plugin skill's permanence rules (plugin `SKILL.md` → Finding IDs are permanent): allocate once, never renumber, withdrawn and superseded IDs stay reserved.
+A component audit's own local IDs map one to one onto the prefixed IDs (`P-acme-forms-H1` is the audit's `H1`); never renumber when merging. Components without a full audit (managed or committed third-party, advisory lookup or focused review only) still get `P-<slug>-` / `T-<slug>-` IDs, allocated in the report. IDs follow the plugin skill's permanence rules (plugin `references/shared-conventions.md` → Finding IDs are permanent): allocate once, never renumber, withdrawn and superseded IDs stay reserved.
 
 **Count once.** The header counts equal the number of distinct finding IDs per severity across the whole document. A finding summarized in the main body and detailed in an annex is one finding.
 
@@ -57,7 +57,7 @@ A component audit's own local IDs map one to one onto the prefixed IDs (`P-acme-
 ## Skeleton
 
 ````markdown
-# Project audit: <project name>
+# Project security audit: <project name>
 
 ## TL;DR
 
@@ -75,7 +75,7 @@ A component audit's own local IDs map one to one onto the prefixed IDs (`P-acme-
 
 **At a glance:** <C> critical · <H> high · <M> medium · <L> low · <I> info; most serious issues in <areas, in plain words>.
 
-(Contract: plugin `SKILL.md` → Report, "Every report opens with a TL;DR". Shareable on its own: no IDs, no paths beyond a
+(Contract: plugin `references/shared-conventions.md` → Report → TL;DR. Shareable on its own: no IDs, no paths beyond a
 site path, no process or tool names, every claim backed by a verified finding.)
 
 **Verdict (production as deployed):** GO / NO-GO / GO WITH FIXES
@@ -289,7 +289,7 @@ here.)
 The project, components, versions, counts and dates below are fabricated.
 
 ````markdown
-# Project audit: Acme Corp marketing site
+# Project security audit: Acme Corp marketing site
 
 ## TL;DR
 

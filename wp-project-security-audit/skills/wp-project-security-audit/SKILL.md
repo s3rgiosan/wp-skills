@@ -1,5 +1,5 @@
 ---
-name: wp-project-audit
+name: wp-project-security-audit
 description: >
   Use when auditing a whole WordPress project (a wp-content repo, a full site
   root, or a Bedrock-style layout) for security and known vulnerabilities, or
@@ -16,7 +16,7 @@ description: >
 
 Opinionated, verification-first security and vulnerability audit of a whole WordPress project. It inventories every component, runs the sweeps no single-component audit can see (dependencies, known advisories at the production version, vendor compromise, secrets and git history, deploy, CI and webroot exposure), dispatches custom plugins and themes to their component audits, correlates findings across components, and ends with a **GO / NO-GO / GO WITH FIXES** verdict for **production as deployed**, plus a verdict per component.
 
-> **Requires `wp-plugin-code-audit` and `wp-theme-code-audit`.** This skill orchestrates both and builds on their conventions: the severity rubric (including the subscriber-exploitable and silent-corruption rules), `[DECISION]` markers, verdict rules, permanent finding IDs, report location and filename rules, `false-positive-traps.md`, and the Fix guidance by ownership table all live in the plugin skill and apply here unchanged. Custom plugins are audited with `wp-plugin-code-audit`, custom themes (including child themes) with `wp-theme-code-audit`, each producing its own report. Install all three. "The plugin skill" means `wp-plugin-code-audit` and "plugin `references/<file>`" a file in its `references/` folder; "the theme skill" and "theme `references/<file>`" likewise for `wp-theme-code-audit`. Locate them by layout: after `install.sh`, `../wp-plugin-code-audit/` and `../wp-theme-code-audit/` from this skill's folder; in a repo checkout, `../../../wp-plugin-code-audit/skills/wp-plugin-code-audit/` and `../../../wp-theme-code-audit/skills/wp-theme-code-audit/`; after a marketplace install, find the installed skill folders (do not guess a cache path).
+> **Requires `wp-plugin-code-audit` and `wp-theme-code-audit`.** This skill orchestrates both and builds on their conventions: plugin `references/shared-conventions.md` (the severity rubric with its subscriber-exploitable and silent-corruption rules, `[DECISION]` markers, verdict rules, permanent finding IDs, report location and filename rules, the Fix guidance by ownership table) and `false-positive-traps.md` apply here with the deltas below. Read those files directly; this skill does not invoke `wp-plugin-code-audit` or `wp-theme-code-audit` itself. The component-depth subagents do: custom plugins are audited with `wp-plugin-code-audit`, custom themes (including child themes) with `wp-theme-code-audit`, each producing its own report. Install all three. "The plugin skill" means `wp-plugin-code-audit` and "plugin `references/<file>`" a file in its `references/` folder; "the theme skill" and "theme `references/<file>`" likewise for `wp-theme-code-audit`. Locate them by layout: after `install.sh`, `../wp-plugin-code-audit/` and `../wp-theme-code-audit/` from this skill's folder; in a repo checkout, `../../../wp-plugin-code-audit/skills/wp-plugin-code-audit/` and `../../../wp-theme-code-audit/skills/wp-theme-code-audit/`; after a marketplace install, find the installed skill folders (do not guess a cache path).
 
 > **Scope:** one WordPress project: every plugin, theme, must-use plugin, drop-in and the core version, the dependency lockfiles, the deploy and CI configuration, the git history, and (optionally, owner-run) the production install. Not a penetration test: nothing is sent to production except what the owner runs or explicitly authorizes (phase 6).
 
@@ -43,14 +43,14 @@ Read these in the plugin and theme skills before the first audit. Only the delta
 
 | Convention | Where | Delta for projects |
 |---|---|---|
-| Severity rubric, subscriber-exploitable rule, silent-corruption rule | plugin `SKILL.md` → Severity Rubric | Rate at the **production** version and on the **production** sites. Same-origin sites and production config can raise a rating (see Correlate). |
+| Severity rubric, subscriber-exploitable rule, silent-corruption rule | plugin `references/shared-conventions.md` → Severity Rubric | Rate at the **production** version and on the **production** sites. Same-origin sites and production config can raise a rating (see Correlate). |
 | Role-to-severity table for rendered content | theme `references/theme-security-checklist.md` (table at the top) | Role counts come from the inventory environment or the owner. Zero today lowers likelihood, not severity. |
-| `[DECISION]` findings | plugin `SKILL.md` → Owner-decision findings | Collected across all areas into one table, by prefixed ID. |
-| Verdict rules | plugin `SKILL.md` → Verdict Rules | Applied to the project as deployed, and separately per component for the inventory column. See Verdict. |
-| Permanent finding IDs | plugin `SKILL.md` → Finding IDs are permanent | Area prefixes `G-`, `P-<slug>-`, `T-<slug>-`, mapping one to one onto each component audit's local IDs. The report states each finding's current severity and rationale only: no re-rating notes, withdrawn or superseded entries, or previous-report mappings. |
-| Report location and filename | plugin `SKILL.md` → Report | One self-contained `PROJECT-AUDIT-<yyyy-mm-dd>.md`; component audits embedded as annexes. See Report. |
+| `[DECISION]` findings | plugin `references/shared-conventions.md` → Owner-decision findings | Collected across all areas into one table, by prefixed ID. |
+| Verdict rules | plugin `references/shared-conventions.md` → Verdict Rules | Applied to the project as deployed, and separately per component for the inventory column. See Verdict. |
+| Permanent finding IDs | plugin `references/shared-conventions.md` → Finding IDs are permanent | Area prefixes `G-`, `P-<slug>-`, `T-<slug>-`, mapping one to one onto each component audit's local IDs. The report states each finding's current severity and rationale only: no re-rating notes, withdrawn or superseded entries, or previous-report mappings. |
+| Report location and filename | plugin `references/shared-conventions.md` → Report | One self-contained `PROJECT-SECURITY-AUDIT-<yyyy-mm-dd>.md`; component audits embedded as annexes. See Report. |
 | False-positive traps | plugin `references/false-positive-traps.md` | Plus the project traps in Verify. |
-| Fix guidance by ownership | plugin `SKILL.md` → Report → Fix guidance by ownership | The bucket from the inventory decides the row. Never "edit the vendor's files" as the fix for distributed third-party code. |
+| Fix guidance by ownership | plugin `references/shared-conventions.md` → Report → Fix guidance by ownership | The bucket from the inventory decides the row. Never "edit the vendor's files" as the fix for distributed third-party code. |
 | Theme verification (reachability, kses on core fields, multisite admins, third-party write paths, chains) | theme `SKILL.md` → Verify | Applies to theme findings merged into this report, and to correlations that involve a theme. |
 
 ---
@@ -63,7 +63,7 @@ Read these in the plugin and theme skills before the first audit. Only the delta
 4. **Verify**: plugin-skill discipline plus the project traps; spot-check every Critical and High against source.
 5. **Correlate**: cross-component findings that need two or more components, or a component plus config.
 6. **Production verification** *(optional)*: an owner-run, read-only check script with known-good manifests, and owner-authorized read-only live-site HTTP checks.
-7. **Report**: one self-contained `PROJECT-AUDIT-<yyyy-mm-dd>.md`, sectioned by area, with every component audit embedded as an annex.
+7. **Report**: one self-contained `PROJECT-SECURITY-AUDIT-<yyyy-mm-dd>.md`, sectioned by area, with every component audit embedded as an annex.
 
 Skipping Verify is how false positives ship. Skipping the up-front production questions is how the audit rates the wrong versions.
 
@@ -75,7 +75,7 @@ Full procedure: `references/inventory.md`.
 
 ```bash
 SKILL_DIR=<this skill's folder>
-OUT=$(mktemp -d)/project-audit        # outside the project; the scripts refuse a path inside it
+OUT=$(mktemp -d)/project-security-audit        # outside the project; the scripts refuse a path inside it
 bash "$SKILL_DIR/scripts/inventory.sh" --root /path/to/project --out "$OUT/inventory"
 # Database fallback for active status when WP-CLI cannot connect. Credentials are read from wp-config.php by the
 # script and passed to the client in a temporary mode-600 option file; never type them on a command line.
@@ -165,7 +165,7 @@ Every brief carries the read-only block, the masking rules and the section contr
 
 ## 4. Verify (mandatory)
 
-Apply the plugin skill's Verify table and `false-positive-traps.md` to every code finding, and the theme skill's Verify rules to every theme finding. Then the project traps:
+Apply the Verify table (plugin `references/shared-conventions.md`) and `false-positive-traps.md` to every code finding, and the theme skill's Verify rules to every theme finding. Then the project traps:
 
 | Trap | Check |
 |---|---|
@@ -189,7 +189,7 @@ Apply the plugin skill's Verify table and `false-positive-traps.md` to every cod
 
 **Spot-check every Critical and High against source before the report.** Open the cited file and lines (or the advisory and the matching source) yourself. Internally a finding is either re-checked by the merge or cited by one reviewer; in the report that becomes a plain evidence label: "independently re-checked in source", "traced in source (single review)", "confirmed on production files", "advisory and version match", "owner's production check" or "observed on the live site (owner-authorized)" (legend: `references/report-template.md` → Evidence labels). A Critical or High with only a single review does not go into the report: re-check it first.
 
-**Counts are findings too** (plugin `SKILL.md` → Verify): every number in the report comes from a captured command.
+**Counts are findings too** (plugin `references/shared-conventions.md` → Verify): every number in the report comes from a captured command.
 
 ---
 
@@ -244,16 +244,16 @@ The OWASP ZAP baseline scan is an optional extra for this phase: passive mode on
 
 ## 7. Report
 
-Follow the plugin skill's report rules (plugin `SKILL.md` → Report): ask where to write, default to `.claude/`, check git-ignore status, keep a dated history, never overwrite, inline summary in chat (path + verdict + counts + top 3).
+Follow the report rules in plugin `references/shared-conventions.md` → Report: ask where to write, default to `.claude/`, check git-ignore status, keep a dated history, never overwrite, inline summary in chat (path + verdict + counts + top 3).
 
 Deltas:
 
-- **Filename:** `PROJECT-AUDIT-<yyyy-mm-dd>.md`; same-day rerun `PROJECT-AUDIT-<yyyy-mm-dd>-<HHMM>.md`.
-- **One self-contained document.** The deliverable is the single `PROJECT-AUDIT-<yyyy-mm-dd>.md`. Every full component audit is embedded as an annex, "Annex N: <slug> (plugin | theme | child theme of <parent>)", carrying all of that component's findings (all severities, with location, precondition, impact, evidence and fix), its verified-false items, a short checked-and-clean list and its sections-audited list. Per-component open questions go to Appendix D and owner decisions to the Decisions table. Working reports from the component audits stay in the audit's working folder (never next to the deliverable) and are never referenced: the report never names or links another report file and never says "see component report"; it says "see Annex N". Offer to git-ignore `PROJECT-AUDIT-*.md`.
+- **Filename:** `PROJECT-SECURITY-AUDIT-<yyyy-mm-dd>.md`; same-day rerun `PROJECT-SECURITY-AUDIT-<yyyy-mm-dd>-<HHMM>.md`.
+- **One self-contained document.** The deliverable is the single `PROJECT-SECURITY-AUDIT-<yyyy-mm-dd>.md`. Every full component audit is embedded as an annex, "Annex N: <slug> (plugin | theme | child theme of <parent>)", carrying all of that component's findings (all severities, with location, precondition, impact, evidence and fix), its verified-false items, a short checked-and-clean list and its sections-audited list. Per-component open questions go to Appendix D and owner decisions to the Decisions table. Working reports from the component audits stay in the audit's working folder (never next to the deliverable) and are never referenced: the report never names or links another report file and never says "see component report"; it says "see Annex N". Offer to git-ignore `PROJECT-SECURITY-AUDIT-*.md`.
 - **Plain language.** No process words in the report (orchestrator, scanner, subagent, brief names, section files, model tiers), and never the names of the audit skills or their scripts and files: describe the method in plain terms and name only external tools and data sources (`references/report-template.md` → Citing evidence); evidence uses the plain labels in `references/report-template.md` → Evidence labels, with the legend in the Method appendix.
 - **Counts:** the header counts equal the distinct finding IDs per severity across the whole document; a finding summarized in the main body and detailed in an annex is counted once.
 - **Structure, by area:**
-  0. **TL;DR** (first section, above the verdict block): a shareable plain-language summary for the owner's stakeholders or a customer, following the plugin skill's contract (plugin `SKILL.md` → Report, "Every report opens with a TL;DR"): Overall, What needs attention now, What is in good shape (verified only), Recommended next steps (containment first), At a glance. No IDs, paths, internals, attack mechanics, tool or process words; every claim traces to a verified finding.
+  0. **TL;DR** (first section, above the verdict block): a shareable plain-language summary for the owner's stakeholders or a customer, following the contract in plugin `references/shared-conventions.md` → Report → TL;DR: Overall, What needs attention now, What is in good shape (verified only), Recommended next steps (containment first), At a glance. No IDs, paths, internals, attack mechanics, tool or process words; every claim traces to a verified finding.
   1. **Summary**: the project verdict (production as deployed), counts per area and severity, top 3 to fix first across all areas, decisions needed from the owner, and a **findings table** (Finding: ID and title · Area · Category: security / performance / standards · Recommendation: one line · Priority: severity). No effort column: effort estimation is out of scope. An optional short glossary follows.
   2. **General / codebase**: Scope (including what is not covered, such as infrastructure as code), platform state (WordPress and PHP versions, PHP support status, who owns core and PHP updates), dependencies, lockfiles and dependency monitoring, deploy and CI, webroot and live-site exposure, secrets, `wp-config.php` and hosting hardening, users and access, development tools, activity logging and approved plugins, privacy and data hygiene, multisite and origin topology, production drift, cross-component correlations.
   3. **Plugins**: custom, then committed third-party, then managed third-party. Each subsection opens with an **identity line**: version (and production version), source, ownership, update channel, active status per site.
@@ -263,7 +263,7 @@ Deltas:
   7. **Checked and clean, verified false, open questions for production, sources, method** (with the evidence-label legend).
   8. **Annexes**: one per full component audit, as above. Sources say what the audit was based on: repository URL and commit, branch, production lists and when they were received, production and live check dates, database export used or not. Private material is named, never linked.
 - **IDs:** `G-` general, `P-<slug>-` plugins, `T-<slug>-` themes (for example `P-acme-forms-H1`), mapping one to one onto each component audit's local IDs (never renumber when building the annexes). When an owner answer changes a rating, rewrite the severity and rationale and keep the ID; the report shows only the current state. Method carries an **Audit runs** table (date, run, what it covered); history of how the report itself changed is not report content.
-- **Fix lines** follow the plugin skill's Fix guidance by ownership table, by bucket: custom code gets the code change; distributed third-party code gets update, report, or mitigate without touching vendor files, and the fix says edits to the vendor's files are overwritten on update; committed copies are forks, and any local patch is recorded as one.
+- **Fix lines** follow the Fix guidance by ownership table (plugin `references/shared-conventions.md` → Report), by bucket: custom code gets the code change; distributed third-party code gets update, report, or mitigate without touching vendor files, and the fix says edits to the vendor's files are overwritten on update; committed copies are forks, and any local patch is recorded as one.
 
 - **Standards reference (optional):** best-practice findings may cite 10up's public Engineering Best Practices (https://10up.github.io/Engineering-Best-Practices/) alongside the WordPress coding standards.
 
@@ -271,9 +271,9 @@ Full skeleton and a fabricated worked example: `references/report-template.md`.
 
 ### Verdict
 
-- **Project verdict** uses the plugin skill's Verdict Rules over every finding that applies to **production as deployed**: active components on production sites, production versions, production config. Findings that only apply locally, or only to inactive and unreachable code, do not drive it. When production versions or config are unconfirmed, say so in the verdict reasoning.
+- **Project verdict** uses the Verdict Rules (plugin `references/shared-conventions.md`) over every finding that applies to **production as deployed**: active components on production sites, production versions, production config. Findings that only apply locally, or only to inactive and unreachable code, do not drive it. When production versions or config are unconfirmed, say so in the verdict reasoning.
 - **Per-component verdict** (inventory column): the verdict of the component's annex for fully audited components; for lookup and hotspot components, the same rules over that component's findings, or "lookup clean" / "no data" when there are none.
-- `[DECISION]` findings do not enter the table (plugin `SKILL.md` → Verdict Rules), but say which ones block fixes.
+- `[DECISION]` findings do not enter the table (plugin `references/shared-conventions.md` → Verdict Rules), but say which ones block fixes.
 
 ---
 
@@ -317,7 +317,7 @@ Hand off to `wp-plugin-audit-remediation` for the remediation log, the frozen au
 - `references/report-template.md`: area-sectioned skeleton and a fabricated worked example.
 - `references/bundled-libraries.md`: the signature table `bundled-libs.sh` reads (grow it by adding rows) and how to check versions.
 - `scripts/inventory.sh`, `scripts/dep-audit.sh`, `scripts/vuln-lookup.sh`, `scripts/bundled-libs.sh`, `scripts/prod-check.sh`, `scripts/live-check.sh`: bash entry points; python3 standard library for JSON and version comparison; curl and the public APIs for lookups; `jq` not required. All read-only on the audited project, writing to the directory passed with `--out` (default a new temp dir).
-- Plugin skill `SKILL.md` (rubric, verdict, IDs, report rules, Fix guidance by ownership), `references/false-positive-traps.md`, `references/security-checklist.md`, `references/standards-checklist.md` (folder slug ownership), `references/report-template.md`.
+- Plugin skill `references/shared-conventions.md` (rubric, verdict, IDs, report rules, Fix guidance by ownership), `references/false-positive-traps.md`, `references/security-checklist.md`, `references/standards-checklist.md` (folder slug ownership), `references/report-template.md`.
 - Theme skill `SKILL.md` (Verify), `references/theme-security-checklist.md` (role table, bundled libraries).
 
 ---

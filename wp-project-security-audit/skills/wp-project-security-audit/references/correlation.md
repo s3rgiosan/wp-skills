@@ -6,7 +6,7 @@ Every correlated finding:
 
 - lives in **General / codebase** with a `G-` ID;
 - cites every part by its own finding ID (`P-acme-forms-H1`, `T-acme-theme-M2`, `G-M4`) and `file:line`;
-- is rated by its end-to-end precondition and impact under the plugin skill's rubric, not by the count of parts (the theme skill's chain rule applies unchanged);
+- is rated by its end-to-end precondition and impact under the severity rubric (plugin `references/shared-conventions.md`), not by the count of parts (the theme skill's chain rule applies unchanged);
 - does not remove or renumber the parts: each keeps its own finding and severity, with a line pointing to the correlation.
 
 All examples below are fabricated.

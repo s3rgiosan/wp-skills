@@ -44,7 +44,7 @@ The most useful dependency finding is often not an advisory at all.
 
 ## 4. Rating
 
-Rate advisories under the plugin skill's rubric (plugin `SKILL.md` → Severity Rubric), then adjust by the Ships column:
+Rate advisories under the severity rubric (plugin `references/shared-conventions.md` → Severity Rubric), then adjust by the Ships column:
 
 | Ships | Rating |
 |---|---|

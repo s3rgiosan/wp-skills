@@ -47,7 +47,7 @@ fi
 
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/live-check.XXXXXX")"
 trap 'rm -rf "$WORK"' EXIT
-UA="wp-project-audit live-check (owner-authorized)"
+UA="wp-project-security-audit live-check (owner-authorized)"
 
 # fetch <method> <url> : sets CODE, CTYPE, SIZE; body in $WORK/body, headers in $WORK/headers
 fetch() {

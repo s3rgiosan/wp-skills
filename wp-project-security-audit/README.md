@@ -1,4 +1,4 @@
-# wp-project-audit
+# wp-project-security-audit
 
 Part of [wp-skills](../README.md): Claude Code skills for WordPress developers.
 
@@ -12,7 +12,7 @@ Orchestrates [wp-plugin-code-audit](../wp-plugin-code-audit) and [wp-theme-code-
 
 ## Installation
 
-Install **all three**: `wp-plugin-code-audit`, `wp-theme-code-audit` and `wp-project-audit`.
+Install **all three**: `wp-plugin-code-audit`, `wp-theme-code-audit` and `wp-project-security-audit`.
 
 ### Via Claude Code plugin marketplace (recommended)
 
@@ -20,7 +20,7 @@ Install **all three**: `wp-plugin-code-audit`, `wp-theme-code-audit` and `wp-pro
 /plugin marketplace add s3rgiosan/wp-skills
 /plugin install wp-plugin-code-audit@s3rgiosan-wp-skills
 /plugin install wp-theme-code-audit@s3rgiosan-wp-skills
-/plugin install wp-project-audit@s3rgiosan-wp-skills
+/plugin install wp-project-security-audit@s3rgiosan-wp-skills
 ```
 
 The plugin manifest declares `wp-plugin-code-audit` and `wp-theme-code-audit` as dependencies. Or wire all three `@s3rgiosan-wp-skills` entries into `settings.json` under `enabledPlugins` (see the [root README](../README.md#install-via-claude-code-plugin-marketplace-recommended) for the full snippet).
@@ -34,19 +34,19 @@ cd wp-skills
 # Default → ~/.claude (install the required component audit skills too)
 bash wp-plugin-code-audit/install.sh
 bash wp-theme-code-audit/install.sh
-bash wp-project-audit/install.sh
+bash wp-project-security-audit/install.sh
 
 # Custom Claude config dir (override via env var)
 CLAUDE_CONFIG_DIR=~/.some-other-dir bash wp-plugin-code-audit/install.sh
 CLAUDE_CONFIG_DIR=~/.some-other-dir bash wp-theme-code-audit/install.sh
-CLAUDE_CONFIG_DIR=~/.some-other-dir bash wp-project-audit/install.sh
+CLAUDE_CONFIG_DIR=~/.some-other-dir bash wp-project-security-audit/install.sh
 ```
 
 Uninstall:
 
 ```bash
-bash wp-project-audit/uninstall.sh                                       # → ~/.claude
-CLAUDE_CONFIG_DIR=~/.some-other-dir bash wp-project-audit/uninstall.sh   # → custom dir
+bash wp-project-security-audit/uninstall.sh                                       # → ~/.claude
+CLAUDE_CONFIG_DIR=~/.some-other-dir bash wp-project-security-audit/uninstall.sh   # → custom dir
 ```
 
 ### Requirements for the scripts
@@ -75,7 +75,7 @@ The skill runs seven phases (one optional):
 4. **Verify**: every candidate traced; every Critical and High spot-checked against source and marked verified by orchestrator or scanner-cited.
 5. **Correlate**: findings that need two or more components, or a component plus config.
 6. **Production verification** *(optional)*: an owner-run read-only check script with known-good manifests, core checksums and near-miss dropper names, and owner-authorized read-only live-site HTTP checks.
-7. **Report**: one self-contained `PROJECT-AUDIT-<yyyy-mm-dd>.md`, sectioned by area, with every component audit embedded as an annex and evidence in plain-language labels.
+7. **Report**: one self-contained `PROJECT-SECURITY-AUDIT-<yyyy-mm-dd>.md`, sectioned by area, with every component audit embedded as an annex and evidence in plain-language labels.
 
 The sweeps and component audits run as parallel subagents with model tiers (strongest model for custom-code review and the merge, mid-tier for sweeps, smallest for running scripts), each writing one section file that the orchestrator merges. Without subagents, the same briefs run sequentially.
 
@@ -84,7 +84,7 @@ The sweeps and component audits run as parallel subagents with model tiers (stro
 ## What the report looks like
 
 ````markdown
-# Project audit: Acme Corp marketing site
+# Project security audit: Acme Corp marketing site
 
 **Verdict (production as deployed):** NO-GO
 **Counts:** 1 critical, 3 high, 4 medium, 2 low, 3 info

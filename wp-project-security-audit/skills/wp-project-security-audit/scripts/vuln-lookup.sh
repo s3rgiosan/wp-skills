@@ -63,7 +63,7 @@ done
 [ -n "$INVENTORY$LIST" ] || { echo "Pass --inventory or --list" >&2; exit 2; }
 command -v python3 >/dev/null 2>&1 || { echo "python3 is required" >&2; exit 2; }
 if [ -z "$OUT" ]; then
-  OUT="$(mktemp -d "${TMPDIR:-/tmp}/wp-project-audit.XXXXXX")"
+  OUT="$(mktemp -d "${TMPDIR:-/tmp}/wp-project-security-audit.XXXXXX")"
 fi
 mkdir -p "$OUT/raw"
 
@@ -160,7 +160,7 @@ def fetch(url, cache_name):
             return json.load(open(path)), None
         except ValueError:
             pass
-    req = urllib.request.Request(url, headers={"User-Agent": "wp-project-audit/1.0"})
+    req = urllib.request.Request(url, headers={"User-Agent": "wp-project-security-audit/1.0"})
     try:
         with urllib.request.urlopen(req, timeout=25) as r:
             body = r.read().decode("utf-8", "replace")
@@ -395,7 +395,7 @@ if php_version:
         php["active_branches"] = sorted(active)
 
 with open(os.path.join(out, "vulns.json"), "w") as f:
-    json.dump({"tool": "wp-project-audit/vuln-lookup.sh", "date": today.strftime("%Y-%m-%d"), "php": php,
+    json.dump({"tool": "wp-project-security-audit/vuln-lookup.sh", "date": today.strftime("%Y-%m-%d"), "php": php,
                "supply_chain_signals": supply_signals, "components": results}, f, indent=2)
 
 def md(s):

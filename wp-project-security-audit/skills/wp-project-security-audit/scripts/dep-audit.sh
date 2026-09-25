@@ -41,7 +41,7 @@ done
 [ -d "$ROOT" ] || { echo "Not a directory: $ROOT" >&2; exit 2; }
 command -v python3 >/dev/null 2>&1 || { echo "python3 is required" >&2; exit 2; }
 if [ -z "$OUT" ]; then
-  OUT="$(mktemp -d "${TMPDIR:-/tmp}/wp-project-audit.XXXXXX")"
+  OUT="$(mktemp -d "${TMPDIR:-/tmp}/wp-project-security-audit.XXXXXX")"
 fi
 OUT_PARENT="$(cd "$(dirname "$OUT")" 2>/dev/null && pwd -P)" || { echo "The parent of --out must exist" >&2; exit 2; }
 OUT="$OUT_PARENT/$(basename "$OUT")"
@@ -279,7 +279,7 @@ with open(os.path.join(out, "candidates.tsv"), "w") as f:
         f.write("\t".join(str(x if x is not None else "").replace("\t", " ") for x in (a.get("advisory_id"), e["lockfile"], a["package"],
                 a["installed"], a["severity"], a["scope"], a["ships"], a.get("cve") or a.get("title"))) + "\n")
 print("Candidates (authoritative list, ships or needs a check): %d rows in candidates.tsv" % len(cand))
-json.dump({"tool": "wp-project-audit/dep-audit.sh", "build_flags": build_flags, "lockfiles": results},
+json.dump({"tool": "wp-project-security-audit/dep-audit.sh", "build_flags": build_flags, "lockfiles": results},
           open(os.path.join(out, "dep-audit.json"), "w"), indent=2)
 
 def md(s):

@@ -81,7 +81,7 @@ done
 command -v python3 >/dev/null 2>&1 || { echo "python3 is required" >&2; exit 2; }
 
 if [ -z "$OUT" ]; then
-  OUT="$(mktemp -d "${TMPDIR:-/tmp}/wp-project-audit.XXXXXX")"
+  OUT="$(mktemp -d "${TMPDIR:-/tmp}/wp-project-security-audit.XXXXXX")"
 fi
 OUT_PARENT="$(cd "$(dirname "$OUT")" 2>/dev/null && pwd -P)" || { echo "The parent of --out must exist" >&2; exit 2; }
 OUT="$OUT_PARENT/$(basename "$OUT")"
@@ -954,7 +954,7 @@ for lf in lockfiles:
 ci_files = [{"path": c, "component": owner_component(c)} for c in ci_files]
 
 result = {
-    "tool": "wp-project-audit/inventory.sh",
+    "tool": "wp-project-security-audit/inventory.sh",
     "project": {"shape": shape, "content_dir": rel(content_dir), "git": bool(git_root),
                 "ci_files": sorted(ci_files, key=lambda x: x["path"]), "deploy_files": sorted(deploy_files),
                 "hosting_hints": hosting, "database_dumps": dumps,
