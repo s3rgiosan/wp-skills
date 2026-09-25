@@ -51,6 +51,14 @@ Theme counterpart of `wp-plugin-code-audit`: a verification-first audit for Word
 
 **[→ Install wp-theme-code-audit](./wp-theme-code-audit/README.md)**
 
+### [wp-project-security-audit](./wp-project-security-audit)
+
+Verification-first security and vulnerability audit of a whole WordPress project (a `wp-content` repo, a full site root, or a Bedrock-style layout). Seven-phase workflow (inventory → automated sweeps → component depth → verify → correlate → production check (optional, owner-run) → report): a component inventory with active status per site, dependency advisories with a ships-to-production column, known vulnerabilities at the production version (free and premium slugs), wp.org staleness and slug-hijack risk, vendor compromise, secrets and git history, deploy, CI and webroot exposure, and cross-component correlations. Dispatches custom plugins to `wp-plugin-code-audit` and custom themes to `wp-theme-code-audit`, runs the sweeps as parallel subagents, and produces a dated `PROJECT-SECURITY-AUDIT-<yyyy-mm-dd>.md` sectioned by area with a **GO / NO-GO / GO WITH FIXES** verdict for production as deployed. Ships read-only inventory, dependency-audit, vulnerability-lookup and production-check scripts. Requires `wp-plugin-code-audit` and `wp-theme-code-audit`.
+
+**Triggers on:** "audit this project", "audit the whole site", "is this site safe", "check every plugin and theme for vulnerabilities", "vulnerability sweep", "is production compromised", "supply chain check for our plugins".
+
+**[→ Install wp-project-security-audit](./wp-project-security-audit/README.md)**
+
 ### [wp-plugin-audit-remediation](./wp-plugin-audit-remediation)
 
 The phase after the audit. Maintains a `REMEDIATION-<yyyy-mm-dd>.md` companion log (per-finding status, what changed, how it was verified, what's still owed by the owner), keeps a frozen copy of the audited version so the report's `file:line` citations stay readable while the code changes, and proves that renames / `phpcbf` runs / mechanical refactors changed no behaviour via a PHP token-stream diff (which also catches an auto-fixer flipping `==` to `===`). Companion to `wp-plugin-code-audit` — run the audit first.

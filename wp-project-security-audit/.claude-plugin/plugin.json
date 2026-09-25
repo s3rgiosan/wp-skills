@@ -1,0 +1,14 @@
+{
+  "name": "wp-project-security-audit",
+  "version": "1.0.0",
+  "description": "Verification-first security and vulnerability audit of a whole WordPress project: component inventory, dependency and known-vulnerability sweeps at the production version, vendor compromise, secrets, deploy and exposure, cross-component correlation, and dispatch of custom plugins and themes to their component audits. Produces an area-sectioned report with a GO / NO-GO / GO WITH FIXES verdict for production as deployed. Requires wp-plugin-code-audit and wp-theme-code-audit.",
+  "author": {
+    "name": "Sérgio Santos",
+    "url": "https://github.com/s3rgiosan"
+  },
+  "homepage": "https://github.com/s3rgiosan/wp-skills/tree/main/wp-project-security-audit",
+  "repository": "https://github.com/s3rgiosan/wp-skills",
+  "license": "MIT",
+  "dependencies": ["wp-plugin-code-audit", "wp-theme-code-audit"],
+  "keywords": ["wordpress", "audit", "security", "vulnerabilities", "supply-chain", "dependencies", "secrets", "deploy", "multisite"]
+}
