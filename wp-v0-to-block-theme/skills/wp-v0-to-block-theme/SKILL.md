@@ -59,6 +59,7 @@ All three print full usage with `--help`.
 
 - Pasting React/JSX into patterns — patterns are block markup, not JSX. Rebuild.
 - Hardcoding px/hex — reference theme.json tokens so global styles stay editable.
+- OKLCH palette values — the editor's contrast checker cannot read them and flags every pairing; keep the palette in hex (`tokens.mjs` converts).
 - Defaulting to a custom block or `ServerSideRender` — prefer core blocks; raise a custom block first.
 - Eyeballing screenshots — use computed CSS from `capture.mjs` for real values, and `compare.mjs` for parity.
 - Trusting a low pixel diff — a dropped section can change under 1% of the pixels. The structure check must pass too.

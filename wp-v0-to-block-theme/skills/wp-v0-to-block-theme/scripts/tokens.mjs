@@ -257,18 +257,120 @@ function warnUnresolved(c, token, unresolved) {
   }
 }
 
+/* ------------------------------------------------------------------ Color conversion */
+
+// OKLab → linear sRGB, via LMS and XYZ D65 (CSS Color 4 reference matrices).
+const OKLAB_TO_LMS = [
+  [1.0, 0.3963377773761749, 0.2158037573099136],
+  [1.0, -0.1055613458156586, -0.0638541728258133],
+  [1.0, -0.0894841775298119, -1.2914855480194092],
+];
+const LMS_TO_XYZ = [
+  [1.2268798758459243, -0.5578149944602171, 0.2813910456659647],
+  [-0.0405757452148008, 1.112286829280103, -0.0717110580655164],
+  [-0.0763729366746601, -0.4214933324022432, 1.5869240198367816],
+];
+const XYZ_TO_LINEAR_SRGB = [
+  [12831 / 3959, -329 / 214, -1974 / 3959],
+  [-851781 / 878810, 1648619 / 878810, 36519 / 878810],
+  [705 / 12673, -2585 / 12673, 705 / 667],
+];
+const GAMUT_EPSILON = 0.0005;
+
+const multiply = (m, v) => m.map((row) => row[0] * v[0] + row[1] * v[1] + row[2] * v[2]);
+
+function oklabToSrgb(lab) {
+  const lms = multiply(OKLAB_TO_LMS, lab).map((x) => x ** 3);
+  const linear = multiply(XYZ_TO_LINEAR_SRGB, multiply(LMS_TO_XYZ, lms));
+  return linear.map((x) => {
+    const abs = Math.abs(x);
+    const encoded = abs <= 0.0031308 ? 12.92 * abs : 1.055 * abs ** (1 / 2.4) - 0.055;
+    return Math.sign(x) * encoded;
+  });
+}
+
+const inGamut = (rgb) => rgb.every((x) => x >= -GAMUT_EPSILON && x <= 1 + GAMUT_EPSILON);
+
+/** Parse a CSS number or percentage; `percentScale` is the value that 100% maps to. */
+function parseChannel(token, percentScale) {
+  if (token === 'none') {
+    return 0;
+  }
+  if (token.endsWith('%')) {
+    return (parseFloat(token) / 100) * percentScale;
+  }
+  return parseFloat(token);
+}
+
+/**
+ * Parse `oklch()` / `oklab()` into OKLab channels plus alpha. Returns null for any other value, including
+ * relative color syntax (`oklch(from …)`) and values that still hold `var()`.
+ */
+function parseOklab(value) {
+  const match = /^(oklch|oklab)\(\s*([^()]+?)\s*\)$/i.exec(value.trim());
+  if (!match || /\bfrom\b|var\(/i.test(match[2])) {
+    return null;
+  }
+  const [channels, alphaToken] = match[2].split('/').map((part) => part.trim());
+  const parts = channels.split(/\s+/);
+  if (parts.length !== 3) {
+    return null;
+  }
+  const alpha = alphaToken ? parseChannel(alphaToken, 1) : 1;
+  const lightness = parseChannel(parts[0], 1);
+  if (match[1].toLowerCase() === 'oklab') {
+    return { lab: [lightness, parseChannel(parts[1], 0.4), parseChannel(parts[2], 0.4)], alpha };
+  }
+  const chroma = parseChannel(parts[1], 0.4);
+  const hue = ((parseFloat(parts[2]) || 0) * Math.PI) / 180;
+  return { lab: [lightness, chroma * Math.cos(hue), chroma * Math.sin(hue)], alpha };
+}
+
+const toHexByte = (x) =>
+  Math.round(Math.min(1, Math.max(0, x)) * 255)
+    .toString(16)
+    .padStart(2, '0');
+
+/**
+ * Convert an `oklch()` / `oklab()` palette value to sRGB hex; other values pass through unchanged. The block
+ * editor's contrast checker parses colors with colord, which cannot read OKLCH and flags every OKLCH pairing
+ * as low contrast.
+ */
+function toPaletteColor(c, token, value) {
+  const parsed = parseOklab(value);
+  if (!parsed) {
+    if (/^(oklch|oklab|lab|lch|color)\(/i.test(value.trim())) {
+      c.warnings.add(
+        `--${token}: ${value} cannot be read by the editor's contrast checker. Replace it with a hex value.`
+      );
+    }
+    return value;
+  }
+  const rgb = oklabToSrgb(parsed.lab);
+  if (!inGamut(rgb)) {
+    c.warnings.add(
+      `--${token}: ${value} is outside sRGB; each channel was clipped, as browsers render it on sRGB screens. Check it against the design.`
+    );
+  }
+  const alpha = parsed.alpha < 1 ? toHexByte(parsed.alpha) : '';
+  return `#${rgb.map(toHexByte).join('')}${alpha}`;
+}
+
 /**
  * Add a color to the light palette and to the dark palette. A style variation's palette replaces the base
  * palette as a whole, so the dark palette lists every color, with `.dark` values where they differ.
+ * OKLCH / OKLab values are written as hex so the editor's contrast checker can read them.
  */
 function addColor(c, slug, raw, resolvers) {
-  const light = resolvers ? resolveVars(raw, resolvers.light) : { value: raw, unresolved: [] };
-  warnUnresolved(c, `color-${slug}`, light.unresolved);
-  c.palette.push({ slug, color: light.value, name: titleCase(slug) });
+  const token = `color-${slug}`;
+  const resolved = resolvers ? resolveVars(raw, resolvers.light) : { value: raw, unresolved: [] };
+  warnUnresolved(c, token, resolved.unresolved);
+  const light = toPaletteColor(c, token, resolved.value);
+  c.palette.push({ slug, color: light, name: titleCase(slug) });
   if (resolvers) {
-    const dark = resolveVars(raw, resolvers.dark).value;
+    const dark = toPaletteColor(c, token, resolveVars(raw, resolvers.dark).value);
     c.darkPalette.push({ slug, color: dark, name: titleCase(slug) });
-    if (dark !== light.value) {
+    if (dark !== light) {
       c.darkOverrides++;
     }
   }
