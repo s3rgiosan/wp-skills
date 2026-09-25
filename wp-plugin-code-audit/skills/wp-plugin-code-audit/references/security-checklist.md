@@ -316,7 +316,7 @@ For each `die()` / `exit()` inside an AJAX or REST callback:
 
 | Pattern | Issue |
 |---|---|
-| `die("error, no order")` in `wp_ajax_*` callback | Returns `text/html` body instead of JSON. Breaks `wp_send_json_*` contract; downstream JS receives unparseable response. Plaintext content may leak internal state ("no order", "DB connection lost", path fragments). |
+| `die("error")` in `wp_ajax_*` callback | Returns `text/html` body instead of JSON. Breaks `wp_send_json_*` contract; downstream JS receives unparseable response. Plaintext content may leak internal state ("DB connection lost", record IDs, path fragments). |
 | `exit;` after `wp_send_json_*` | Redundant (helpers call `wp_die` internally) and confuses readers. |
 | `die( $exception->getMessage() )` | Echoes exception text — may leak file paths, query fragments, DB errors. |
 
