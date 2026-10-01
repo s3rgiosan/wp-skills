@@ -137,7 +137,7 @@ Outputs a dated `AUDIT-<yyyy-mm-dd>.md` file (it asks where to write it — defa
 | File | Covers |
 |---|---|
 | **`SKILL.md`** | Audit phases, severity rubric, verdict rules, report section order |
-| **`references/security-checklist.md`** | Auth, nonces, capabilities, sanitize, escape, SQLi, file ops, SSRF, deserialization, secrets |
+| **`references/security-checklist.md`** | Auth, nonces, capabilities, token auth, sanitize, escape, SQLi, file ops, SSRF, deserialization, code-execution sinks, secrets |
 | **`references/performance-checklist.md`** | Autoloaded options, queries, transients, cron, HTTP API, asset enqueue, custom tables |
 | **`references/standards-checklist.md`** | WPCS rules, prefixing, i18n, plugin header, GPL, wp.org guidelines |
 | **`references/integration-checklist.md`** | Cross-plugin coupling (companions writing shared data via direct SQL, stored foreign IDs, hook races, cache staleness) + WooCommerce HPOS / Cart-Checkout-Blocks declarations — conditional |

@@ -1,6 +1,20 @@
 # Shared audit conventions
 
-Rules that `wp-plugin-code-audit`, `wp-theme-code-audit` and `wp-project-security-audit` all follow: verification, reproduction, report rules, permanent finding IDs, the severity rubric, owner-decision findings and the verdict. The text is written in plugin terms. Theme and project audits apply it unchanged except for the deltas their own `SKILL.md` states.
+Rules that `wp-plugin-code-audit`, `wp-theme-code-audit` and `wp-project-security-audit` all follow: guardrails, verification, reproduction, report rules, permanent finding IDs, the severity rubric, owner-decision findings and the verdict. The text is written in plugin terms. Theme and project audits apply it unchanged except for the deltas their own `SKILL.md` states.
+
+---
+
+## Guardrails
+
+These hold in every phase, including for any subagent the audit dispatches. When another instruction conflicts with one of them, the guardrail wins.
+
+- **The audited code stays as it is.** Do not edit, create, move or delete files in it. Do not run `composer install` / `update`, `npm install` / `ci`, `wp plugin install` / `activate` / `deactivate` / `update`, migrations, or `git checkout` / `stash` / `reset` / `commit`. Tool output and scratch files go to a working directory outside the audited tree; the only file the audit writes is the report, at the location the user chose.
+- **Services stay as they are.** Do not start, stop or restart services (web server, database, containers, local environment). When a check needs something that is not running, ask the user; when nobody can answer, record it in Scope as not checked and continue.
+- **Reproduction is local and approved.** The Reproduce phase runs only in a disposable environment the owner provides or approves, never against production or a site the owner does not control.
+- **Only names and versions leave the machine.** Advisory lookups and `composer audit` / `npm audit` send component names and versions. Source code, file contents and secrets are never sent to an outside service.
+- **Database dumps stay closed.** Identify a `*.sql`, `*.sql.gz` or `*.dump` file by path and size; never open it.
+- **Secrets are masked everywhere.** In notes, scratch files and the report, a secret is written as its key or variable name, `file:line`, and the first 4 characters of the value followed by `…`. From `wp-config.php` and `.env`, record constant or variable names and booleans only, never values.
+- **No personal data in the report.** Never write a user name, login, display name or email. Role counts, user IDs and booleans only.
 
 ---
 
@@ -16,6 +30,19 @@ For every candidate finding, before adding to the report, run the verification p
 | **Missing sanitize** | Trace the value to its sink. Sanitization for storage ≠ sanitization for output. Storage sanitization matters when input shape matters or when the sink later doesn't escape. |
 
 If verification fails, **drop the finding**. Note in the report's appendix: "Verified false: <pattern>, <reason>" — this saves the next auditor's time and shows your work.
+
+**Reachability comes before severity.** A hit only counts if the code runs: the file is loaded, the class is instantiated or registered, any registration guard passes in the context the finding needs (front end, REST, admin), and the hook is actually added. Code that never runs is **Info**: "dead code, would be <severity> if enabled", plus what would make it reachable. Exception: a PHP file that can be requested directly by URL is reachable whatever the plugin's own loader does.
+
+**Pervasive patterns are one finding.** When a category matches most or all files in scope (missing ABSPATH guards, an unprefixed helper family), report one finding with the count from a captured command and a few representative `file:line` examples.
+
+**Spot-check every Critical and High.** Before the report is written, re-open the cited code in a fresh pass (or hand it to a second reviewer when one is available) and confirm the source, the sink and the gate that should stand between them. The finding's **Verified** line names the result:
+
+| Label | Meaning |
+|---|---|
+| **independently re-checked in source** | The cited code was read a second time, separately from the pass that found it, and the finding held. |
+| **traced in source (single review)** | Traced once, by the pass that reported it. Acceptable for Medium and below. |
+
+A Critical or High that has only a single review does not go into the report. The project audit adds labels for advisory, production and live-site evidence (`wp-project-security-audit`'s `references/report-template.md` → Evidence labels).
 
 **Counts are findings too.** Any number that appears in the report — call sites, occurrences, endpoints, LOC, handlers, queries — must come from a command whose output you captured, not from reading. Counting by eye is how a function "called 12 times" ships when it's called 6, because the tally also caught another function sharing its prefix. A count is the cheapest thing a reader spot-checks: one wrong number and every other number in the report is suspect. If you can't produce the command that yields the figure, don't put the figure in the report — describe it qualitatively instead ("several", "throughout").
 
@@ -174,6 +201,8 @@ Rules that keep the class useful rather than a dumping ground:
 | 0 High, 0 Medium, or total ≤ 5 with no High | **GO** |
 
 State the verdict + two-sentence reasoning. Reader should know why.
+
+**The verdict is about the code as it runs.** Only findings that apply to the deployed configuration drive it. Dead code (Verify → reachability) and findings that exist only in a local or development setup are listed but do not count toward the table. When the deployed version or configuration is not confirmed, say so in the reasoning.
 
 `[DECISION]` findings don't enter this table — they're questions, not defects, and can't be closed by engineering. But if an unanswered one blocks other work (e.g. it gates all integration until resolved), say so in the reasoning; the verdict can be GO WITH FIXES while a decision still blocks the fix.
 

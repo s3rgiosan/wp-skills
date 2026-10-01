@@ -2,7 +2,7 @@
 
 The four categories that get over-flagged in WP audits. Every candidate finding in these categories MUST go through the verification procedure below before being written to the report.
 
-> A candidate finding can appear exploitable but verified false when a guard — validation, allowlisting, or escaping — prevents the exploit path. Drop the finding, and note a fragile guard (one a refactor could break) as Low.
+> A candidate finding can appear exploitable but verified false when a guard — validation, allowlisting, or escaping — prevents the exploit path. Drop the finding, and note a fragile guard (one a refactor could break) as a separate finding: Low when the guard sits next to the sink, Medium when it lives elsewhere (a constructor, another class, a caller) so a new code path can reach the sink without it.
 
 Two failure modes the procedures protect against:
 
@@ -42,7 +42,7 @@ A finding can be "not exploitable today" but "fragile":
 
 > The query uses `esc_sql()` and the value passes `post_type_exists()` in the constructor. Not exploitable today. **Fragile**: a refactor that calls this code path with an unvalidated post type would re-introduce SQLi. Recommended: switch to `$wpdb->prepare()` with `%s` and document the invariant.
 
-That's a Medium finding, not a Critical.
+That's a Medium finding, not a Critical: the guard lives in the constructor, away from the query. The same `esc_sql()` with an allowlist check on the line above the query would be Low.
 
 ### Anti-pattern: PHPCS rule cited as the only evidence
 

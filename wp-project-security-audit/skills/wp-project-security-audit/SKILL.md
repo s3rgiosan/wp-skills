@@ -140,7 +140,7 @@ Script output is candidates, never findings. A lookup with no data is not a clea
 |---|---|---|
 | **Custom plugin** | full `wp-plugin-code-audit` | a working report in the audit's working folder, merged into the report as an annex |
 | **Custom theme** (including child themes) | full `wp-theme-code-audit`; for a child, the parent is named and audited separately only if custom | a working report in the audit's working folder, merged into the report as an annex |
-| **Committed third-party** | hotspot pass: unauthenticated REST `permission_callback`, `nopriv` AJAX, file paths built from input, `unserialize` on request or low-trust data, remote update endpoints, direct-access PHP that bootstraps WordPress | findings in the project report under the component |
+| **Committed third-party** | hotspot pass: unauthenticated REST `permission_callback`, `nopriv` AJAX, hand-rolled token checks, file paths built from input, `unserialize` on request or low-trust data, code-execution sinks fed by request or stored data, remote update endpoints, direct-access PHP that bootstraps WordPress | findings in the project report under the component |
 | **Managed third-party** (wp.org, premium artifact, VCS) | lookups only (phase 2), unless a lookup or the owner gives a reason to read code | lookup results under the component |
 | **Must-use and drop-ins** | custom: full plugin-skill review; third-party: as its owning bucket; every loader checked for missing targets | as above |
 | **Core** | version lookup; checksums in phase 6 | General |
@@ -187,7 +187,7 @@ Apply the Verify table (plugin `references/shared-conventions.md`) and `false-po
 
 **Every raw candidate is accounted for.** `vuln-lookup.sh`, `dep-audit.sh` and `bundled-libs.sh` each write a `candidates.tsv`, the authoritative candidate list. Every row ends up in the report as a finding or in Verified false with a reason; scanners and the merge run the coverage check in `references/subagent-briefs.md` (Section file contract → Completeness) and require zero missing rows. The merge reads the raw candidate lists, not only section files. When comparing with a previous report, check the raw script outputs before calling a previous finding "missed": missed means absent from the raw outputs too, not only from a section file. That comparison is an internal check to catch misses; its results are never report content.
 
-**Spot-check every Critical and High against source before the report.** Open the cited file and lines (or the advisory and the matching source) yourself. Internally a finding is either re-checked by the merge or cited by one reviewer; in the report that becomes a plain evidence label: "independently re-checked in source", "traced in source (single review)", "confirmed on production files", "advisory and version match", "owner's production check" or "observed on the live site (owner-authorized)" (legend: `references/report-template.md` → Evidence labels). A Critical or High with only a single review does not go into the report: re-check it first.
+**Spot-check every Critical and High against source before the report** (plugin `references/shared-conventions.md` → Verify). Open the cited file and lines (or the advisory and the matching source) yourself. Internally a finding is either re-checked by the merge or cited by one reviewer; in the report that becomes a plain evidence label: "independently re-checked in source", "traced in source (single review)", "confirmed on production files", "advisory and version match", "owner's production check" or "observed on the live site (owner-authorized)" (legend: `references/report-template.md` → Evidence labels). A Critical or High with only a single review does not go into the report: re-check it first.
 
 **Counts are findings too** (plugin `references/shared-conventions.md` → Verify): every number in the report comes from a captured command.
 
@@ -271,7 +271,7 @@ Full skeleton and a fabricated worked example: `references/report-template.md`.
 
 ### Verdict
 
-- **Project verdict** uses the Verdict Rules (plugin `references/shared-conventions.md`) over every finding that applies to **production as deployed**: active components on production sites, production versions, production config. Findings that only apply locally, or only to inactive and unreachable code, do not drive it. When production versions or config are unconfirmed, say so in the verdict reasoning.
+- **Project verdict** uses the Verdict Rules (plugin `references/shared-conventions.md`) over every finding that applies to **production as deployed**: active components on production sites, production versions, production config. Findings that only apply locally, or only to inactive and unreachable code, do not drive it (plugin `references/shared-conventions.md` → Verdict Rules). When production versions or config are unconfirmed, say so in the verdict reasoning.
 - **Per-component verdict** (inventory column): the verdict of the component's annex for fully audited components; for lookup and hotspot components, the same rules over that component's findings, or "lookup clean" / "no data" when there are none.
 - `[DECISION]` findings do not enter the table (plugin `references/shared-conventions.md` → Verdict Rules), but say which ones block fixes.
 

@@ -122,7 +122,7 @@ Level 5 is a reasonable bar for plugin audits. Higher levels (6–9) generate mo
 
 Findings to flag in the report:
 - Type errors that translate to runtime fatals (null deref, undefined method) → **Medium** or **High** depending on path.
-- Dead code in security-relevant paths → **Medium**.
+- Dead code in security-relevant paths → **Info**, worded "dead code, would be <severity> if enabled" (`shared-conventions.md` → Verify → reachability). A directly requestable file is never dead code.
 - Type errors in non-critical paths → **Low** / **Info**.
 
 PHPStan rarely false-positives at level 5. Trust it more than PHPCS.

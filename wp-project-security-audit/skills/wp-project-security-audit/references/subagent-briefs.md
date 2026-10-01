@@ -238,8 +238,11 @@ Check, reading every hit in context (plugin skill references/security-checklist.
 references/false-positive-traps.md before writing any candidate):
 - register_rest_route with permission_callback __return_true or missing, and what the callback does (§1.1);
 - wp_ajax_nopriv_ handlers, and wp_ajax_ handlers without a capability check or nonce (§1.2, §2);
+- hand-rolled token checks (bearer, API key, JWT, webhook signature) on REST or AJAX endpoints (§1.6);
 - file paths built from request input: include/require, file_get_contents, fopen, unlink, readfile (§6);
 - unserialize / maybe_unserialize on request data, cookies, or options a low role can write (§8);
+- code-execution sinks (eval, assert, create_function, preg_replace /e, shell functions, backticks) fed by request
+  or stored data (§13);
 - remote update or licence endpoints: hosts, whether responses are verified, whether they can install code;
 - direct-access PHP files that bootstrap WordPress themselves (require of wp-load.php) or lack an ABSPATH guard.
 Fix lines follow the "committed or forked" row of the ownership table: update from the vendor, report, mitigate

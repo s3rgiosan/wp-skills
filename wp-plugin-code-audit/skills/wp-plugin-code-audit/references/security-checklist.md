@@ -65,6 +65,31 @@ For each callsite, trace the ID to its sink. Examples that need a record-level c
 
 **Severity:** IDOR with destructive impact is at least **High**; if the record holds sensitive data (PII / financial / private), **Critical** when reachable by Subscriber.
 
+### 1.6 Hand-rolled token authentication
+
+Some plugins authenticate REST or AJAX requests themselves: a bearer token, an API key header, a signed JWT, a webhook signature. The `permission_callback` then returns whatever the plugin's own check returns, and that check is the whole access control.
+
+**Detect:**
+```bash
+grep -RniE "(HTTP_AUTHORIZATION|get_header\(\s*['\"](authorization|x-api-key|x-[a-z-]*signature)|Bearer )" --include="*.php" .
+grep -RniE "(firebase.JWT|JWT::decode|jwt_decode)" --include="*.php" .
+grep -RnE "hash_hmac\(" --include="*.php" .
+```
+
+For each, read the validation path and confirm:
+- **Signature is verified with a pinned algorithm.** A JWT decoded without verification, or one that trusts its own `alg` header (including `none`), proves nothing.
+- **Expiry is enforced.** `exp` (and `nbf` where issued) is checked; long-lived static keys have a rotation path.
+- **The comparison is constant-time.** Shared secrets and HMACs are compared with `hash_equals()` (§9.1), never `==` / `===` / `strcmp`.
+- **The token maps to a WordPress user, and that user's capabilities gate the action.** A valid token alone authorizes nothing; `wp_set_current_user()` followed by the normal `current_user_can()` check is the usual shape.
+- **The token travels in a header.** A token accepted from the query string ends up in server logs, analytics and `Referer` headers.
+- **Failures are uniform.** Missing, malformed, expired and wrong tokens get the same error and status; different messages let a caller probe which part is wrong.
+
+Never send a token to a live endpoint to test it; the source trace is the evidence.
+
+**Severity:** a bypass (unverified signature, `alg: none`, a check that can be skipped by omitting the header) is **Critical** when the endpoint changes data or returns private data. Missing expiry or a non-constant-time comparison is **Medium**. A query-string token is **Low**, **Medium** when the endpoint is public-facing and the token is long-lived.
+
+**Fix:** use core's Application Passwords (Basic auth over HTTPS, mapped to a real user) where they fit. Otherwise use a maintained JWT library with the algorithm pinned in the decode call, enforce expiry, compare with `hash_equals()`, and resolve the token to a user before checking capabilities.
+
 ---
 
 ## 2. Nonces (CSRF)
@@ -295,7 +320,7 @@ Stack traces, debug strings, or "API returned X" messages that include the crede
 
 ## 10. Cross-Site Scripting (Beyond Section 4)
 
-- `the_title()` is auto-escaped in default contexts but not in attribute context — wrap with `esc_attr()` for `<input value="">`.
+- `the_title()` does not escape: its filters texturize and convert characters, they do not neutralize markup. Where post titles are low-trust (contributors, imported content), use `echo esc_html( get_the_title() )`, and `the_title_attribute()` or `esc_attr( get_the_title() )` inside an attribute such as `<input value="">`. See `false-positive-traps.md` §3.
 - `wp_localize_script()` JSON-encodes values; safe for inline JS.
 - Inline `onclick="..."` with PHP interpolation → `esc_js()` + `esc_attr()` double-escape minefield. Prefer event listeners.
 - Stored XSS in user-editable fields rendered without `esc_html()` / `wp_kses_post()`.
@@ -373,6 +398,15 @@ defined( 'ABSPATH' ) || exit;
 
 - **`extract()`** on user input → variable injection.
 - **`call_user_func()` / `call_user_func_array()`** with user-controlled callable → arbitrary function call.
+- **Code-execution sinks** — `eval()`, `assert()` with a string argument, `create_function()` (removed in PHP 8), `preg_replace()` with the `/e` modifier (removed in PHP 7), and the shell family: `exec`, `shell_exec`, `system`, `passthru`, `proc_open`, `popen`, backticks. WPCS reports them through `Squiz.PHP.Eval` and `WordPress.PHP.DiscouragedPHPFunctions` (group `system_calls`), so the tool scan usually lists them already.
+
+  ```bash
+  grep -RnE "\b(eval|assert|create_function|exec|shell_exec|system|passthru|proc_open|popen)\s*\(" --include="*.php" .
+  grep -RnE "preg_replace\s*\(\s*['\"]/.*/[a-zA-Z]*e[a-zA-Z]*['\"]" --include="*.php" .   # /e with a / delimiter; read other delimiters by hand
+  grep -RnE "\`[^\`]*\\\$" --include="*.php" .   # backticks that interpolate a variable
+  ```
+
+  Trace each argument to its source. A constant string or a value built only from plugin constants is Info at most (note it for the wp.org review if the plugin ships there). Any request, cookie, option or meta value reaching the argument is code execution: rate it by who can write that value, per the Subscriber-exploitable rule. Fix: remove the call; for a shell command that must stay, pick the command from a fixed allowlist and pass every argument through `escapeshellarg()`.
 - **Misspelled filenames that WP relies on** — e.g. `unistall.php` instead of `uninstall.php` → uninstall hook never fires → orphaned options / tables (call out as **Low** if no destructive logic; **Medium** if cleanup code is in there but unreachable; **High** if uninstall is supposed to remove credentials and they remain).
 - **Misspelled constants** — e.g. `WP_UNISTALL_PLUGIN` vs `WP_UNINSTALL_PLUGIN` → guard never triggers. Same severity logic.
 

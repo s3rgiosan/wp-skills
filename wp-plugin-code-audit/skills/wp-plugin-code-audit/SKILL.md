@@ -115,6 +115,21 @@ if [ -f .distignore ]; then echo "--- .distignore ---"; cat .distignore; fi
 
 For remote audits (wp.org slug, GitHub URL): `references/remote-fetch.md`.
 
+### Hotspot pass (committed third-party code)
+
+When the target is third-party code committed to a site's repository (outside its vendor's update path) and the user wants a risk read, not a full audit, run a hotspot pass instead of phases 2 and 3. Read every hit in context and verify it as usual:
+
+- `register_rest_route` with `permission_callback` missing or `__return_true`, and what the callback does (`security-checklist.md` §1.1);
+- `wp_ajax_nopriv_` handlers, and `wp_ajax_` handlers without a capability check or nonce (§1.2, §2);
+- hand-rolled token checks on REST or AJAX endpoints (§1.6);
+- file paths built from request input in `include` / `require`, `file_get_contents`, `fopen`, `unlink`, `readfile` (§6);
+- `unserialize` / `maybe_unserialize` on request data, cookies, or options a low role can write (§8);
+- code-execution sinks fed by request or stored data (§13);
+- remote update or licence endpoints: which hosts, whether responses are verified, whether they can install code;
+- direct-access PHP: files that bootstrap WordPress on their own (`require` of `wp-load.php`) or lack an ABSPATH guard (§12).
+
+Say in Scope that it was a hotspot pass and list the classes covered. Fix lines follow the "committed or already modified" row of the ownership table (`references/shared-conventions.md` → Fix guidance by ownership).
+
 ---
 
 ## 2. Tool scan
@@ -159,7 +174,7 @@ Tools catch patterns; people catch intent. Read in this order:
 
 Apply the five checklists. **Traverse every section of every checklist; don't skim and assume coverage.** A common audit failure is forgetting to read a reference file end-to-end and missing entire categories (secrets storage, IDOR, ABSPATH guards, error-response disclosure).
 
-- `references/security-checklist.md` — auth, nonces, caps, **IDOR**, sanitize, escape, SQLi, CSRF, SSRF, file ops, deserialization, secrets in code, **stored credentials**, **error response & info disclosure**, **direct file access**, **personal data without exporters or erasers**.
+- `references/security-checklist.md` — auth, nonces, caps, **IDOR**, **hand-rolled token auth**, sanitize, escape, SQLi, CSRF, SSRF, file ops, deserialization, **code-execution sinks**, secrets in code, **stored credentials**, **error response & info disclosure**, **direct file access**, **personal data without exporters or erasers**.
 - `references/performance-checklist.md` — autoloaded options, expensive queries, missing indexes, transients without TTL, cache-thrashing hooks, cron storms, enqueue scope, asset weight.
 - `references/standards-checklist.md` — WPCS rules, function/class prefixing, i18n, deprecated APIs, plugin header completeness, GPL compatibility.
 - `references/integration-checklist.md` — cross-plugin coupling invisible from a single plugin: companions writing shared data via direct SQL (hooks never fire), stored foreign IDs vs record-duplicating layers, hook-ordering races, cache staleness, WooCommerce HPOS / Cart-Checkout-Blocks declarations. **Conditional — apply only when a companion touches the same data.**
@@ -171,7 +186,7 @@ Apply the five checklists. **Traverse every section of every checklist; don't sk
 
 ## 4. Verify (mandatory)
 
-Trace every candidate finding through source before it enters the report. The per-category verification table, the drop-and-record rule and the "counts are findings too" rule are in `references/shared-conventions.md` → Verify. Category procedures: `references/false-positive-traps.md`.
+Trace every candidate finding through source before it enters the report. The per-category verification table, the drop-and-record rule, reachability, pervasive patterns, the spot-check of every Critical and High, and the "counts are findings too" rule are in `references/shared-conventions.md` → Verify. Category procedures: `references/false-positive-traps.md`.
 
 ---
 
@@ -228,6 +243,8 @@ The report is the start of the work, not the end — findings get fixed, the own
 - **Listing every PHPCS warning as a finding.** PHPCS finds candidates, not findings. Filter aggressively.
 - **Skipping the verify phase under time pressure.** A false-positive-laden report trains people to ignore audits.
 - **Hand-waving "looks fine" without reading hook callbacks.** Hooks are where the bugs live.
+- **Rating by the tool's severity.** `composer audit` or `npm audit` calling a dev-only package "critical" says nothing about the plugin; what ships and runs decides.
+- **Rating by the comment instead of the capability.** "Admins only" in a docblock means nothing; the `current_user_can()` argument decides.
 - **Reporting on the build output (`dist/`).** Audit source. Note when source isn't shipped (then audit the build, downgrade confidence).
 - **No verdict.** Every audit ends in GO / NO-GO / GO WITH FIXES. "It depends" is not a verdict.
 - **Top-3-to-fix-first list missing or has 7 items.** Three. Force prioritization.
