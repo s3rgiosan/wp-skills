@@ -53,6 +53,11 @@
       "name": "wp-v0-to-block-theme",
       "source": "./wp-v0-to-block-theme",
       "description": "Translate a v0 (Vercel) design — React/Next + Tailwind + shadcn/ui — into a WordPress block theme: map Tailwind tokens to theme.json and shadcn/ui to core blocks on top of the wp-design-to-block-theme workflow. Requires wp-design-to-block-theme."
+    },
+    {
+      "name": "wp-claude-design-to-block-theme",
+      "source": "./wp-claude-design-to-block-theme",
+      "description": "Turn a Claude design (a Claude Design canvas or an HTML artifact) into a WordPress block theme: unbundle the canvas into pages, map artboards to routes, and rebuild with the wp-design-to-block-theme workflow. Requires wp-design-to-block-theme."
     }
   ]
 }

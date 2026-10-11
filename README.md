@@ -91,6 +91,14 @@ Translate a v0 (Vercel) design — React/Next + Tailwind + shadcn/ui — into a 
 
 **[→ Install wp-v0-to-block-theme](./wp-v0-to-block-theme/README.md)**
 
+### [wp-claude-design-to-block-theme](./wp-claude-design-to-block-theme)
+
+Turn a Claude design — a Claude Design canvas or an HTML artifact — into a WordPress block theme (FSE). Unbundles a downloaded canvas into one standalone page per artboard (`unbundle.mjs`), maps artboards to routes from `canvas.json`, and reads hover colors, links, `data-props` tweaks and `DCLogic` behaviors from the canvas source, then rebuilds with the `wp-design-to-block-theme` workflow. Requires `wp-design-to-block-theme`.
+
+**Triggers on:** "Claude design to WordPress", "turn this canvas into a block theme", "convert this artifact to a WordPress theme", a claude.ai/artifact URL or a downloaded canvas `.html` paired with a WordPress theme request.
+
+**[→ Install wp-claude-design-to-block-theme](./wp-claude-design-to-block-theme/README.md)**
+
 ---
 
 ## Install via Claude Code plugin marketplace (recommended)
