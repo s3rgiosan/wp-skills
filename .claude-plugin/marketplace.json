@@ -52,7 +52,7 @@
     {
       "name": "wp-v0-to-block-theme",
       "source": "./wp-v0-to-block-theme",
-      "description": "Translate a v0 (Vercel) design — React/Next + Tailwind + shadcn/ui — into a WordPress block theme: capture the rendered design, map Tailwind tokens to theme.json, and rebuild sections as patterns, templates, and Interactivity API blocks."
+      "description": "Translate a v0 (Vercel) design — React/Next + Tailwind + shadcn/ui — into a WordPress block theme: map Tailwind tokens to theme.json and shadcn/ui to core blocks on top of the wp-design-to-block-theme workflow. Requires wp-design-to-block-theme."
     }
   ]
 }

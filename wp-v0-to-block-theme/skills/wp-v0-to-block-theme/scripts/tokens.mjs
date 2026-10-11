@@ -16,7 +16,7 @@
  *
  * Output: JSON with a top-level `settings` key, ready to merge into theme.json. With --dark-out, also a
  * `styles/dark.json` style variation holding the `.dark` palette.
- * This is a first pass — review against references/tokens-mapping.md (rename slugs, drop unused, add fluid type).
+ * This is a first pass — review against references/tailwind-tokens.md and the core references/theme-json-tokens.md (rename slugs, drop unused, add fluid type).
  *
  * No network, no side effects beyond writing --out / --dark-out (or stdout).
  */
@@ -395,7 +395,7 @@ function collectFromCss(rawCss) {
   const tokens = scopes.hasTheme ? scopes.theme : parseVars(stripComments(rawCss));
 
   for (const [name, raw] of Object.entries(tokens)) {
-    // `--text-xl--line-height` and friends are sub-properties of a token, not tokens.
+    // `--text-xl--line-height` and friends are sub-properties of a token and are skipped.
     if (name.includes('--') || raw === 'initial') {
       continue;
     }

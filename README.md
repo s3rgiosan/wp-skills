@@ -85,7 +85,7 @@ Turn any rendered web design — a deployed preview, a local dev server, or stat
 
 ### [wp-v0-to-block-theme](./wp-v0-to-block-theme)
 
-Translate a v0 (Vercel) design — React/Next + Tailwind + shadcn/ui — into a WordPress block theme (FSE). No automatic converter exists, so the skill splits the work into the mechanical parts it automates (per-breakpoint Playwright capture of the rendered design, mapping Tailwind v3/v4 tokens to `theme.json`, and a design-vs-rebuild parity gate) and the judgment parts it guides: rebuilding each route and section as templates, patterns, content, and Interactivity API blocks. Covers current block-theme practice (theme.json v3, style variations for dark mode, block bindings, root-padding-aware alignments) and the Interactivity API (server-seeded state, `data-wp-*` directives). Ships three scripts (`capture.mjs`, `tokens.mjs`, `compare.mjs`) and composes with `wp-block-themes` / `wp-patterns` / `wp-block-development` / `wp-interactivity-api`.
+Translate a v0 (Vercel) design — React/Next + Tailwind + shadcn/ui — into a WordPress block theme (FSE). Adds the v0 inputs, Tailwind v3/v4 token mapping to `theme.json` (`tokens.mjs`, with shadcn `var()` resolution and OKLCH → hex), and a shadcn/ui → core blocks map on top of the `wp-design-to-block-theme` workflow. Requires `wp-design-to-block-theme`.
 
 **Triggers on:** "v0 to WordPress", "v0 to block theme", "convert this v0 design", "Vercel design to WP theme", "Tailwind to theme.json", a v0.dev / *.vercel.app URL paired with a WordPress theme request.
 
