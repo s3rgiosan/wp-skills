@@ -197,4 +197,4 @@ skill-name/
 
 ## License
 
-MIT
+[MIT](LICENSE)
