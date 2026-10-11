@@ -75,6 +75,14 @@ Deep architectural analysis of WordPress plugins — what the plugin does, how i
 
 **[→ Install wp-mnemon](./wp-mnemon/README.md)**
 
+### [wp-design-to-block-theme](./wp-design-to-block-theme)
+
+Turn any rendered web design — a deployed preview, a local dev server, or static HTML files — into a WordPress block theme (FSE). No automatic converter exists, so the skill splits the work into the mechanical parts it automates (per-breakpoint Playwright capture of the rendered pages, `theme.json` tokens derived from what the pages paint, and a design-vs-rebuild parity gate) and the judgment parts it guides: a content-model pass that asks where each piece of content lives (site identity, post fields, taxonomies, meta, settings, custom blocks), then rebuilding each route and section as templates, patterns, content, and Interactivity API blocks. Covers current block-theme practice (theme.json v3, fluid type, style variations for dark mode, block bindings, root-padding-aware alignments) and the Interactivity API. Ships three scripts (`capture.mjs`, `css-tokens.mjs`, `compare.mjs`), is the shared core for the source skills below, and composes with `wp-block-themes` / `wp-patterns` / `wp-block-development` / `wp-interactivity-api`.
+
+**Triggers on:** "design to block theme", "HTML to WordPress theme", "convert this mockup to a block theme", "turn this static site into an FSE theme", "extract theme.json from this page".
+
+**[→ Install wp-design-to-block-theme](./wp-design-to-block-theme/README.md)**
+
 ### [wp-v0-to-block-theme](./wp-v0-to-block-theme)
 
 Translate a v0 (Vercel) design — React/Next + Tailwind + shadcn/ui — into a WordPress block theme (FSE). No automatic converter exists, so the skill splits the work into the mechanical parts it automates (per-breakpoint Playwright capture of the rendered design, mapping Tailwind v3/v4 tokens to `theme.json`, and a design-vs-rebuild parity gate) and the judgment parts it guides: rebuilding each route and section as templates, patterns, content, and Interactivity API blocks. Covers current block-theme practice (theme.json v3, style variations for dark mode, block bindings, root-padding-aware alignments) and the Interactivity API (server-seeded state, `data-wp-*` directives). Ships three scripts (`capture.mjs`, `tokens.mjs`, `compare.mjs`) and composes with `wp-block-themes` / `wp-patterns` / `wp-block-development` / `wp-interactivity-api`.
