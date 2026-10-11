@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Claude Code skills for WordPress developers",
-    "version": "1.6.0"
+    "version": "1.7.0"
   },
   "allowCrossMarketplaceDependenciesOn": ["s3rgiosan-wp-agents"],
   "plugins": [
@@ -45,9 +45,19 @@
       "description": "Deep architectural analysis of WordPress plugins — what the plugin does, how it works, what triggers what, and how data flows. 13-phase workflow with structured output."
     },
     {
+      "name": "wp-design-to-block-theme",
+      "source": "./wp-design-to-block-theme",
+      "description": "Turn any rendered web design (URL, dev server or static HTML) into a WordPress block theme: capture the pages, derive theme.json tokens from what they paint, rebuild sections as patterns, templates, and Interactivity API blocks, and gate parity."
+    },
+    {
       "name": "wp-v0-to-block-theme",
       "source": "./wp-v0-to-block-theme",
-      "description": "Translate a v0 (Vercel) design — React/Next + Tailwind + shadcn/ui — into a WordPress block theme: capture the rendered design, map Tailwind tokens to theme.json, and rebuild sections as patterns, templates, and Interactivity API blocks."
+      "description": "Translate a v0 (Vercel) design — React/Next + Tailwind + shadcn/ui — into a WordPress block theme: map Tailwind tokens to theme.json and shadcn/ui to core blocks on top of the wp-design-to-block-theme workflow. Requires wp-design-to-block-theme."
+    },
+    {
+      "name": "wp-claude-design-to-block-theme",
+      "source": "./wp-claude-design-to-block-theme",
+      "description": "Turn a Claude design (a Claude Design canvas or an HTML artifact) into a WordPress block theme: unbundle the canvas into pages, map artboards to routes, and rebuild with the wp-design-to-block-theme workflow. Requires wp-design-to-block-theme."
     }
   ]
 }

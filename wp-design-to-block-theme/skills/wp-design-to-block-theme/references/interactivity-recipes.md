@@ -1,8 +1,8 @@
-# Rebuilding v0 interactivity with the Interactivity API
+# Rebuilding design interactivity with the Interactivity API
 
-v0 interactive widgets (React state) become server-rendered markup + `data-wp-*` directives + a store. The markup renders complete on the server; the API hydrates behavior. This keeps the block-editor preview faithful and avoids shipping a React runtime.
+A design's interactive widgets (React state, a component runtime, inline scripts) become server-rendered markup + `data-wp-*` directives + a store. The markup renders complete on the server; the API hydrates behavior. This keeps the block-editor preview faithful and ships no framework runtime.
 
-For depth, delegate to the **wp-interactivity-api** skill when installed. This file is the quick recipe set for the common v0 widgets. The inline `data-wp-context='{…}'` string shown in the recipes below is the client-only shorthand; when the initial value comes from the server, prefer `wp_interactivity_data_wp_context()` instead (see Setup).
+For depth, delegate to the **wp-interactivity-api** skill when installed. This file is the quick recipe set for the common widgets. The inline `data-wp-context='{…}'` string shown in the recipes below is the client-only shorthand; when the initial value comes from the server, prefer `wp_interactivity_data_wp_context()` instead (see Setup).
 
 ## Setup (once per theme)
 
@@ -41,7 +41,7 @@ A nested `data-wp-context` inherits its ancestors' keys. Writing a key through `
 
 Check first whether the target WP version has the native accordion blocks (`core/accordion` and its children, stable since WordPress 6.9); use them when their behavior matches the design.
 
-Radix/shadcn `Accordion type="single"` (v0's default) closes the open item when another opens. Check `behaviors-*.json` from `capture.mjs --behaviors` (`disclosurePairs[].closesPrevious`) to know which one the design uses.
+A single-open accordion closes the open item when another opens; a multiple accordion leaves it open. Check `behaviors-*.json` from `capture.mjs --behaviors` (`disclosurePairs[].closesPrevious`) to know which one the design uses.
 
 Single-open: the wrapper owns `openId`; each item declares only its `id`.
 
@@ -128,7 +128,7 @@ store('mytheme', {
 
 ## Header that changes on scroll
 
-A v0 header is often transparent over the hero and turns solid (background, shadow) once the page scrolls. `sections-*.json` records the header's class and styles at the top and after scrolling (`header.atTop` / `header.scrolled`). Read the threshold from the source (`scrollY > 40` and similar).
+A header is often transparent over the hero and turns solid (background, shadow) once the page scrolls. `sections-*.json` records the header's class and styles at the top and after scrolling (`header.atTop` / `header.scrolled`). Read the threshold from the source (`scrollY > 40` and similar).
 
 ```html
 <header data-wp-interactive="mytheme"
@@ -149,7 +149,7 @@ Style `.is-scrolled` in the theme stylesheet with preset colors. Server-render t
 
 ## Reveal on scroll
 
-v0 sections often fade or slide in when they enter the viewport (framer-motion `whileInView`). Treat this as progressive enhancement:
+Sections often fade or slide in when they enter the viewport. Treat this as progressive enhancement:
 
 - Content is visible by default. Only a class added by JS (for example `has-reveal` on `<html>`) hides it before the reveal, so no-JS visitors and crawlers see everything.
 - Use one shared `IntersectionObserver` in a `data-wp-init` callback and add the reveal class once. Do not create an observer per element.
@@ -221,7 +221,7 @@ const { state } = store('mytheme', {
 });
 ```
 
-Use global `state` (not per-block `context`) for anything two regions share.
+Anything two regions share lives in global `state`; per-block `context` holds what one block owns.
 
 After a client-side navigation (region-based routing), a value the server recomputed for the new page — a cart count, a facet count — isn't automatically reflected in client state. Read it back with `getServerState()` / `getServerContext()` (WP 6.7+) inside a derived `state` getter or a callback:
 

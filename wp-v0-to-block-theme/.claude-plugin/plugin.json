@@ -1,7 +1,7 @@
 {
   "name": "wp-v0-to-block-theme",
-  "version": "1.0.2",
-  "description": "Translate a v0 (Vercel) design — React/Next + Tailwind + shadcn/ui — into a WordPress block (FSE) theme: capture the rendered design, map Tailwind tokens to theme.json, and rebuild sections as patterns, templates, and Interactivity API blocks.",
+  "version": "2.0.0",
+  "description": "Translate a v0 (Vercel) design — React/Next + Tailwind + shadcn/ui — into a WordPress block (FSE) theme: map Tailwind tokens to theme.json and shadcn/ui to core blocks, on top of the wp-design-to-block-theme capture, rebuild and parity workflow. Requires wp-design-to-block-theme.",
   "author": {
     "name": "Sérgio Santos",
     "url": "https://github.com/s3rgiosan"
@@ -9,5 +9,6 @@
   "homepage": "https://github.com/s3rgiosan/wp-skills/tree/main/wp-v0-to-block-theme",
   "repository": "https://github.com/s3rgiosan/wp-skills",
   "license": "MIT",
+  "dependencies": ["wp-design-to-block-theme"],
   "keywords": ["wordpress", "block-theme", "fse", "v0", "vercel", "tailwind", "theme-json", "gutenberg", "interactivity-api"]
 }

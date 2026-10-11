@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * compare.mjs — parity gate between two capture.mjs runs: the design (v0) and the WordPress rebuild.
+ * compare.mjs — parity gate between two capture.mjs runs: the design and the WordPress rebuild.
  *
  * Per route and breakpoint it checks:
  *   - structure: heading outline (h1–h3 text, in order) and section count — a dropped section fails here
@@ -18,9 +18,10 @@
  *   node compare.mjs <design-capture-dir> <local-capture-dir> [--tolerance 2] [--pixel-threshold 1]
  *     [--map design-route=local-route ...] [--json FILE]
  *
- * Requires Playwright (used to decode and diff the screenshots).
+ * Requires Playwright (used to decode and diff the screenshots), beside this script or in the current directory.
  */
 
+import { createRequire } from 'node:module';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -190,9 +191,18 @@ function compareSection(d, l, tol) {
 
 /* ------------------------------------------------------------------ Pixel diff */
 
+/** Playwright from beside this script, or else from the current working directory. */
+async function importPlaywright() {
+  try {
+    return await import('playwright');
+  } catch {
+    return createRequire(`${process.cwd()}/`)('playwright');
+  }
+}
+
 async function loadPlaywright() {
   try {
-    const mod = await import('playwright');
+    const mod = await importPlaywright();
     return mod.chromium;
   } catch {
     return null;

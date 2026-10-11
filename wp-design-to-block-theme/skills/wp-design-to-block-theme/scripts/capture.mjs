@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * capture.mjs — capture a rendered page (deployed v0 preview, a local `next dev`/`next start`, or the
- * WordPress rebuild) for translation to, and comparison with, a block theme.
+ * capture.mjs — capture a rendered page (a deployed design preview, a local dev server, a local HTML file,
+ * or the WordPress rebuild) for translation to, and comparison with, a block theme.
  *
  * Each page is scrolled top to bottom first, so reveal-on-scroll content and lazy images render, then
  * fonts and finite animations are awaited. For each route and breakpoint it writes, into <out>/<route>/:
@@ -9,20 +9,23 @@
  *   - dom-<w>.html        rendered outerHTML (post-hydration)
  *   - computed-<w>.json   computed styles for a curated selector set
  *   - sections-<w>.json   per-section geometry and styles, heading outline, header state before/after scroll
+ *   - styles-<w>.json     page-wide style tallies and custom properties, read by css-tokens.mjs
  *   - network-<w>.json    failed requests (4xx/5xx, aborted) and console errors
  *   - behaviors-<w>.json  (--behaviors) state changes caused by clicking each control
  * plus <out>/capture.json listing the routes and breakpoints.
  *
  * Usage:
- *   node capture.mjs <url> [<url> ...] [--routes FILE] [--base URL] [--out DIR]
+ *   node capture.mjs <url|file> [<url|file> ...] [--routes FILE] [--base URL|DIR] [--out DIR]
  *     [--breakpoints 390,768,1280] [--selectors "body,h1,..."] [--timeout 60000] [--behaviors] [--max-triggers 40]
  *
- * Requires Playwright:
- *   npm i -D playwright   (or)   npx playwright install chromium
+ * Requires Playwright, installed beside this script or in the current working directory:
+ *   npm i -D playwright && npx playwright install chromium
  */
 
+import { createRequire } from 'node:module';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { basename, isAbsolute, relative, resolve } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const DEFAULT_BREAKPOINTS = [390, 768, 1280];
 const DEFAULT_SELECTORS = [
@@ -40,24 +43,26 @@ const CAPTURED_PROPS = [
 const HELP = `capture.mjs — capture pages for block-theme translation and parity checks
 
 Usage:
-  node capture.mjs <url> [<url> ...] [--routes FILE] [--base URL] [--out DIR]
+  node capture.mjs <url|file> [<url|file> ...] [--routes FILE] [--base URL|DIR] [--out DIR]
     [--breakpoints 390,768,1280] [--selectors "body,h1,..."] [--timeout 60000] [--behaviors] [--max-triggers 40]
 
   --routes FILE     one path or URL per line (# comments allowed); paths resolve against --base
                     or the first URL's origin.
+  --base URL|DIR    origin for route paths, or a folder of local HTML files.
+                    A local file's route folder is its name without .html (index.html → home).
   --behaviors       click each visible control and record the state changes it causes.
   --max-triggers N  cap on controls clicked per breakpoint (default 40).
 
-Writes <out>/<route>/{shot,dom,computed,sections,network}-<w>.* per breakpoint (default out ./v0-capture).
+Writes <out>/<route>/{shot,dom,computed,sections,styles,network}-<w>.* per breakpoint (default out ./design-capture).
 Capture the design and the WordPress rebuild with the same routes, then diff them with compare.mjs.
-Requires Playwright: npx playwright install chromium`;
+Requires Playwright in the current directory: npm i -D playwright && npx playwright install chromium`;
 
 function parseArgs(argv) {
   const args = {
     urls: [],
     routesFile: null,
     base: null,
-    out: 'v0-capture',
+    out: 'design-capture',
     breakpoints: DEFAULT_BREAKPOINTS,
     selectors: DEFAULT_SELECTORS,
     timeout: 60000,
@@ -117,42 +122,74 @@ function parseArgs(argv) {
  * The design and the local capture derive the same name from the same path, which is how compare.mjs pairs them.
  */
 function routeSlug(url) {
-  const { pathname, search } = new URL(url);
+  const { protocol, pathname, search } = new URL(url);
+  if (protocol === 'file:') {
+    const name = basename(decodeURIComponent(pathname)).replace(/\.html?$/i, '');
+    return name === 'index' ? 'home' : name.replace(/[^a-z0-9_.-]/gi, '-');
+  }
   const path = pathname.replace(/^\/+|\/+$/g, '');
   const base = path === '' ? 'home' : path.replace(/\//g, '__').replace(/[^a-z0-9_.-]/gi, '-');
   const query = search.replace(/^\?/, '').replace(/[^a-z0-9_.-]/gi, '-');
   return query === '' ? base : `${base}--${query}`;
 }
 
-/** Give each route its own folder: a name already taken gets a numeric suffix, with a warning. */
+/** A URL stays as it is; anything else is a local file path. */
+function toUrl(value) {
+  return /^(https?|file):/i.test(value) ? value : pathToFileURL(resolve(value)).href;
+}
+
+/** A --base that is not a URL is a folder of local HTML files. */
+function baseUrl(base) {
+  if (/^(https?|file):/i.test(base)) {
+    return base;
+  }
+  return `${pathToFileURL(resolve(base)).href}/`;
+}
+
+/** Give each route its own folder: a name already taken gets the first free numeric suffix, with a warning. */
 function uniqueSlugs(routes) {
-  const used = new Map();
+  const used = new Set();
   return routes.map((url) => {
     const slug = routeSlug(url);
-    const count = (used.get(slug) || 0) + 1;
-    used.set(slug, count);
-    if (count === 1) {
-      return slug;
+    let unique = slug;
+    for (let n = 2; used.has(unique); n++) {
+      unique = `${slug}-${n}`;
     }
-    const renamed = `${slug}-${count}`;
-    console.error(`Warning: ${url} maps to folder "${slug}", already used; writing to "${renamed}" instead.`);
-    return renamed;
+    used.add(unique);
+    if (unique !== slug) {
+      console.error(`Warning: ${url} maps to folder "${slug}", already used; writing to "${unique}" instead.`);
+    }
+    return unique;
   });
 }
 
+/** True when `path` is `folder` or inside it. */
+function isInside(path, folder) {
+  const rel = relative(folder, path);
+  return !rel.startsWith('..') && !isAbsolute(rel);
+}
+
 function resolveRoutes(args) {
-  const urls = [...args.urls];
+  const urls = args.urls.map(toUrl);
   if (args.routesFile) {
-    const base = args.base || (urls[0] ? new URL(urls[0]).origin : null);
+    let base = null;
+    if (args.base) {
+      base = baseUrl(args.base);
+    } else if (urls[0]) {
+      // A file URL has no origin; its route paths resolve against its folder.
+      base = urls[0].startsWith('file:') ? new URL('.', urls[0]).href : new URL(urls[0]).origin;
+    }
     const lines = readFileSync(args.routesFile, 'utf8')
       .split('\n')
       .map((l) => l.replace(/#.*/, '').trim())
       .filter(Boolean);
     for (const line of lines) {
-      if (/^https?:\/\//.test(line)) {
+      if (/^(https?|file):/i.test(line)) {
         urls.push(line);
       } else if (base) {
-        urls.push(new URL(line, base).href);
+        // Under a folder of local files, `/about.html` names a file in that folder.
+        const path = base.startsWith('file:') ? line.replace(/^\/+/, '') : line;
+        urls.push(new URL(path, base).href);
       } else {
         console.error(`Route "${line}" is a path; pass --base URL or a full URL first.`);
         process.exit(1);
@@ -162,13 +199,22 @@ function resolveRoutes(args) {
   return [...new Set(urls)];
 }
 
+/** Playwright from beside this script, or else from the current working directory. */
+async function importPlaywright() {
+  try {
+    return await import('playwright');
+  } catch {
+    return createRequire(`${process.cwd()}/`)('playwright');
+  }
+}
+
 async function loadPlaywright() {
   try {
-    const mod = await import('playwright');
+    const mod = await importPlaywright();
     return mod.chromium;
   } catch {
     console.error(
-      'Playwright is not installed. Install it first:\n  npm i -D playwright && npx playwright install chromium'
+      'Playwright is not installed. Install it in the current directory first:\n  npm i -D playwright && npx playwright install chromium'
     );
     process.exit(1);
   }
@@ -282,14 +328,21 @@ function collectSections() {
     };
   };
   const text = (el) => (el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 80);
+  // A heading inside hidden content (a collapsed panel, a paginated-away row) is not part of the page as shown.
+  const rendered = (el) => el.getClientRects().length > 0;
 
+  // A child of <main> that wraps bands of its own (a CMS content wrapper) is not a band itself.
   const candidates = Array.from(
     document.querySelectorAll('body header, body footer, body section, main > *')
-  ).filter((el) => el.getBoundingClientRect().height > 0);
+  ).filter(
+    (el) =>
+      el.getBoundingClientRect().height > 0 &&
+      !(el.parentElement?.tagName === 'MAIN' && el.querySelector('header, footer, section'))
+  );
   const sections = candidates.filter((el) => !candidates.some((o) => o !== el && o.contains(el)));
 
   const out = sections.map((el, index) => {
-    const heading = el.querySelector('h1, h2, h3');
+    const heading = Array.from(el.querySelectorAll('h1, h2, h3')).find(rendered);
     const column = Array.from(el.querySelectorAll('*')).find(
       (d) => getComputedStyle(d).maxWidth !== 'none'
     );
@@ -314,6 +367,7 @@ function collectSections() {
           }
         : null,
       headings: Array.from(el.querySelectorAll('h1, h2, h3, h4'))
+        .filter(rendered)
         .slice(0, 4)
         .map((h) => ({
           tag: h.tagName.toLowerCase(),
@@ -331,10 +385,196 @@ function collectSections() {
     };
   });
 
-  const outline = Array.from(document.querySelectorAll('h1, h2, h3')).map(
+  const outline = Array.from(document.querySelectorAll('h1, h2, h3')).filter(rendered).map(
     (h) => `${h.tagName.toLowerCase()}: ${text(h)}`
   );
   return { sections: out, outline, documentHeight: document.documentElement.scrollHeight };
+}
+
+/**
+ * Page-wide style tallies for token extraction (css-tokens.mjs): colors normalised to hex, type per text
+ * element (keyed by structural path so breakpoints line up), spacing, radii, shadows, max-widths, and the
+ * custom properties declared on :root, in dark-mode rules, and inline on elements.
+ */
+function collectStyleStats() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1;
+  canvas.height = 1;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  const hexCache = new Map();
+  // Paint the color and read the pixel back: any CSS color syntax comes out as sRGB hex. The canvas ignores a
+  // value that is not a color, so a value that leaves two different starting colors unchanged is not one.
+  const toHex = (value) => {
+    if (hexCache.has(value)) {
+      return hexCache.get(value);
+    }
+    ctx.fillStyle = '#000';
+    ctx.fillStyle = value;
+    const fromBlack = ctx.fillStyle;
+    ctx.fillStyle = '#fff';
+    ctx.fillStyle = value;
+    if (fromBlack !== ctx.fillStyle) {
+      hexCache.set(value, null);
+      return null;
+    }
+    ctx.clearRect(0, 0, 1, 1);
+    ctx.fillRect(0, 0, 1, 1);
+    const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data;
+    const hex = (n) => n.toString(16).padStart(2, '0');
+    const out = a === 0 ? null : `#${hex(r)}${hex(g)}${hex(b)}${a < 255 ? hex(a) : ''}`;
+    hexCache.set(value, out);
+    return out;
+  };
+  const path = (el) => {
+    const parts = [];
+    for (let n = el; n && n !== document.body; n = n.parentElement) {
+      const same = Array.from(n.parentElement?.children || []).filter((s) => s.tagName === n.tagName);
+      parts.unshift(`${n.tagName.toLowerCase()}:${same.indexOf(n) + 1}`);
+    }
+    return parts.join('>');
+  };
+  const tally = (map, key, weight = 1) => {
+    if (key) {
+      map[key] = (map[key] || 0) + weight;
+    }
+  };
+  const ownText = (el) =>
+    Array.from(el.childNodes)
+      .filter((n) => n.nodeType === Node.TEXT_NODE)
+      .map((n) => n.textContent)
+      .join('')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+  const stats = {
+    colors: { text: {}, background: {}, border: {} },
+    fontFamilies: {},
+    type: [],
+    spacing: { padding: {}, margin: {}, gap: {} },
+    radius: {},
+    shadow: {},
+    maxWidth: {},
+    customProperties: { root: {}, dark: {}, inline: {} },
+  };
+
+  const bodyStyle = getComputedStyle(document.body);
+  stats.ground = { background: toHex(bodyStyle.backgroundColor), color: toHex(bodyStyle.color) };
+  const bodyRect = document.body.getBoundingClientRect();
+  let groundArea = stats.ground.background?.length === 7 ? bodyRect.width * bodyRect.height : 0;
+
+  for (const el of document.body.querySelectorAll('*')) {
+    const r = el.getBoundingClientRect();
+    const cs = getComputedStyle(el);
+    if (r.width === 0 || r.height === 0 || cs.visibility === 'hidden' || /^(SCRIPT|STYLE|TEMPLATE)$/.test(el.tagName)) {
+      continue;
+    }
+    const text = ownText(el);
+    if (text) {
+      tally(stats.colors.text, toHex(cs.color), text.length);
+      tally(stats.fontFamilies, cs.fontFamily, text.length);
+      stats.type.push({
+        path: path(el),
+        tag: el.tagName.toLowerCase(),
+        text: text.slice(0, 40),
+        length: text.length,
+        family: cs.fontFamily,
+        size: cs.fontSize,
+        lineHeight: cs.lineHeight,
+        weight: cs.fontWeight,
+        letterSpacing: cs.letterSpacing,
+        textTransform: cs.textTransform,
+      });
+    }
+    // Background colors weigh by painted area, so a page ground outranks a small badge.
+    tally(stats.colors.background, toHex(cs.backgroundColor), Math.round((r.width * r.height) / 100));
+    for (const side of ['top', 'right', 'bottom', 'left']) {
+      if (parseFloat(cs.getPropertyValue(`border-${side}-width`)) > 0 && cs.getPropertyValue(`border-${side}-style`) !== 'none') {
+        tally(stats.colors.border, toHex(cs.getPropertyValue(`border-${side}-color`)));
+      }
+    }
+    for (const side of ['top', 'right', 'bottom', 'left']) {
+      const pad = cs.getPropertyValue(`padding-${side}`);
+      if (parseFloat(pad) > 0) {
+        tally(stats.spacing.padding, pad);
+      }
+    }
+    // Side margins are mostly auto-centering, which computes to a px value that is not a spacing step.
+    for (const side of ['top', 'bottom']) {
+      const mar = cs.getPropertyValue(`margin-${side}`);
+      if (parseFloat(mar) > 0) {
+        tally(stats.spacing.margin, mar);
+      }
+    }
+    // The largest painted surface sets the page ground and its ink. A wrapper as large as <body> wins over it,
+    // since the wrapper's text color is the one the page inherits.
+    const area = r.width * r.height;
+    const bg = toHex(cs.backgroundColor);
+    if (bg && bg.length === 7 && area >= groundArea) {
+      groundArea = area;
+      stats.ground = { background: bg, color: toHex(cs.color) };
+    }
+    if (/flex|grid/.test(cs.display)) {
+      for (const g of [cs.rowGap, cs.columnGap]) {
+        if (parseFloat(g) > 0) {
+          tally(stats.spacing.gap, g);
+        }
+      }
+    }
+    if (parseFloat(cs.borderTopLeftRadius) > 0) {
+      tally(stats.radius, cs.borderTopLeftRadius);
+    }
+    if (cs.boxShadow && cs.boxShadow !== 'none') {
+      tally(stats.shadow, cs.boxShadow);
+    }
+    if (cs.maxWidth !== 'none' && /px$/.test(cs.maxWidth)) {
+      tally(stats.maxWidth, cs.maxWidth);
+    }
+    for (let i = 0; i < el.style.length; i++) {
+      const name = el.style[i];
+      if (name.startsWith('--')) {
+        const value = el.style.getPropertyValue(name).trim();
+        stats.customProperties.inline[name] = { value, hex: toHex(value) };
+      }
+    }
+  }
+
+  // :root, html, and the guarded form :root:not([data-theme="light"]) that pages with a theme toggle use.
+  const isRootSelector = (sel) => /(^|,)\s*(:root|html)(:not\([^)]*\))?\s*(,|$)/.test(sel);
+  // A dark marker inside :not() selects the light state, so it is ignored.
+  const isDarkSelector = (sel) =>
+    /\[data-theme=["']?dark["']?\]|\.dark(?![\w-])/.test(sel.replace(/:not\([^)]*\)/g, ''));
+  const readVars = (rule, target) => {
+    for (let i = 0; i < rule.style.length; i++) {
+      const name = rule.style[i];
+      if (name.startsWith('--')) {
+        const value = rule.style.getPropertyValue(name).trim();
+        target[name] = { value, hex: toHex(value) };
+      }
+    }
+  };
+  const walk = (rules, inDarkMedia) => {
+    for (const rule of rules) {
+      if (rule instanceof CSSMediaRule) {
+        walk(rule.cssRules, inDarkMedia || /prefers-color-scheme:\s*dark/.test(rule.conditionText || rule.media.mediaText));
+      } else if (rule.cssRules && !(rule instanceof CSSStyleRule)) {
+        walk(rule.cssRules, inDarkMedia);
+      } else if (rule instanceof CSSStyleRule) {
+        if (isDarkSelector(rule.selectorText) || (inDarkMedia && isRootSelector(rule.selectorText))) {
+          readVars(rule, stats.customProperties.dark);
+        } else if (isRootSelector(rule.selectorText)) {
+          readVars(rule, stats.customProperties.root);
+        }
+      }
+    }
+  };
+  for (const sheet of document.styleSheets) {
+    try {
+      walk(sheet.cssRules, false);
+    } catch {
+      // A cross-origin stylesheet (a web-font CSS file) cannot be read; it declares no tokens.
+    }
+  }
+  return stats;
 }
 
 function collectHeaderState() {
@@ -357,7 +597,7 @@ function collectHeaderState() {
 
 // Controls whose wording suggests a side effect (cart, account, submission) are never clicked.
 const UNSAFE_WORDING =
-  /add to (cart|bag|basket)|buy|checkout|pay|subscribe|sign ?(up|in|out)|log ?(in|out)|delete|remove|submit|send|order|book now/i;
+  /\b(add to (cart|bag|basket)|buy|checkout|pay|subscribe|sign ?(up|in|out)|log ?(in|out)|delete|remove|submit|send|order|book now)/i;
 const TRIGGER_SELECTOR = 'button, [role="button"], [role="tab"], summary';
 
 /** Indices (within TRIGGER_SELECTOR matches) of visible, enabled controls that are safe to click. */
@@ -443,13 +683,17 @@ function diffState(before, after) {
   return changes;
 }
 
-async function clickAndDiff(page, url, trigger) {
+/** A URL without its fragment: a click that only changes the hash stays on the page. */
+const withoutHash = (value) => value.replace(/#.*$/, '');
+
+async function clickAndDiff(page, trigger) {
   const locator = page.locator(TRIGGER_SELECTOR).nth(trigger.index);
+  const loadedUrl = page.url();
   const before = await page.evaluate(snapshotState);
   await locator.click({ timeout: 3000 });
   await page.waitForTimeout(400);
   const currentUrl = page.url();
-  if (currentUrl !== url) {
+  if (withoutHash(currentUrl) !== withoutHash(loadedUrl)) {
     return { navigatedTo: currentUrl, changes: [] };
   }
   return { changes: diffState(before, await page.evaluate(snapshotState)) };
@@ -477,7 +721,7 @@ async function captureBehaviors(context, url, args) {
   for (const trigger of triggers) {
     page = await fresh();
     try {
-      results.push({ label: trigger.label, ...(await clickAndDiff(page, url, trigger)) });
+      results.push({ label: trigger.label, ...(await clickAndDiff(page, trigger)) });
     } catch (err) {
       results.push({ label: trigger.label, error: err.message.split('\n')[0] });
     }
@@ -533,6 +777,7 @@ async function captureRoute(browser, url, width, dir, args) {
   const sections = await page.evaluate(collectSections);
   sections.header = { atTop: headerAtTop, scrolled: headerScrolled };
   writeFileSync(`${dir}/sections-${width}.json`, JSON.stringify(sections, null, 2));
+  writeFileSync(`${dir}/styles-${width}.json`, JSON.stringify(await page.evaluate(collectStyleStats), null, 2));
   writeFileSync(`${dir}/network-${width}.json`, JSON.stringify(network, null, 2));
 
   if (args.behaviors) {
@@ -560,8 +805,14 @@ async function main() {
     process.exit(1);
   }
 
-  const chromium = await loadPlaywright();
   const outDir = resolve(args.out);
+  const baseFolder = args.base ? baseUrl(args.base) : null;
+  if (baseFolder?.startsWith('file:') && isInside(outDir, fileURLToPath(baseFolder))) {
+    console.error('--out must be outside the --base folder: the capture never writes into the design files.');
+    process.exit(2);
+  }
+
+  const chromium = await loadPlaywright();
   mkdirSync(outDir, { recursive: true });
 
   const manifest = { breakpoints: args.breakpoints, routes: [], capturedAt: new Date().toISOString() };

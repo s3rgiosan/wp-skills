@@ -1,0 +1,14 @@
+{
+  "name": "wp-claude-design-to-block-theme",
+  "version": "1.0.0",
+  "description": "Turn a Claude design (a Claude Design canvas or an HTML artifact) into a WordPress block (FSE) theme: unbundle the canvas export into pages, map artboards to routes, read tokens and behavior from the canvas source, then rebuild with the wp-design-to-block-theme workflow. Requires wp-design-to-block-theme.",
+  "author": {
+    "name": "Sérgio Santos",
+    "url": "https://github.com/s3rgiosan"
+  },
+  "homepage": "https://github.com/s3rgiosan/wp-skills/tree/main/wp-claude-design-to-block-theme",
+  "repository": "https://github.com/s3rgiosan/wp-skills",
+  "license": "MIT",
+  "dependencies": ["wp-design-to-block-theme"],
+  "keywords": ["wordpress", "block-theme", "fse", "claude", "claude-design", "artifact", "theme-json", "gutenberg", "interactivity-api"]
+}

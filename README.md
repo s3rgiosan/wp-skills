@@ -75,13 +75,29 @@ Deep architectural analysis of WordPress plugins — what the plugin does, how i
 
 **[→ Install wp-mnemon](./wp-mnemon/README.md)**
 
+### [wp-design-to-block-theme](./wp-design-to-block-theme)
+
+Turn any rendered web design — a deployed preview, a local dev server, or static HTML files — into a WordPress block theme (FSE). No automatic converter exists, so the skill splits the work into the mechanical parts it automates (per-breakpoint Playwright capture of the rendered pages, `theme.json` tokens derived from what the pages paint, and a design-vs-rebuild parity gate) and the judgment parts it guides: a content-model pass that asks where each piece of content lives (site identity, post fields, taxonomies, meta, settings, custom blocks), then rebuilding each route and section as templates, patterns, content, and Interactivity API blocks. Covers current block-theme practice (theme.json v3, fluid type, style variations for dark mode, block bindings, root-padding-aware alignments) and the Interactivity API. Ships three scripts (`capture.mjs`, `css-tokens.mjs`, `compare.mjs`), is the shared core for the source skills below, and composes with `wp-block-themes` / `wp-patterns` / `wp-block-development` / `wp-interactivity-api`.
+
+**Triggers on:** "design to block theme", "HTML to WordPress theme", "convert this mockup to a block theme", "turn this static site into an FSE theme", "extract theme.json from this page".
+
+**[→ Install wp-design-to-block-theme](./wp-design-to-block-theme/README.md)**
+
 ### [wp-v0-to-block-theme](./wp-v0-to-block-theme)
 
-Translate a v0 (Vercel) design — React/Next + Tailwind + shadcn/ui — into a WordPress block theme (FSE). No automatic converter exists, so the skill splits the work into the mechanical parts it automates (per-breakpoint Playwright capture of the rendered design, mapping Tailwind v3/v4 tokens to `theme.json`, and a design-vs-rebuild parity gate) and the judgment parts it guides: rebuilding each route and section as templates, patterns, content, and Interactivity API blocks. Covers current block-theme practice (theme.json v3, style variations for dark mode, block bindings, root-padding-aware alignments) and the Interactivity API (server-seeded state, `data-wp-*` directives). Ships three scripts (`capture.mjs`, `tokens.mjs`, `compare.mjs`) and composes with `wp-block-themes` / `wp-patterns` / `wp-block-development` / `wp-interactivity-api`.
+Translate a v0 (Vercel) design — React/Next + Tailwind + shadcn/ui — into a WordPress block theme (FSE). Adds the v0 inputs, Tailwind v3/v4 token mapping to `theme.json` (`tokens.mjs`, with shadcn `var()` resolution and OKLCH → hex), and a shadcn/ui → core blocks map on top of the `wp-design-to-block-theme` workflow. Requires `wp-design-to-block-theme`.
 
 **Triggers on:** "v0 to WordPress", "v0 to block theme", "convert this v0 design", "Vercel design to WP theme", "Tailwind to theme.json", a v0.dev / *.vercel.app URL paired with a WordPress theme request.
 
 **[→ Install wp-v0-to-block-theme](./wp-v0-to-block-theme/README.md)**
+
+### [wp-claude-design-to-block-theme](./wp-claude-design-to-block-theme)
+
+Turn a Claude design — a Claude Design canvas or an HTML artifact — into a WordPress block theme (FSE). Unbundles a downloaded canvas into one standalone page per artboard (`unbundle.mjs`), maps artboards to routes from `canvas.json`, and reads hover colors, links, `data-props` tweaks and `DCLogic` behaviors from the canvas source, then rebuilds with the `wp-design-to-block-theme` workflow. Requires `wp-design-to-block-theme`.
+
+**Triggers on:** "Claude design to WordPress", "turn this canvas into a block theme", "convert this artifact to a WordPress theme", a claude.ai/artifact URL or a downloaded canvas `.html` paired with a WordPress theme request.
+
+**[→ Install wp-claude-design-to-block-theme](./wp-claude-design-to-block-theme/README.md)**
 
 ---
 
@@ -197,4 +213,4 @@ skill-name/
 
 ## License
 
-MIT
+[MIT](LICENSE)
