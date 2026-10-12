@@ -42,16 +42,16 @@ Start with what the design has; add the rest as needed:
 
 Each template = header part + one or more patterns + footer part.
 
-**Header variants.** A home page often has a transparent `fixed` header over the hero, and a solid header elsewhere. Compare `header.atTop` in the `sections-*.json` of each route. Build one header part plus a modifier class (for example `is-overlay`) set by the front-page template. Use a second part (`parts/header-overlay.html`) only when the markup differs. If the header also changes on scroll, see the scroll recipe in `interactivity-recipes.md`.
+**Header variants.** A home page often has a transparent `fixed` header over the hero, and a solid header elsewhere. Compare `header.atTop` in the `sections-*.json` of each route. Build one header part plus a modifier class (for example `is-overlay`) set by the front-page template. Use a second part (`parts/header-overlay.html`) only when the markup differs. If the header also changes on scroll, see the scroll recipe in `interactivity-recipes.md`. A sticky or fixed header sits below the admin bar for logged-in visitors (`html-to-core-blocks.md`, Sticky and fixed elements).
 
 **Sticky footer.** Design page roots are often a full-height flex column (`min-height: 100vh; display: flex; flex-direction: column`), which keeps the footer at the bottom of short pages. Once header and footer are template parts, that wrapper is gone. Recreate it once in the theme stylesheet:
 
 ```css
-.wp-site-blocks { min-height: 100vh; display: flex; flex-direction: column; }
+.wp-site-blocks { min-height: calc(100vh - var(--wp-admin--admin-bar--height, 0px)); display: flex; flex-direction: column; }
 .wp-site-blocks > main { flex: 1; }
 ```
 
-The `main` selector needs the template's content group to use `"tagName":"main"`.
+The `main` selector needs the template's content group to use `"tagName":"main"`. The admin bar term keeps short pages from scrolling for logged-in visitors (`html-to-core-blocks.md`, Sticky and fixed elements).
 
 ## Pattern file format
 

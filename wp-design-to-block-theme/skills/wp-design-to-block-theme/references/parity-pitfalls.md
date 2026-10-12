@@ -35,7 +35,7 @@ Each gate reports PASS, FAIL or NOT RUN. **NOT RUN is never a pass.** List it in
 
 1. **`compare.mjs` passes** for every route at every breakpoint.
 2. **Pixel diff is not enough on its own.** A dropped section below the fold can change well under 1% of a tall page's pixels. The structure check exists for this reason. Never raise `--pixel-threshold` to make a failure pass; find the cause.
-3. **Visual review.** Open the design and local screenshots side by side for every route, one breakpoint at a time, and read each pair. Look at the `diff-<w>.png` for every page that failed. Whole-page composites are downscaled when an image model reads them, so compare per viewport.
+3. **Visual review.** Open the design and local screenshots side by side for every route, one breakpoint at a time, and read each pair. Look at the `diff-<w>.png` for every page that failed. Whole-page composites are downscaled when an image model reads them, so compare per viewport. Review once more logged in: sticky and fixed elements sit below the admin bar, at 390px they leave no gap once the bar scrolls away, and short pages do not scroll (`html-to-core-blocks.md`, Sticky and fixed elements).
 4. **Behaviours.** Every entry in the design's `behaviors-*.json` (menu toggles, accordions, tabs, dialogs, links rendered as buttons) is either rebuilt and exercised on the local site, or listed in the handover notes as not ported.
 5. **Editor round-trip.** Open every template, template part and pattern in the Site Editor, and every Page in the post editor. No block may show "This block contains unexpected or invalid content". In the editor's browser console, this lists invalid blocks:
 

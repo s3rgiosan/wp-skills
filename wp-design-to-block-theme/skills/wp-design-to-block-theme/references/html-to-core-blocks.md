@@ -116,6 +116,29 @@ Full-bleed handling comes from theme.json. Turn on root-padding-aware alignments
 
 With it on, WordPress applies the root padding so `alignfull` bands span edge-to-edge while constrained content keeps the inset — no manual edge handling for the common case.
 
+### Sticky and fixed elements: offset by the admin bar
+A logged-in visitor sees the admin bar above the page. While the bar shows, WordPress sets its height on `html` as `--wp-admin--admin-bar--height`: 32px, or 46px at 782px and below. The variable is undefined without the bar, so always give it a `0px` fallback. Every element whose position depends on the top of the viewport adds it:
+
+```css
+.site-header {
+  position: sticky;
+  top: var(--wp-admin--admin-bar--height, 0px);
+}
+
+/* At 600px and below the admin bar scrolls with the page. */
+@media (max-width: 600px) {
+  .site-header {
+    top: 0;
+  }
+}
+```
+
+- **Sticky and fixed elements** (headers, nav bars, drawers, progress bars, back-to-top buttons): offset `top` by the variable, and reset it to `0` at 600px and below, where the bar is `position: absolute`.
+- **Full-height layouts** (the sticky-footer wrapper): `min-height: calc(100vh - var(--wp-admin--admin-bar--height, 0px))`. The bar pushes the page down by its height, so `100vh` alone scrolls.
+- **In-page anchors under a sticky header:** `scroll-padding-top` on `html` is the admin bar plus the header's height. Core sets it to the admin bar height alone.
+
+`capture.mjs` runs logged out, so the parity gate never sees the bar. Check these logged in during the visual review.
+
 ### Grid column count
 `grid-template-columns: repeat(N, …)` → core grid `columnCount:N` (a fixed, even N). `minimumColumnWidth` uses `auto-fill`, which creates as many tracks as fit and leaves empty tracks when items < tracks — reserve it for genuinely fluid galleries (`auto-fit`/`auto-fill` intentions), and pick a value that yields the intended N at the content width.
 
