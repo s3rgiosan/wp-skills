@@ -152,6 +152,14 @@ theme.json declares the matching part areas so the Site Editor knows where each 
 
 Only when the section carries behavior or data that core blocks cannot express: an interactive widget with no core equivalent, a form with no form solution in the project, or a dynamic query with custom output (the same rule as in html-to-core-blocks.md). Static/visual sections are always patterns. A list with filters or search is a `core/query` with core or Query Loop Filters blocks, never a custom list block (`content-model.md`, Filters and pagination). Raise the custom-block decision before building it.
 
+### A custom block's editor UI
+
+Build each editor control from the first source that has it:
+
+1. **Core APIs and components** in the project's WordPress version: `@wordpress/block-editor` (`RichText`, `InnerBlocks`, `MediaPlaceholder`, `MediaReplaceFlow`, `InspectorControls`, `BlockControls`), `@wordpress/components` (`ToggleControl`, `SelectControl`, `RangeControl`, `ToolbarButton`, `ComboboxControl`, `FormTokenField`), and `@wordpress/core-data` (`useEntityProp`, `useEntityRecords`). When unsure whether core exports a component in that version, check its documentation.
+2. **[10up Block Components](https://github.com/10up/block-components)** (`@10up/block-components`): for example `ContentPicker` (pick posts, terms or users), `Repeater`, `Link`, `IconPicker`, `Image`, `MediaToolbar` and `Optional`. They are editor-only and rely on `@wordpress/dependency-extraction-webpack-plugin`, which `@wordpress/scripts` and 10up-toolkit already run. Picked IDs are content: they live in the inserted block's attributes, never in a pattern.
+3. **A custom component**, only after confirming neither source has one. Record which component and why in `CONVERSION-NOTES.md`.
+
 ## Author shared elements once
 
 An element that appears on several pages (a component reused across routes) is authored **once**, as one block or one pattern. Variants are a modifier class, a block style, or block attributes on that one implementation, never a second copy with different markup. Two copies of the same element drift apart in markup and styling. Check for duplicates before handover.

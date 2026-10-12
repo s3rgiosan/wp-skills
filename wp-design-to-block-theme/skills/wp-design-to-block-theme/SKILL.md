@@ -73,6 +73,7 @@ All three print full usage with `--help`. `capture.mjs` and `compare.mjs` need P
 - Shipping the first-pass token scale unconsolidated — fold near-duplicate sizes and steps, rename slugs to roles.
 - OKLCH palette values — the editor's contrast checker cannot read them and flags every pairing; keep the palette in hex.
 - Defaulting to a custom block or `ServerSideRender` — prefer core blocks; raise a custom block first.
+- Hand-building editor controls (a post picker, a repeater, a link field) — use core components, then 10up Block Components, and only then write one (`references/section-to-pattern.md`, A custom block's editor UI).
 - A custom post-list block for a filtered list — keep the `core/query`, and add Query Loop Filters (`humanmade/query-filter`) when core cannot filter in place (`references/content-model.md`, Filters and pagination).
 - Eyeballing screenshots — use computed CSS from `capture.mjs` for real values, and `compare.mjs` for parity.
 - Trusting a low pixel diff — a dropped section can change under 1% of the pixels. The structure check must pass too.
