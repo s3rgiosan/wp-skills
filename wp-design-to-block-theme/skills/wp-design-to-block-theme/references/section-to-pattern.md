@@ -150,7 +150,7 @@ theme.json declares the matching part areas so the Site Editor knows where each 
 
 ## When a section needs a custom block
 
-Only when the section carries behavior or data that core blocks cannot express: an interactive widget with no core equivalent, a form with no form solution in the project, or a dynamic query with custom output (the same rule as in html-to-core-blocks.md). Static/visual sections are always patterns. Raise the custom-block decision before building it.
+Only when the section carries behavior or data that core blocks cannot express: an interactive widget with no core equivalent, a form with no form solution in the project, or a dynamic query with custom output (the same rule as in html-to-core-blocks.md). Static/visual sections are always patterns. A list with filters or search is a `core/query` with core or Query Loop Filters blocks, never a custom list block (`content-model.md`, Filters and pagination). Raise the custom-block decision before building it.
 
 ## Author shared elements once
 

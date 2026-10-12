@@ -25,7 +25,7 @@ List every item in the design that is one of these:
 | Large image on a post, article or detail page | Featured image | `core/post-featured-image` |
 | Card or row image in a list of posts | Featured image | `core/post-featured-image` in a Query Loop |
 | Title, excerpt, date, author of an item | Post fields | `core/post-title`, `core/post-excerpt`, `core/post-date` |
-| Category, type, industry, tag on an item | Taxonomy | `core/post-terms`; a filter is links to the term archives or a custom block |
+| Category, type, industry, tag on an item | Taxonomy | `core/post-terms`; a filter is links to the term archives or a Query Loop Filters block |
 | A list of items of one kind (case studies, team members, events) | A post type | Query Loop over the post type |
 | Facts about one item (client, duration, budget, URL) | Post meta | Block bindings on core blocks (`core/post-meta`), edited in a sidebar panel |
 | A site-wide list or set of figures (logo strip, key figures, hours) | A settings page, a taxonomy, or a custom block | Ask (below) |
@@ -39,7 +39,10 @@ Raise these decisions; never pick one silently:
 - **Meta keys:** key names, types, and how editors fill them (a sidebar panel on the post type, registered with `register_post_meta()` and `show_in_rest`).
 - **Site-wide lists and figures:** a custom block (editors fill the list in place), a taxonomy (the list is terms that also tag content), a settings page (one list used in several places), or static copy in a pattern.
 - **Curated lists:** when a Query Loop shows hand-picked items in a set order (a showcase strip, related posts chosen by an editor), suggest the [Advanced Query Loop](https://wordpress.org/plugins/advanced-query-loop/) plugin. It is a `core/query` variation (`"namespace":"advanced-query-loop"`): editors pick the posts in the block sidebar, stored as `query.include_posts` (`[{"id":101}, …]`) with `"orderBy":"post__in"`. It also excludes the current post (`"exclude_current":true`) for "more posts" lists. The pattern ships with `include_posts` empty; the IDs exist only in the block an editor inserts. Ask before adding the plugin.
-- **Filters and pagination over a list:** core Query Loop pagination with term archive links (each filter is a URL), or a custom block with the Interactivity API (filtering in place).
+- **Filters and pagination over a list:** a filtered list stays a `core/query`. Pick the first option that covers the design:
+  1. Core only: Query Loop pagination, `core/search` for search, and links to the term archives for filters (each filter is a URL).
+  2. In-place filters by taxonomy, post type or search: suggest the [Query Loop Filters](https://github.com/humanmade/query-filter) plugin (`humanmade/query-filter` on Composer). Its `query-filter/taxonomy` and `query-filter/post-type` blocks sit inside the `core/query` and render as a select, radio buttons or checkboxes. A `core/search` inside the query becomes a live search over its results. Filters are URL parameters matched by term slug, and results update through the Interactivity API router. It requires WordPress 6.6 and PHP 8.2. The post type filter also needs Advanced Query Loop. Install a tagged release or the `release` branch: `main` has no built assets. Ask before adding the plugin.
+  3. A custom block with the Interactivity API: only when neither covers the design (for example, a range or date filter, or filters combined with OR). Raise it first.
 
 When a decision is open, ask it as a question with the options and a recommended default, then build to the answer.
 
