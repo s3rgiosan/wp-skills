@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Claude Code skills for WordPress developers",
-    "version": "1.9.0"
+    "version": "1.9.1"
   },
   "allowCrossMarketplaceDependenciesOn": ["s3rgiosan-wp-agents"],
   "plugins": [
