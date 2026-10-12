@@ -145,7 +145,7 @@ const { state } = store('mytheme', {
 });
 ```
 
-Style `.is-scrolled` in the theme stylesheet with preset colors. Server-render the at-top state, so the header is correct before hydration and without JS.
+Style `.is-scrolled` in the header's component file (`src/frontend/components/header.css`) with preset colors. Server-render the at-top state, so the header is correct before hydration and without JS.
 
 ## Reveal on scroll
 

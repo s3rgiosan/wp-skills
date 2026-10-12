@@ -161,4 +161,22 @@ A grid with `minimumColumnWidth` sets `container-type: inline-size`. Inside a ve
 Target only classes the block actually renders: read its `render.php` or saved markup first. When the design needs a class the block does not output, add it server-side with a `render_block` filter.
 
 ### Where core-block CSS lives
-Style a core block with a theme-wide block selector (`.wp-block-<name>`) so every instance gets the style. Component stylesheets are for the theme's own named components.
+Style a core block with a theme-wide block selector (`.wp-block-<name>`) so every instance gets the style, in that block's file under `src/frontend/blocks/`. Component stylesheets are for the theme's own named components.
+
+### Theme stylesheets
+Split the theme's CSS into small files by layer, built by `@wordpress/scripts` into one front-end stylesheet. Never write one catch-all file, and keep `style.css` to the theme header.
+
+```
+src/frontend/
+├── index.css      # @import "./base/index.css"; then blocks/, then components/
+├── base/          # element defaults, page layout, utilities: elements.css, layout.css
+├── blocks/        # core block overrides, one file per block: button.css, post-title.css
+└── components/    # the theme's own components, one file per component: header.css, card.css
+```
+
+- Each layer folder has an `index.css` with one `@import` per file. Components come last, so a component rule wins over a block override of equal specificity.
+- Name a block file after the block (`core/post-title` → `post-title.css`), and keep the `.is-style-*` rules of a block style in the file of the block it is registered on. Name a component file after its class root (`.site-header` → `header.css`), with its states and breakpoints in the same file.
+- A rule that must win over the rest of its layer goes in a file imported last, with a comment saying why.
+- A custom block keeps its CSS in its own `style.css`, imported by its `index.js` and declared as `"style": "file:./style-index.css"` in `block.json`, so it loads only on pages that use the block.
+- Build: add a CSS entry to `webpack.config.js` (`'css/frontend': path.resolve( __dirname, 'src/frontend/index.css' )` next to the default entries). Enqueue `build/css/frontend.css` on the front end, with the version from `build/css/frontend.asset.php`, and load it in the editor with `add_editor_style( 'build/css/frontend.css' )`.
+- Lint `src/**/*.{css,scss}` with `wp-scripts lint-style`.
