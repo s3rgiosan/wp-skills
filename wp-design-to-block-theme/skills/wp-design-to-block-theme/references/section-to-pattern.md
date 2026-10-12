@@ -101,9 +101,9 @@ Templates and patterns do not create content. Set up the site so the routes reso
 
 - **Pages.** Create one Page per static route, with `post_content` that references the section patterns (see "Pages reference patterns" below). Set `show_on_front=page` and `page_on_front` to the home page, and `page_for_posts` to the blog page if there is one.
 - **Permalinks.** Set a pretty permalink structure (`wp rewrite structure '/%postname%/'`). With plain permalinks, every path renders the front page with status 200, and a route check passes by mistake.
-- **Navigation.** `core/navigation` should reference a navigation menu (`"ref":<id>`), created from the design's links, so editors can change it. Do not hard-code the links in the header part.
+- **Navigation.** Create a navigation menu from the design's links so editors can change it. The header part holds `<!-- wp:navigation /-->` with no `ref` and no links; it renders that menu (see "Block markup rules", No database IDs).
 - **Blog.** A design grid of article cards becomes `core/query` + `core/post-template`. Rebuild the card with `core/post-featured-image`, `core/post-title` (`"isLink":true`), `core/post-excerpt`, `core/post-date`, and `core/post-terms`, styled to match. Use the design's articles as sample posts only if the client agrees; otherwise ask for the posts to start with, and list what is missing in the handover notes.
-- **Related or "latest" strips** on other pages are also `core/query` blocks. Set the query (category, count, order) to what the design shows.
+- **Related or "latest" strips** on other pages are also `core/query` blocks. Set the query (count, order, and a category resolved by slug) to what the design shows.
 - **Site identity.** The design's page title and description give the site title and tagline. The design's favicon becomes the Site Icon.
 
 Optional headers bind a pattern to a specific slot:
@@ -141,6 +141,12 @@ theme.json declares the matching part areas so the Site Editor knows where each 
 - Reference tokens for every value: colors as `{"backgroundColor":"primary"}` / `var:preset|color|primary`, spacing via spacing presets, font sizes via `{"fontSize":"large"}`.
 - Use `align":"full"` / `"wide"` for full-bleed and wide bands; set `contentSize`/`wideSize` in theme.json so they resolve.
 - Prefer layout via block `layout` attributes (`flex`, `grid`, `constrained`) over custom CSS.
+- **No database IDs.** Patterns, templates and parts never carry a post, page, term, attachment, menu, user or synced-pattern ID. IDs differ on every install, so a pattern built on the development site points at the wrong content, or at nothing, everywhere else. Per block:
+  - `core/navigation`: no `ref`. Without one, the block renders the most recently published navigation menu, created in step 7. A second menu (a footer menu) is assigned in the Site Editor after setup, so its `ref` lives in the database copy of the part. `core/navigation-link` carries a `url`, with no `id`.
+  - `core/query`: filter by the current context (`"inherit":true` on archive templates) or by post type, order and count. When a query must show one term, look the term up by slug in the pattern's PHP (`get_term_by()`) and print the resolved ID into the attributes, skipping the filter when the term is missing.
+  - Curated lists (Advanced Query Loop `include_posts`, `core/post-*` blocks pinned to a post): ship the pattern with nothing picked; editors choose the posts in the inserted block.
+  - `core/image`, `core/cover`, `core/media-text`: theme assets by `get_theme_file_uri()`, with no `id` and no `wp-image-<id>` class. Media Library images are content, chosen by editors.
+  - `core/block` (`"ref":<id>`): reference the theme's pattern with `core/pattern` and its `slug`.
 
 ## When a section needs a custom block
 
