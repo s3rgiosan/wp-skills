@@ -78,7 +78,7 @@ class Component extends DCLogic {
 
 | Part | What it is | WordPress home |
 |---|---|---|
-| `<helmet><style>` | Page basics and class rules, including `:hover` states and keyframes | Tokens (`theme.json`), block styles, `style.css` for what no token expresses |
+| `<helmet><style>` | Page basics and class rules, including `:hover` states and keyframes | Tokens (`theme.json`), block styles, and the `src/frontend/` block or component file for what no token expresses |
 | `<helmet>` font `<link>` | Google Fonts | Self-hosted `fontFace` (core `references/theme-json-tokens.md`, Fonts) |
 | Inline `style="…"` | Most of the layout and color, as hardcoded hex and px | Block attributes on presets; never copy the literals |
 | `{{hole}}` | A value filled from `renderVals()` | Read the value in `renderVals()`; a color there is a palette token |
