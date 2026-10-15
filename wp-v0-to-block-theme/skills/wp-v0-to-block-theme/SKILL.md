@@ -41,7 +41,7 @@ Steps 4, 9 and 10 run as the core describes. A v0 redesign after the build is a 
 ## Scripts
 
 - `scripts/tokens.mjs <globals.css | tailwind.config.js> [--css FILE] [--out FILE] [--dark-out FILE]` — Tailwind v4 `@theme` CSS or v3 JS config → theme.json settings, with shadcn `var()` references resolved. No network. `--help` for usage.
-- Core `scripts/capture.mjs`, `scripts/css-tokens.mjs`, `scripts/compare.mjs` — capture, rendered tokens, parity gate (see the core SKILL.md).
+- Core `scripts/capture.mjs`, `scripts/css-tokens.mjs`, `scripts/compare.mjs`, `scripts/capture-editor.mjs` — capture, rendered tokens, parity gate, editor capture for the editor-parity gate (see the core SKILL.md).
 
 ## Common Mistakes
 
