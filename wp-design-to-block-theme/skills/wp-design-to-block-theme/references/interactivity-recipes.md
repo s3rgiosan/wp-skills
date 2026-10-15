@@ -154,7 +154,7 @@ Sections often fade or slide in when they enter the viewport. Treat this as prog
 - Content is visible by default. Only a class added by JS (for example `has-reveal` on `<html>`) hides it before the reveal, so no-JS visitors and crawlers see everything.
 - Use one shared `IntersectionObserver` in a `data-wp-init` callback and add the reveal class once. Do not create an observer per element.
 - Under `prefers-reduced-motion: reduce`, skip the animation and show the content immediately.
-- Keep reveals out of the block editor. The editor preview must show the content at rest.
+- Keep reveals out of the block editor. The editor preview must show the content at rest (`editor-parity.md`, Behavior at rest).
 
 ## Repeated items (data-wp-each)
 

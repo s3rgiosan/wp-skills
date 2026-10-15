@@ -37,14 +37,14 @@ Each gate reports PASS, FAIL or NOT RUN. **NOT RUN is never a pass.** List it in
 2. **Pixel diff is not enough on its own.** A dropped section below the fold can change well under 1% of a tall page's pixels. The structure check exists for this reason. Never raise `--pixel-threshold` to make a failure pass; find the cause.
 3. **Visual review.** Open the design and local screenshots side by side for every route, one breakpoint at a time, and read each pair. Look at the `diff-<w>.png` for every page that failed. Whole-page composites are downscaled when an image model reads them, so compare per viewport. Review once more logged in: sticky and fixed elements sit below the admin bar, at 390px they leave no gap once the bar scrolls away, and short pages do not scroll (`html-to-core-blocks.md`, Sticky and fixed elements).
 4. **Behaviours.** Every entry in the design's `behaviors-*.json` (menu toggles, accordions, tabs, dialogs, links rendered as buttons) is either rebuilt and exercised on the local site, or listed in the handover notes as not ported.
-5. **Editor round-trip.** Open every template, template part and pattern in the Site Editor, and every Page in the post editor. No block may show "This block contains unexpected or invalid content". In the editor's browser console, this lists invalid blocks:
+5. **Editor parity.** Capture the editor on the same routes and compare it with the front end:
 
-   ```js
-   const walk = (blocks) => blocks.flatMap((b) => [b, ...walk(b.innerBlocks)]);
-   walk(wp.data.select('core/block-editor').getBlocks()).filter((b) => !b.isValid).map((b) => b.name);
+   ```bash
+   WP_USER=admin WP_PASSWORD=… node scripts/capture-editor.mjs --routes wp-routes.txt --base http://mysite.test --out capture/editor
+   node scripts/compare.mjs capture/local capture/editor --editor
    ```
 
-   Save, reload, and confirm the front end did not change.
+   It passes when the canvas matches the front end at every breakpoint, with no invalid block, block warning or unaccepted placeholder (`editor-parity.md`). The routes reach every template and Page. Open each pattern that no route shows in the Site Editor's pattern screen; it must show no "This block contains unexpected or invalid content". Then save a Page and a template, reload, and confirm the front end did not change.
 6. **Build.** `npm run build` is clean.
 
 ## Named failure modes to check for
@@ -71,7 +71,7 @@ Every block with a text and background color shows the "low contrast" warning in
 All sections are offset by the same amount, and the offset adds up down the page. Cause: core's default `blockGap` adds a top margin between top-level blocks, which the design does not have. Fix: set `styles.spacing.blockGap` to the design's rhythm, or `0` when sections carry their own padding (see `theme-json-tokens.md`).
 
 ### Footer floats mid-screen on short pages
-The design keeps the footer at the bottom of the viewport; the rebuild leaves empty space under it. Cause: the design's full-height flex-column page wrapper did not survive the move to template parts. Fix: the `.wp-site-blocks` flex-column recipe in `section-to-pattern.md`.
+The design keeps the footer at the bottom of the viewport; the rebuild leaves empty space under it. Cause: the design's full-height flex-column page wrapper did not survive the move to template parts. Fix: the `.wp-site-blocks` flex-column recipe in `section-to-pattern.md`. In the editor the footer floats even with the recipe in place: the canvas root is `.is-root-container.wp-site-blocks`, and core sets `display: flow-root` on it. Repeat the rule for that selector (`editor-parity.md`).
 
 ### Content missing from the design capture
 Sections render blank or half-transparent in the design screenshots. Cause: reveal-on-scroll animations that never fired, or lazy images that never loaded. `capture.mjs` scrolls the page and waits for finite animations before capturing. If content is still missing, the design animates on a trigger other than scrolling (a timer, a hover, a click). Find the trigger in the source, and check every design screenshot before using it as the reference.

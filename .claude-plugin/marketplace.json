@@ -47,7 +47,7 @@
     {
       "name": "wp-design-to-block-theme",
       "source": "./wp-design-to-block-theme",
-      "description": "Turn any rendered web design (URL, dev server or static HTML) into a WordPress block theme: capture the pages, derive theme.json tokens from what they paint, rebuild sections as patterns, templates, and Interactivity API blocks, and gate parity."
+      "description": "Turn any rendered web design (URL, dev server or static HTML) into a WordPress block theme: capture the pages, derive theme.json tokens from what they paint, rebuild sections as patterns, templates, and Interactivity API blocks, and gate parity with the design and between the front end and the block editor."
     },
     {
       "name": "wp-v0-to-block-theme",

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * compare.mjs — parity gate between two capture.mjs runs: the design and the WordPress rebuild.
+ * compare.mjs — parity gate between two captures: the design and the WordPress rebuild (two capture.mjs runs),
+ * or, with --editor, the WordPress front end and its block editor (capture.mjs and capture-editor.mjs).
  *
  * Per route and breakpoint it checks:
  *   - structure: heading outline (h1–h3 text, in order) and section count — a dropped section fails here
@@ -9,7 +10,9 @@
  *     heading font metrics, form control height/background, background image presence;
  *   - pixels: full-page screenshot diff ratio, compared in slices so tall pages are read in full
  *     (writes diff-<w>.png, or diff-<w>-<n>.png per differing slice, next to the local capture);
- *   - network: failed requests and console errors on the local site.
+ *   - network: failed requests and console errors on the local site (or in the editor);
+ *   - editor (--editor only): invalid blocks, block warnings, placeholders not accepted at capture and
+ *     unsettled previews in the editor canvas fail; blocks previewed with ServerSideRender are listed.
  *
  * Exit code: 0 all checks pass, 1 any check fails, 2 usage error. Checks without data report NOT RUN,
  * which never counts as a pass.
@@ -17,29 +20,35 @@
  * Usage:
  *   node compare.mjs <design-capture-dir> <local-capture-dir> [--tolerance 2] [--pixel-threshold 1]
  *     [--map design-route=local-route ...] [--json FILE]
+ *   node compare.mjs <front-end-capture-dir> <editor-capture-dir> --editor
  *
  * Requires Playwright (used to decode and diff the screenshots), beside this script or in the current directory.
  */
 
-import { createRequire } from 'node:module';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { loadChromium } from './lib/browser.mjs';
 
-const HELP = `compare.mjs — parity gate between a design capture and a WordPress capture
+const HELP = `compare.mjs — parity gate between a design capture and a WordPress capture, or (--editor) between
+the WordPress front end and its block editor
 
 Usage:
   node compare.mjs <design-capture-dir> <local-capture-dir> [--tolerance 2] [--pixel-threshold 1]
     [--map design-route=local-route ...] [--json FILE]
+  node compare.mjs <front-end-capture-dir> <editor-capture-dir> --editor
 
   --tolerance N        px difference allowed for geometry and font metrics (default 2).
   --pixel-threshold N  max % of differing pixels per screenshot (default 1).
   --map a=b            pair route folder a (design) with b (local) when their slugs differ.
   --json FILE          also write the full result as JSON.
+  --editor             the second capture is capture-editor.mjs output: compare the editor canvas with the
+                       front end, and check the editor's invalid blocks, warnings and placeholders
+                       (accept a placeholder with capture-editor.mjs --allow-placeholder).
 
 Exit 0 = pass, 1 = fail. NOT RUN is never a pass.`;
 
 function parseArgs(argv) {
-  const args = { dirs: [], tolerance: 2, pixelThreshold: 1, map: {}, json: null };
+  const args = { dirs: [], tolerance: 2, pixelThreshold: 1, map: {}, json: null, editor: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     switch (a) {
@@ -61,6 +70,9 @@ function parseArgs(argv) {
       case '--json':
         args.json = argv[++i];
         break;
+      case '--editor':
+        args.editor = true;
+        break;
       default:
         if (!a.startsWith('-')) {
           args.dirs.push(a);
@@ -81,15 +93,39 @@ const trackCount = (template) =>
 
 /* ------------------------------------------------------------------ Checks */
 
-function compareStructure(design, local) {
+/**
+ * The front end runs titles and text through wptexturize (curly quotes, dashes, ellipses); the editor shows
+ * the raw text. Editor comparisons fold both to plain ASCII.
+ */
+const untexturize = (value) =>
+  value
+    .replace(/[\u2018\u2019\u201A\u2032]/g, "'")
+    .replace(/[\u201C\u201D\u201E\u2033]/g, '"')
+    .replace(/[\u2013\u2014]/g, '-')
+    .replace(/\u2026/g, '...')
+    .replace(/\u00D7/g, 'x');
+
+/** Fold every heading text and section label of a sections capture. */
+function untexturizeSections(capture) {
+  capture.outline = capture.outline.map(untexturize);
+  for (const section of capture.sections) {
+    section.label = untexturize(section.label);
+    for (const heading of section.headings) {
+      heading.text = untexturize(heading.text);
+    }
+  }
+  return capture;
+}
+
+function compareStructure(design, local, ref) {
   const problems = [];
   const missing = design.outline.filter((h) => !local.outline.includes(h));
   const extra = local.outline.filter((h) => !design.outline.includes(h));
   if (missing.length) {
-    problems.push(`headings missing locally: ${missing.join(' | ')}`);
+    problems.push(`headings missing ${ref === 'design' ? 'locally' : 'in the editor'}: ${missing.join(' | ')}`);
   }
   if (extra.length) {
-    problems.push(`headings not in the design: ${extra.join(' | ')}`);
+    problems.push(`headings not in the ${ref}: ${extra.join(' | ')}`);
   }
   const shared = design.outline.filter((h) => local.outline.includes(h));
   const localOrder = local.outline.filter((h) => shared.includes(h));
@@ -97,7 +133,7 @@ function compareStructure(design, local) {
     problems.push('heading order differs');
   }
   if (design.sections.length !== local.sections.length) {
-    problems.push(`section count ${local.sections.length}, design has ${design.sections.length}`);
+    problems.push(`section count ${local.sections.length}, ${ref} has ${design.sections.length}`);
   }
   return problems;
 }
@@ -112,7 +148,9 @@ function pairSections(designSections, localSections) {
   return designSections.map((d, i) => {
     let match = localSections.findIndex((l, j) => !used.has(j) && l.label && l.label === d.label);
     const positional = localSections[i];
-    if (match === -1 && positional && !used.has(i) && !designLabels.has(positional.label)) {
+    // Two unlabelled sections at the same position pair too.
+    const freeLabel = positional && (positional.label === d.label || !designLabels.has(positional.label));
+    if (match === -1 && positional && !used.has(i) && freeLabel) {
       match = i;
     }
     if (match === -1) {
@@ -123,13 +161,13 @@ function pairSections(designSections, localSections) {
   });
 }
 
-function compareSection(d, l, tol) {
+function compareSection(d, l, tol, ref) {
   const problems = [];
   const near = (name, a, b) => {
     const x = px(a);
     const y = px(b);
     if (x !== null && y !== null && Math.abs(x - y) > tol) {
-      problems.push(`${name}: ${b} (design ${a})`);
+      problems.push(`${name}: ${b} (${ref} ${a})`);
     }
   };
 
@@ -139,7 +177,7 @@ function compareSection(d, l, tol) {
 
   const hasImage = (s) => s['background-image'] && s['background-image'] !== 'none';
   if (hasImage(d.styles) !== hasImage(l.styles)) {
-    problems.push(`background-image ${hasImage(l.styles) ? 'present' : 'missing'} (design differs)`);
+    problems.push(`background-image ${hasImage(l.styles) ? 'present' : 'missing'} (${ref} differs)`);
   }
 
   if (d.column && l.column) {
@@ -149,12 +187,12 @@ function compareSection(d, l, tol) {
 
   if (d.row && l.row) {
     if (d.row.items !== l.row.items) {
-      problems.push(`row items: ${l.row.items} (design ${d.row.items})`);
+      problems.push(`row items: ${l.row.items} (${ref} ${d.row.items})`);
     }
     const dt = trackCount(d.row['grid-template-columns']);
     const lt = trackCount(l.row['grid-template-columns']);
     if (dt !== null && lt !== null && dt !== lt) {
-      problems.push(`grid tracks: ${lt} (design ${dt})`);
+      problems.push(`grid tracks: ${lt} (${ref} ${dt})`);
     }
     near('row column-gap', d.row['column-gap'], l.row['column-gap']);
     near('row row-gap', d.row['row-gap'], l.row['row-gap']);
@@ -168,7 +206,7 @@ function compareSection(d, l, tol) {
     near(`${dh.tag} "${dh.text.slice(0, 30)}" font-size`, dh['font-size'], lh['font-size']);
     near(`${dh.tag} "${dh.text.slice(0, 30)}" line-height`, dh['line-height'], lh['line-height']);
     if (dh['font-weight'] !== lh['font-weight']) {
-      problems.push(`${dh.tag} "${dh.text.slice(0, 30)}" font-weight: ${lh['font-weight']} (design ${dh['font-weight']})`);
+      problems.push(`${dh.tag} "${dh.text.slice(0, 30)}" font-weight: ${lh['font-weight']} (${ref} ${dh['font-weight']})`);
     }
   });
 
@@ -179,9 +217,9 @@ function compareSection(d, l, tol) {
     }
     near(`${dc.tag} height`, dc.height, lc.height);
     if (dc['background-color'] !== lc['background-color']) {
-      problems.push(`${dc.tag} background: ${lc['background-color']} (design ${dc['background-color']})`);
+      problems.push(`${dc.tag} background: ${lc['background-color']} (${ref} ${dc['background-color']})`);
     }
-    if (!lc.name) {
+    if (!lc.name && ref === 'design') {
       problems.push(`${lc.tag} has no name attribute; its value is not submitted`);
     }
   });
@@ -189,25 +227,30 @@ function compareSection(d, l, tol) {
   return problems;
 }
 
+/**
+ * Editor canvas problems: invalid blocks, block warnings, placeholders not accepted at capture and previews
+ * still loading fail. Accepted placeholders and blocks previewed with ServerSideRender are listed for review
+ * against CONVERSION-NOTES.md.
+ */
+function checkEditor(flags) {
+  const problems = [
+    ...flags.invalidBlocks.map((name) => `${name}: invalid block ("unexpected or invalid content")`),
+    ...flags.warnings.map((w) => `${w.block || 'unknown block'}: warning "${w.text}"`),
+    ...flags.placeholders
+      .filter((p) => !p.allowed)
+      .map((p) => `${p.block || 'unknown block'}: shows a placeholder where the front end renders output`),
+  ];
+  if (!flags.previewsSettled) {
+    problems.push('previews were still loading when the canvas was captured');
+  }
+  const info = [
+    ...new Set(flags.placeholders.filter((p) => p.allowed).map((p) => `${p.block}: placeholder accepted`)),
+    ...flags.serverSideRender.map((name) => `${name}: previewed with ServerSideRender`),
+  ];
+  return { status: problems.length ? 'FAIL' : 'PASS', problems, info };
+}
+
 /* ------------------------------------------------------------------ Pixel diff */
-
-/** Playwright from beside this script, or else from the current working directory. */
-async function importPlaywright() {
-  try {
-    return await import('playwright');
-  } catch {
-    return createRequire(`${process.cwd()}/`)('playwright');
-  }
-}
-
-async function loadPlaywright() {
-  try {
-    const mod = await importPlaywright();
-    return mod.chromium;
-  } catch {
-    return null;
-  }
-}
 
 // Chromium canvases stop reading pixels past ~65k px in one dimension, so tall pages are compared in slices.
 const SLICE_HEIGHT = 8192;
@@ -314,11 +357,20 @@ async function main() {
   const designManifest = readJson(join(designDir, 'capture.json'));
   const localManifest = readJson(join(localDir, 'capture.json'));
   if (!designManifest || !localManifest) {
-    console.error('Both directories must be capture.mjs output (capture.json missing).');
+    console.error('Both directories must be capture output (capture.json missing).');
     process.exit(2);
   }
+  if (args.editor !== (localManifest.kind === 'editor')) {
+    console.error(
+      args.editor
+        ? '--editor expects capture-editor.mjs output as the second directory.'
+        : 'The second directory is an editor capture; add --editor.'
+    );
+    process.exit(2);
+  }
+  const ref = args.editor ? 'front end' : 'design';
 
-  const chromium = await loadPlaywright();
+  const chromium = await loadChromium();
   const browser = chromium ? await chromium.launch() : null;
   const page = browser ? await browser.newPage() : null;
   const localRoutes = new Set(localManifest.routes.map((r) => r.dir));
@@ -331,26 +383,30 @@ async function main() {
         const entry = { route: route.dir, width, checks: {} };
         results.push(entry);
         if (!localRoutes.has(localRoute)) {
-          entry.checks.route = { status: 'FAIL', problems: [`no local capture for route "${localRoute}"`] };
+          entry.checks.route = { status: 'FAIL', problems: [`no capture for route "${localRoute}" in ${localDir}`] };
           continue;
         }
         const dPath = (f) => join(designDir, route.dir, `${f}-${width}`);
         const lPath = (f) => join(localDir, localRoute, `${f}-${width}`);
 
-        const ds = readJson(`${dPath('sections')}.json`);
-        const ls = readJson(`${lPath('sections')}.json`);
+        let ds = readJson(`${dPath('sections')}.json`);
+        let ls = readJson(`${lPath('sections')}.json`);
+        if (ds && ls && args.editor) {
+          ds = untexturizeSections(ds);
+          ls = untexturizeSections(ls);
+        }
         if (ds && ls) {
-          const structure = compareStructure(ds, ls);
+          const structure = compareStructure(ds, ls, ref);
           entry.checks.structure = { status: structure.length ? 'FAIL' : 'PASS', problems: structure };
 
           const sectionProblems = [];
           for (const [d, l] of pairSections(ds.sections, ls.sections)) {
             const name = `#${d.index} ${d.tag} "${d.label.slice(0, 40)}"`;
             if (!l) {
-              sectionProblems.push(`${name}: no matching local section`);
+              sectionProblems.push(`${name}: no matching section`);
               continue;
             }
-            for (const p of compareSection(d, l, args.tolerance)) {
+            for (const p of compareSection(d, l, args.tolerance, ref)) {
               sectionProblems.push(`${name}: ${p}`);
             }
           }
@@ -364,7 +420,7 @@ async function main() {
         const lShot = `${lPath('shot')}.png`;
         if (page && existsSync(dShot) && existsSync(lShot)) {
           const { percent, heights } = await pixelDiff(page, dShot, lShot, lPath('diff'));
-          const problems = [`${percent.toFixed(2)}% pixels differ (design ${heights[0]}px tall, local ${heights[1]}px)`];
+          const problems = [`${percent.toFixed(2)}% pixels differ (${ref} ${heights[0]}px tall, compared ${heights[1]}px)`];
           entry.checks.pixels = { status: percent > args.pixelThreshold ? 'FAIL' : 'PASS', problems };
         } else {
           entry.checks.pixels = {
@@ -383,6 +439,13 @@ async function main() {
         } else {
           entry.checks.network = { status: 'NOT RUN', problems: ['network JSON missing'] };
         }
+
+        if (args.editor) {
+          const flags = readJson(`${lPath('editor')}.json`);
+          entry.checks.editor = flags
+            ? checkEditor(flags)
+            : { status: 'NOT RUN', problems: ['editor JSON missing'] };
+        }
       }
     }
   } finally {
@@ -400,7 +463,7 @@ async function main() {
       }
       console.log(`- ${name}: ${check.status}`);
       const shown = check.status === 'PASS' && name !== 'pixels' ? [] : check.problems;
-      for (const p of shown) {
+      for (const p of [...shown, ...(check.info || [])]) {
         console.log(`  - ${p}`);
       }
     }

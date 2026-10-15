@@ -47,11 +47,12 @@ Each template = header part + one or more patterns + footer part.
 **Sticky footer.** Design page roots are often a full-height flex column (`min-height: 100vh; display: flex; flex-direction: column`), which keeps the footer at the bottom of short pages. Once header and footer are template parts, that wrapper is gone. Recreate it once, in the base layout file (`src/frontend/base/layout.css`; `html-to-core-blocks.md`, Theme stylesheets):
 
 ```css
-.wp-site-blocks { min-height: calc(100vh - var(--wp-admin--admin-bar--height, 0px)); display: flex; flex-direction: column; }
+.wp-site-blocks,
+.is-root-container.wp-site-blocks { min-height: calc(100vh - var(--wp-admin--admin-bar--height, 0px)); display: flex; flex-direction: column; }
 .wp-site-blocks > main { flex: 1; }
 ```
 
-The `main` selector needs the template's content group to use `"tagName":"main"`. The admin bar term keeps short pages from scrolling for logged-in visitors (`html-to-core-blocks.md`, Sticky and fixed elements).
+The `main` selector needs the template's content group to use `"tagName":"main"`. The second selector is the editor canvas root, where core sets `display: flow-root` (`editor-parity.md`). The admin bar term keeps short pages from scrolling for logged-in visitors (`html-to-core-blocks.md`, Sticky and fixed elements).
 
 ## Pattern file format
 
@@ -159,6 +160,8 @@ Build each editor control from the first source that has it:
 1. **Core APIs and components** in the project's WordPress version: `@wordpress/block-editor` (`RichText`, `InnerBlocks`, `MediaPlaceholder`, `MediaReplaceFlow`, `InspectorControls`, `BlockControls`), `@wordpress/components` (`ToggleControl`, `SelectControl`, `RangeControl`, `ToolbarButton`, `ComboboxControl`, `FormTokenField`), and `@wordpress/core-data` (`useEntityProp`, `useEntityRecords`). When unsure whether core exports a component in that version, check its documentation.
 2. **[10up Block Components](https://github.com/10up/block-components)** (`@10up/block-components`): for example `ContentPicker` (pick posts, terms or users), `Repeater`, `Link`, `IconPicker`, `Image`, `MediaToolbar` and `Optional`. They are editor-only and rely on `@wordpress/dependency-extraction-webpack-plugin`, which `@wordpress/scripts` and 10up-toolkit already run. Picked IDs are content: they live in the inserted block's attributes, never in a pattern.
 3. **A custom component**, only after confirming neither source has one. Record which component and why in `CONVERSION-NOTES.md`.
+
+The block's `edit` renders the same markup as its `render.php` while unselected, and shows these controls only when selected. Its editor preview is a JS mirror unless the user chooses `ServerSideRender` for it (`editor-parity.md`).
 
 ## Author shared elements once
 

@@ -6,8 +6,9 @@ description: >
   theme", "convert this mockup/prototype to a block theme", "turn this static site into an FSE theme",
   "extract theme.json from this page", or a design URL or HTML file paired with a WordPress theme request.
   Source skills build on it (wp-v0-to-block-theme for v0 exports, wp-claude-design-to-block-theme for
-  Claude Design canvases and HTML artifacts); prefer those when the source matches. Not for classic
-  (PHP template) themes.
+  Claude Design canvases and HTML artifacts); prefer those when the source matches. Also runs an
+  editor parity pass on an existing block theme: "the editor doesn't match the front end", "editor
+  parity", "make the editor preview match the site". Not for classic (PHP template) themes.
 ---
 
 # Design → WordPress Block Theme
@@ -17,6 +18,8 @@ description: >
 A design renders as **HTML + CSS** (and sometimes a JavaScript runtime). A block theme is **static block markup (HTML), `theme.json`, PHP patterns, and Interactivity API** behavior. No automatic converter exists: every section is **rebuilt** as block markup, with the rendered design as reference.
 
 Split the work: **mechanical** (design capture, token extraction, parity — run the scripts) vs **judgment** (composing blocks, patterns vs custom blocks — the model). Do the mechanical parts first so the rebuild references real tokens and real markup.
+
+The editor is part of the result. Every template, part, pattern and custom block renders in the block editor as it does on the front end, with editing controls only on the selected block (`references/editor-parity.md`).
 
 ## Source skills
 
@@ -42,29 +45,34 @@ Steps 1 and 3 are scripts; step 2 is a stop for the user's decisions; steps 4–
 1. **Routes + capture.** List the routes and map each to a template or Page (`references/section-to-pattern.md`, "Map the routes first"). Write them to a routes file. Run `scripts/capture.mjs --routes routes.txt --base <url-or-folder> --behaviors` → per route and breakpoint: DOM, computed CSS, per-section styles, style tallies, screenshots, failed requests, and the state changes each control causes. Check the screenshots for content that did not render. Segment each page per `references/section-to-pattern.md`.
 2. **Content model.** Inventory every image, repeated item, classifying label, fact and site-wide list, and decide where each lives: site identity, post fields, a post type, a taxonomy, post meta, a settings page, a custom block, or static copy (`references/content-model.md`). Ask the user each open decision (taxonomy and meta names, theme or plugin, block vs settings vs copy) with a recommended default, and wait for the answers before building patterns. Hardcode only what the user chooses to.
 3. **Tokens → theme.json.** Use the source skill's token source when it has one. Always run `scripts/css-tokens.mjs <design-capture> --dark-out styles/dark.json --report tokens-report.json` → a `theme.json` `settings` + draft `styles` fragment from what the pages paint. Resolve every warning it prints. Consolidate and rename against `references/theme-json-tokens.md` (fluid type, fonts, default presets, `blockGap`). Tokens **before** patterns. Delegate to the **wp-block-themes** skill.
-4. **Scaffold.** `style.css`, `theme.json` (merge step 3), `templates/`, `parts/`, `patterns/`, `styles/`, `assets/` (fonts, images), `functions.php`, and `package.json` (`@wordpress/scripts`). Front-end CSS goes in `src/frontend/`, split into base, core block and component files and built to one stylesheet (`references/html-to-core-blocks.md`, Theme stylesheets). Custom blocks and view modules also live in `src/`. Register post types, taxonomies and meta where step 2 decided. Delegate to the **wp-block-themes** skill.
+4. **Scaffold.** `style.css`, `theme.json` (merge step 3), `templates/`, `parts/`, `patterns/`, `styles/`, `assets/` (fonts, images), `functions.php`, and `package.json` (`@wordpress/scripts`). Front-end CSS goes in `src/frontend/`, split into base, core block and component files and built to one stylesheet (`references/html-to-core-blocks.md`, Theme stylesheets). Custom blocks and view modules also live in `src/`. Load the front-end stylesheet in the editor with `add_editor_style()`, declare fonts in theme.json `fontFace`, and load any other asset the canvas needs through `enqueue_block_assets` (`references/editor-parity.md`, Styles and fonts reach the canvas). Register post types, taxonomies and meta where step 2 decided. Delegate to the **wp-block-themes** skill.
 5. **Layout.** Header/footer → `parts/*.html`, including header variants. Routes → `templates/*.html` (index, front-page, page, single, archive, 404) per the route map. Recreate the sticky-footer wrapper, and offset it and every sticky or fixed element by the admin bar (`references/html-to-core-blocks.md`, Sticky and fixed elements). Delegate to the **wp-block-themes** skill.
-6. **Sections → patterns.** One `patterns/*.php` per section, built to the step 2 decisions: dynamic content through its block (Query Loop, `core/post-featured-image`, `core/site-logo`, `core/post-terms`, bindings to meta), never hardcoded. Never put a database ID (post, term, attachment, menu `ref`) in a pattern, template or part. **Core blocks first**, styled via tokens; custom block only where core cannot express it — raise first. Wrap every string for translation, and carry the design's exact copy. Keep arrows and other decorative glyphs out of labels: they are a block style or CSS. Localize design images and fonts into `assets/`; never ship a placeholder image. Inventory the icons up front (a linked icon becomes a linkable block, such as a button or a linked image); author shared elements once, vary by modifier. Use `references/html-to-core-blocks.md` and `references/section-to-pattern.md`. Delegate to the **wp-patterns** / **wp-block-development** skills.
+6. **Sections → patterns.** One `patterns/*.php` per section, built to the step 2 decisions: dynamic content through its block (Query Loop, `core/post-featured-image`, `core/site-logo`, `core/post-terms`, bindings to meta), never hardcoded. Never put a database ID (post, term, attachment, menu `ref`) in a pattern, template or part. **Core blocks first**, styled via tokens; custom block only where core cannot express it — raise first. Wrap every string for translation, and carry the design's exact copy. Keep arrows and other decorative glyphs out of labels: they are a block style or CSS. Localize design images and fonts into `assets/`; never ship a placeholder image. Inventory the icons up front (a linked icon becomes a linkable block, such as a button or a linked image); author shared elements once, vary by modifier. Use `references/html-to-core-blocks.md` and `references/section-to-pattern.md`. A custom block's `edit` renders its `render.php` markup while unselected and shows its controls only when selected. Once a dynamic block's `render.php` exists, ask the user whether its editor preview is a JS mirror or `ServerSideRender`, with a recommendation, and record the answer. Ask the same for any server-side filter that changes block output (`references/editor-parity.md`). Delegate to the **wp-patterns** / **wp-block-development** skills.
 7. **Content.** Create the Pages (referencing patterns), front page and posts page, pretty permalinks, navigation menus, and the blog Query Loop, plus the terms, meta values and settings from step 2. See `references/section-to-pattern.md`, "Content: pages, menus, blog".
-8. **Interactivity.** Rebuild each behavior in `behaviors-*.json` (accordions, tabs, sliders, dialogs, scroll-triggered header, mobile nav) with the **Interactivity API** (`data-wp-*` + store), server-rendered then hydrated; cross-region controls share one namespace. See `references/interactivity-recipes.md`. Delegate to the **wp-interactivity-api** skill.
-9. **Verify.** Capture the local site with a route file listing the same routes (WordPress paths), then run `scripts/compare.mjs <design-capture> <local-capture>`, pairing differing route folders with `--map`. Run it *during* the rebuild, section by section, and again here. Then run the remaining gates in `references/parity-pitfalls.md`: visual review, behaviors, editor round-trip, clean build. NOT RUN is never a pass.
+8. **Interactivity.** Rebuild each behavior in `behaviors-*.json` (accordions, tabs, sliders, dialogs, scroll-triggered header, mobile nav) with the **Interactivity API** (`data-wp-*` + store), server-rendered then hydrated; cross-region controls share one namespace. The editor runs no view scripts, so each widget's server-rendered initial state is what editors see: open panels, the first tab, the first slide, revealed content (`references/editor-parity.md`, Behavior at rest). See `references/interactivity-recipes.md`. Delegate to the **wp-interactivity-api** skill.
+9. **Verify.** Capture the local site with a route file listing the same routes (WordPress paths), then run `scripts/compare.mjs <design-capture> <local-capture>`, pairing differing route folders with `--map`. Run it *during* the rebuild, section by section, and again here. Then capture the editor with `scripts/capture-editor.mjs` on the same routes and run `scripts/compare.mjs <local-capture> <editor-capture> --editor` (`references/editor-parity.md`, The editor-parity gate). Then run the remaining gates in `references/parity-pitfalls.md`: visual review, behaviors, editor parity, clean build. NOT RUN is never a pass.
 10. **Handover.** Add `screenshot.png` (1200×900) to the theme, and write `CONVERSION-NOTES.md`. It lists:
    - the route → template/Page map
    - the content model: each step 2 decision and who made it
    - token consolidation and custom-block decisions
+   - each block's editor preview (JS mirror or ServerSideRender) and each server-side filter decision, with who decided
+   - editor differences accepted at the gate, with the reason
    - behaviors not ported
    - copy still to supply
    - the gate results, including any NOT RUN and why
 
 A redesign after the build is a **re-capture + compare pass** against the current patterns and blocks, which then get updated in place.
 
+An existing block theme whose editor does not match its front end gets an **editor parity pass**: the step 9 editor gate on its own, then fixes in place (`references/editor-parity.md`, Editor parity pass on an existing theme).
+
 ## Scripts
 
-All three print full usage with `--help`. `capture.mjs` and `compare.mjs` need Playwright: run them from a working folder outside the theme where `npm i -D playwright && npx playwright install chromium` has run. They load it from the current directory.
+All four print full usage with `--help`. `capture.mjs`, `capture-editor.mjs` and `compare.mjs` need Playwright: run them from a working folder outside the theme where `npm i -D playwright && npx playwright install chromium` has run. They load it from the current directory.
 
 - `scripts/capture.mjs <url|file> [--routes FILE --base URL|DIR] [--out DIR] [--breakpoints 390,768,1280] [--behaviors]` — Playwright capture of the design or the local site. Scrolls each page and waits for fonts and animations before capturing. A local file's route folder is its name without `.html` (`index.html` → `home`).
 - `scripts/css-tokens.mjs <capture-dir> [--out FILE] [--dark-out FILE] [--report FILE] [--max-colors 16]` — rendered styles → theme.json settings and draft styles: palette ranked by painted area and text, custom-property names as slugs, font families and sizes (fluid when the narrow breakpoint is smaller), spacing, radii, shadows, layout widths, and a dark variation from dark-mode custom properties. No network.
-- `scripts/compare.mjs <design-capture> <local-capture> [--map design=local]` — parity gate. It checks structure, section styles, pixels and network. Exit code `0` = pass.
+- `scripts/capture-editor.mjs --routes FILE --base URL [--out DIR] [--breakpoints …] [--user U --password P] [--allow-placeholder <block>]` — logs in to the local site (or reads `WP_USER`/`WP_PASSWORD`) and captures each route's editor canvas, with the same files as `capture.mjs` plus `editor-<w>.json` (invalid blocks, warnings, placeholders, ServerSideRender previews). `--allow-placeholder` accepts a recorded empty state and leaves it out of the measurements. It changes no content or editor preference.
+- `scripts/compare.mjs <design-capture> <local-capture> [--map design=local]` — parity gate. It checks structure, section styles, pixels and network. Exit code `0` = pass. With `--editor`, it compares the front end (first) with the editor capture (second), and also fails on invalid blocks, warnings and placeholders not accepted at capture.
 
 ## Common Mistakes
 
@@ -72,7 +80,12 @@ All three print full usage with `--help`. `capture.mjs` and `compare.mjs` need P
 - Hardcoding px/hex — reference theme.json tokens so global styles stay editable.
 - Shipping the first-pass token scale unconsolidated — fold near-duplicate sizes and steps, rename slugs to roles.
 - OKLCH palette values — the editor's contrast checker cannot read them and flags every pairing; keep the palette in hex.
-- Defaulting to a custom block or `ServerSideRender` — prefer core blocks; raise a custom block first.
+- Defaulting to a custom block — prefer core blocks; raise a custom block first.
+- Choosing a block's editor preview alone — a JS mirror is the default; `ServerSideRender` is the user's call, per block, once its `render.php` exists.
+- A custom block's `edit` that renders differently from its `render.php`, or uses `RichText.Content` (it adds a `<div>` in the editor) — mirror the markup with `RichText` and show controls only when selected.
+- A `render_block` or query-vars filter that changes the front end only — the editor never runs it; move the change into the markup, mirror it, or record it (`references/editor-parity.md`).
+- A page-wrapper rule on `.wp-site-blocks` alone — the editor root is `.is-root-container.wp-site-blocks` with core's `display: flow-root`; repeat the rule for it.
+- A single-class theme rule for a value global styles also set (`gap`, `margin-block-start`) — it wins on the front end and loses in the editor, where editor styles load first; set it on the block (`blockGap`, a preset) instead.
 - Hand-building editor controls (a post picker, a repeater, a link field) — use core components, then 10up Block Components, and only then write one (`references/section-to-pattern.md`, A custom block's editor UI).
 - A custom post-list block for a filtered list — keep the `core/query`, and add Query Loop Filters (`humanmade/query-filter`) when core cannot filter in place (`references/content-model.md`, Filters and pagination).
 - Eyeballing screenshots — use computed CSS from `capture.mjs` for real values, and `compare.mjs` for parity.
