@@ -11,8 +11,9 @@
  *   - pixels: full-page screenshot diff ratio, compared in slices so tall pages are read in full
  *     (writes diff-<w>.png, or diff-<w>-<n>.png per differing slice, next to the local capture);
  *   - network: failed requests and console errors on the local site (or in the editor);
- *   - editor (--editor only): invalid blocks, block warnings, placeholders not accepted at capture and
- *     unsettled previews in the editor canvas fail; blocks previewed with ServerSideRender are listed.
+ *   - editor (--editor only): invalid blocks, block warnings, placeholders not accepted at capture,
+ *     unsettled previews in the editor canvas, and a post type that opens without its template fail;
+ *     blocks previewed with ServerSideRender are listed.
  *
  * Exit code: 0 all checks pass, 1 any check fails, 2 usage error. Checks without data report NOT RUN,
  * which never counts as a pass.
@@ -42,8 +43,9 @@ Usage:
   --map a=b            pair route folder a (design) with b (local) when their slugs differ.
   --json FILE          also write the full result as JSON.
   --editor             the second capture is capture-editor.mjs output: compare the editor canvas with the
-                       front end, and check the editor's invalid blocks, warnings and placeholders
-                       (accept a placeholder with capture-editor.mjs --allow-placeholder).
+                       front end, and check the editor's invalid blocks, warnings, placeholders
+                       (accept a placeholder with capture-editor.mjs --allow-placeholder) and that each
+                       post type opens with its template shown.
 
 Exit 0 = pass, 1 = fail. NOT RUN is never a pass.`;
 
@@ -228,8 +230,8 @@ function compareSection(d, l, tol, ref) {
 }
 
 /**
- * Editor canvas problems: invalid blocks, block warnings, placeholders not accepted at capture and previews
- * still loading fail. Accepted placeholders and blocks previewed with ServerSideRender are listed for review
+ * Editor canvas problems: invalid blocks, block warnings, placeholders not accepted at capture, previews
+ * still loading, and a post type that opens without its template fail. Accepted placeholders and blocks previewed with ServerSideRender are listed for review
  * against CONVERSION-NOTES.md.
  */
 function checkEditor(flags) {
@@ -242,6 +244,12 @@ function checkEditor(flags) {
   ];
   if (!flags.previewsSettled) {
     problems.push('previews were still loading when the canvas was captured');
+  }
+  if (flags.defaultRenderingMode === 'post-only') {
+    problems.push(
+      `${flags.postType} opens without its template (post-only): declare ` +
+        `add_post_type_support( '${flags.postType}', 'editor', [ 'default-mode' => 'template-locked' ] )`
+    );
   }
   const info = [
     ...new Set(flags.placeholders.filter((p) => p.allowed).map((p) => `${p.block}: placeholder accepted`)),

@@ -73,12 +73,14 @@ node skills/wp-design-to-block-theme/scripts/css-tokens.mjs ./capture/design --o
 node skills/wp-design-to-block-theme/scripts/capture.mjs --routes wp-routes.txt --base http://mysite.test --out ./capture/local
 node skills/wp-design-to-block-theme/scripts/compare.mjs ./capture/design ./capture/local --map about=about-us
 
-# Capture the block editor on the same routes, then run the editor-parity gate (exit 0 = pass)
+# Find theme rules that lose in the editor because of stylesheet order, then capture the block editor
+# on the same routes and run the editor-parity gate (exit 0 = pass)
+node skills/wp-design-to-block-theme/scripts/cascade-order.mjs --routes wp-routes.txt --base http://mysite.test
 WP_USER=admin WP_PASSWORD=password node skills/wp-design-to-block-theme/scripts/capture-editor.mjs --routes wp-routes.txt --base http://mysite.test --out ./capture/editor
 node skills/wp-design-to-block-theme/scripts/compare.mjs ./capture/local ./capture/editor --editor
 ```
 
-Pass `--help` to any script for the full flag list. `capture.mjs`, `capture-editor.mjs` and `compare.mjs` load Playwright from the current directory; `capture-editor.mjs` logs in to the local site and changes no content or editor preference; `css-tokens.mjs` has no dependencies and does no network I/O.
+Pass `--help` to any script for the full flag list. `capture.mjs`, `capture-editor.mjs`, `cascade-order.mjs` and `compare.mjs` load Playwright from the current directory; `capture-editor.mjs` logs in to the local site and changes no content or editor preference; `css-tokens.mjs` has no dependencies and does no network I/O.
 
 ---
 
@@ -105,6 +107,7 @@ wp-design-to-block-theme/
         └── scripts/
             ├── capture.mjs           ← Playwright capture of the design or the rebuild
             ├── capture-editor.mjs    ← Playwright capture of the block editor canvas per route
+            ├── cascade-order.mjs     ← theme rules that win on the front end only because of stylesheet order
             ├── css-tokens.mjs        ← rendered styles → theme.json settings
             ├── compare.mjs           ← design vs rebuild, or front end vs editor, parity gate
             └── lib/                  ← collectors and helpers shared by the capture scripts

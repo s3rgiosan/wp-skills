@@ -40,11 +40,12 @@ Each gate reports PASS, FAIL or NOT RUN. **NOT RUN is never a pass.** List it in
 5. **Editor parity.** Capture the editor on the same routes and compare it with the front end:
 
    ```bash
+   node scripts/cascade-order.mjs --routes wp-routes.txt --base http://mysite.test
    WP_USER=admin WP_PASSWORD=… node scripts/capture-editor.mjs --routes wp-routes.txt --base http://mysite.test --out capture/editor
    node scripts/compare.mjs capture/local capture/editor --editor
    ```
 
-   It passes when the canvas matches the front end at every breakpoint, with no invalid block, block warning or unaccepted placeholder (`editor-parity.md`). The routes reach every template and Page. Open each pattern that no route shows in the Site Editor's pattern screen; it must show no "This block contains unexpected or invalid content". Then save a Page and a template, reload, and confirm the front end did not change.
+   It passes when no theme rule depends on stylesheet order, every post type opens with its template shown, and the canvas matches the front end at every breakpoint, with no invalid block, block warning or unaccepted placeholder (`editor-parity.md`). The routes reach every template and Page. Open each pattern that no route shows in the Site Editor's pattern screen; it must show no "This block contains unexpected or invalid content". Then save a Page and a template, reload, and confirm the front end did not change.
 6. **Build.** `npm run build` is clean.
 
 ## Named failure modes to check for
@@ -69,6 +70,12 @@ Every block with a text and background color shows the "low contrast" warning in
 
 ### Every section sits a little lower than the design
 All sections are offset by the same amount, and the offset adds up down the page. Cause: core's default `blockGap` adds a top margin between top-level blocks, which the design does not have. Fix: set `styles.spacing.blockGap` to the design's rhythm, or `0` when sections carry their own padding (see `theme-json-tokens.md`).
+
+### Spacing between blocks collapses in the editor only
+Article paragraphs, a row's items or a pagination bar touch in the canvas but are spaced on the front end. Cause: a class rule adds the space (`.article-body > * + *`, `.meta-row { gap }`) and ties with the global layout rule on specificity; the editor loads the theme stylesheet first, so the global rule wins there. Fix: set `blockGap` on the block, or give the rule a second class where the block has no gap setting (`editor-parity.md`, Cascade order). `scripts/cascade-order.mjs` finds every case.
+
+### The article loses its styles in the editor
+Posts show unstyled text in the editor: default size, no spacing, no post header. Cause: the post opens in post-only mode, without the template, so the class on `core/post-content` that styles the article is not in the canvas. Fix: declare `default-mode` `template-locked` for the post type (`editor-parity.md`, The post editor shows the template).
 
 ### Footer floats mid-screen on short pages
 The design keeps the footer at the bottom of the viewport; the rebuild leaves empty space under it. Cause: the design's full-height flex-column page wrapper did not survive the move to template parts. Fix: the `.wp-site-blocks` flex-column recipe in `section-to-pattern.md`. In the editor the footer floats even with the recipe in place: the canvas root is `.is-root-container.wp-site-blocks`, and core sets `display: flow-root` on it. Repeat the rule for that selector (`editor-parity.md`).

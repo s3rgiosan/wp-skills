@@ -13,7 +13,8 @@
  *   - sections-<w>.json   per-section geometry and styles, heading outline
  *   - styles-<w>.json     page-wide style tallies
  *   - network-<w>.json    failed canvas and REST requests, and editor console errors
- *   - editor-<w>.json     invalid blocks, block placeholders and warnings, blocks previewed with ServerSideRender
+ *   - editor-<w>.json     invalid blocks, block placeholders and warnings, blocks previewed with ServerSideRender,
+ *                         and the rendering mode the post type opens in by default
  * plus <out>/capture.json listing the routes, their editor URLs and the breakpoints.
  *
  * Usage:
@@ -228,12 +229,23 @@ async function openEditor(page, editorUrl, width, timeout) {
     const { select, dispatch } = window.wp.data;
     const editor = select('core/editor');
     const postType = editor.getCurrentPostType();
-    // The post editor shows the template around the content only in template-locked mode.
-    if (!/^wp_(template|template_part|block|navigation)$/.test(postType) && editor.getRenderingMode?.() === 'post-only') {
+    const isContent = !/^wp_(template|template_part|block|navigation)$/.test(postType);
+    // The mode the post type opens in for an editor with no saved preference. Core's default is post-only:
+    // the content without its template, so no template wrapper or class applies around it.
+    let defaultMode = null;
+    if (isContent) {
+      const editorSupport = select('core').getPostType(postType)?.supports?.editor;
+      const declared = Array.isArray(editorSupport)
+        ? editorSupport.find((feature) => feature && 'default-mode' in feature)?.['default-mode']
+        : undefined;
+      defaultMode = declared || 'post-only';
+    }
+    // The canvas is captured with the template shown, so the comparison measures the whole page.
+    if (isContent && editor.getRenderingMode?.() === 'post-only') {
       dispatch('core/editor').setRenderingMode('template-locked');
     }
     dispatch('core/block-editor').clearSelectedBlock();
-    return { postType, mode: editor.getRenderingMode?.() || null };
+    return { postType, mode: editor.getRenderingMode?.() || null, defaultMode };
   });
 
   // The pinned iframe covers the editor UI, so its viewport is exactly the breakpoint.
@@ -436,7 +448,7 @@ async function captureRoute(context, route, width, dir, args) {
   await page.setViewportSize({ width: Math.max(EDITOR_WIDTH, width), height: VIEWPORT_HEIGHT });
   const log = watchEditor(page);
   try {
-    const { frame, postType, mode } = await openEditor(page, route.editor, width, args.timeout);
+    const { frame, postType, mode, defaultMode } = await openEditor(page, route.editor, width, args.timeout);
     const previewsSettled = await waitForPreviews(page, frame, log, args.timeout);
     await scrollThrough(frame);
     await settle(frame);
@@ -467,6 +479,7 @@ async function captureRoute(context, route, width, dir, args) {
       editorUrl: route.editor,
       postType,
       renderingMode: mode,
+      defaultRenderingMode: defaultMode,
       previewsSettled,
       ...flags,
       serverSideRender: [...log.serverSideRender].sort(),
