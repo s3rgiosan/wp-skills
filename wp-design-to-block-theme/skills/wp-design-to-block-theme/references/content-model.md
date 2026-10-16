@@ -35,7 +35,9 @@ List every item in the design that is one of these:
 
 Raise these decisions; never pick one silently:
 
-- **Post types and taxonomies:** name, slug, labels, whether the URL is public, and where they are registered. A theme that registers content types loses that content when the theme changes, so the default is a plugin. A theme registers them only when the user says so (for example, a one-off site whose theme is the whole product).
+- **Post types, taxonomies and meta:** name, slug, labels, whether the URL is public, and where they are registered. The content stays in the database when the theme changes, so the code that registers it must stay too:
+  1. **A support mu-plugin or a plugin (default).** The site's data architecture lives there, and survives a theme switch or rebuild.
+  2. **The theme (fallback),** only when neither a mu-plugin nor a plugin is possible. Record why in `CONVERSION-NOTES.md`.
 - **Meta keys:** key names, types, and how editors fill them (a sidebar panel on the post type, registered with `register_post_meta()` and `show_in_rest`).
 - **Site-wide lists and figures:** a custom block (editors fill the list in place), a taxonomy (the list is terms that also tag content), a settings page (one list used in several places), or static copy in a pattern.
 - **Curated lists:** when a Query Loop shows hand-picked items in a set order (a showcase strip, related posts chosen by an editor), suggest the [Advanced Query Loop](https://wordpress.org/plugins/advanced-query-loop/) plugin. It is a `core/query` variation (`"namespace":"advanced-query-loop"`): editors pick the posts in the block sidebar, stored as `query.include_posts` (`[{"id":101}, …]`) with `"orderBy":"post__in"`. It also excludes the current post (`"exclude_current":true`) for "more posts" lists. The pattern ships with `include_posts` empty; the IDs exist only in the block an editor inserts. Ask before adding the plugin.
