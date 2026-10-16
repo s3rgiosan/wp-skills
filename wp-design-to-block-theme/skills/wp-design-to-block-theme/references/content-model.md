@@ -36,7 +36,7 @@ List every item in the design that is one of these:
 Raise these decisions; never pick one silently:
 
 - **Post types, taxonomies and meta:** name, slug, labels, whether the URL is public, and where they are registered. The content stays in the database when the theme changes, so the code that registers it must stay too:
-  1. **A support mu-plugin or a plugin (default).** The site's data architecture lives there, and survives a theme switch or rebuild.
+  1. **A support mu-plugin or a plugin (default).** This plugin-territory functionality lives there, and survives a theme switch or rebuild.
   2. **The theme (fallback),** only when neither a mu-plugin nor a plugin is possible. Record why in `CONVERSION-NOTES.md`.
 - **Meta keys:** key names, types, and how editors fill them (a sidebar panel on the post type, registered with `register_post_meta()` and `show_in_rest`).
 - **Site-wide lists and figures:** a custom block (editors fill the list in place), a taxonomy (the list is terms that also tag content), a settings page (one list used in several places), or static copy in a pattern.
