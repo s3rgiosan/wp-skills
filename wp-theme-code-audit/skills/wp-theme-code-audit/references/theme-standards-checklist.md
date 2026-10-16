@@ -153,6 +153,7 @@ grep -RnE "<(script|link)[^>]+(src|href)=" --include="*.php" --include="*.html" 
 grep -RnE "wp_(enqueue|register)_(script|style|script_module)\(" --include="*.php" .
 grep -RnE "wp_localize_script|wp_add_inline_script|wp_add_inline_style" --include="*.php" .
 grep -RnE "add_action\(\s*['\"](wp_enqueue_scripts|enqueue_block_assets|enqueue_block_editor_assets|admin_enqueue_scripts)['\"]" --include="*.php" .
+grep -RL '"version"' --include="block.json" .                                    # block.json files without a version
 ```
 
 | Issue | Severity | Fix |
@@ -161,6 +162,7 @@ grep -RnE "add_action\(\s*['\"](wp_enqueue_scripts|enqueue_block_assets|enqueue_
 | Inline `<script>` blocks echoed in templates | Low | `wp_add_inline_script()` (and `wp_json_encode()` for data) |
 | Enqueued without a version, or with `time()` as version | Low | `wp_get_theme()->get( 'Version' )` or the `*.asset.php` file from the build |
 | `*.asset.php` produced by the build but ignored (dependencies and version hardcoded) | Low | Read `dependencies` and `version` from the asset file |
+| Custom block with `file:` styles and no `version` in `block.json`, and nothing that sets one at build or registration (10up-toolkit writes one into the built `block.json`). Block styles take their version only from `block.json`, so they load with the WordPress version and caches serve stale CSS after a deploy | Low | Set `version` in a `block_type_metadata` filter to a hash of the block's stylesheets |
 | Module JS (`import` syntax, Interactivity API stores) enqueued as a classic script | Medium (broken) | `wp_enqueue_script_module()` / `viewScriptModule` in `block.json` |
 | `get_template_directory_uri()` used for assets a child theme is meant to override | Low | `get_theme_file_uri()` (resolves child first) |
 | jQuery deregistered or replaced with a CDN copy | Medium | Remove; depend on core's `jquery` handle only where needed |
