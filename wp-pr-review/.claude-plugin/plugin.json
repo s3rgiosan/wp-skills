@@ -1,0 +1,14 @@
+{
+  "name": "wp-pr-review",
+  "version": "1.0.0",
+  "description": "Context-aware pull request review for WordPress projects: reviews the PR against its target branch, the task it delivers, the project's rules, and a wp-mnemon map of every touched plugin and theme; re-checks every finding with an independent verifier; writes a review doc with per-line comments and quick-fix suggestions. Requires wp-mnemon.",
+  "author": {
+    "name": "Sérgio Santos",
+    "url": "https://github.com/s3rgiosan"
+  },
+  "homepage": "https://github.com/s3rgiosan/wp-skills/tree/main/wp-pr-review",
+  "repository": "https://github.com/s3rgiosan/wp-skills",
+  "license": "MIT",
+  "dependencies": ["wp-mnemon"],
+  "keywords": ["wordpress", "code-review", "pull-request", "merge-request", "github", "gitlab"]
+}

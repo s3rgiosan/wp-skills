@@ -13,6 +13,19 @@ just to catalog hooks and data structures, but to understand **what the plugin d
 it works, what triggers what, and how data flows through the system**.
 
 Follow every phase below in order. Do not skip phases even if the plugin seems simple.
+The one exception is Phase 1b: when it finds an existing analysis of the same plugin
+version, the analysis phases are skipped.
+
+## Memory root
+
+All documentation lives under one root, called `<root>` in this skill:
+
+```
+<claude config dir>/agent-memory/wp-mnemon/
+```
+
+`<claude config dir>` is `$CLAUDE_CONFIG_DIR` when set, otherwise `~/.claude`. Resolve it
+once, for example `ROOT="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/agent-memory/wp-mnemon"`.
 
 ---
 
@@ -58,6 +71,38 @@ Extract and record:
 - Main file path
 - Constants defined (`PLUGIN_VERSION`, `PLUGIN_DIR`, `PLUGIN_URL`, etc.)
 - Read the plugin's README or readme.txt to understand its stated purpose and features
+
+`<version>` is the header `Version:` value verbatim (for example `2.4.1`). When the header
+has no version, use `unversioned`.
+
+---
+
+## Phase 1b: Check memory
+
+Each version of a plugin has its own analysis, because versions can differ in hooks,
+data, and behavior.
+
+**1. Migrate the legacy layout.** Earlier runs wrote the docs directly in
+`<root>/plugins/<slug>/*.md`, with no version folder. When `<root>/plugins/<slug>/overview.md`
+exists:
+- Read the version from the header line of that `overview.md` (`# <Plugin Name> — v<version>`
+  or a `Version` field). Take whatever the header records.
+- When no version can be read, use `unversioned`.
+- Move the five files (overview.md, architecture.md, hooks.md, data.md, extending.md) into
+  `<root>/plugins/<slug>/<that version>/`.
+- Update the plugin's row in `<root>/MEMORY.md` so it matches the moved docs (name, slug,
+  that version, the analyzed date from the header).
+
+**2. Look for this version.** Check `<root>/plugins/<slug>/<version>/overview.md`.
+
+- **It exists**: do not re-analyze. Read the five docs, skip to Phase 12, and report
+  "reused existing analysis for <slug> <version>" with the five doc paths. The user can
+  ask to re-analyze or refresh; in that case run every phase and overwrite this version's
+  folder.
+- **It is missing, and other version folders exist for the slug**: run the full analysis
+  and write a new `<version>/` folder in Phase 11. Leave the other versions' folders
+  untouched. Note the other versions on record for Phase 12.
+- **No folder exists for the slug**: run the full analysis.
 
 ---
 
@@ -303,17 +348,22 @@ Focus on the most common real-world use cases.
 
 ## Phase 11: Write Memory Files
 
-Create a directory for the plugin and write multiple focused files:
+Create a directory for this plugin version and write multiple focused files. A version
+folder is written once per analysis run and overwritten only on an explicit refresh.
+Other versions' folders are never modified.
 
 ### Directory structure
 ```
-~/.claude/agent-memory/wp-mnemon/plugins/{plugin-slug}/
+<root>/plugins/{plugin-slug}/{version}/
 ├── overview.md
 ├── architecture.md
 ├── hooks.md
 ├── data.md
 └── extending.md
 ```
+
+`{version}` is the plugin header `Version:` value verbatim, or `unversioned` when the
+header has none.
 
 ### `overview.md` — What it does & how it works
 
@@ -438,12 +488,14 @@ For each key class: responsibility, file path, key methods.}
 {How data is created, updated, read, deleted — and where to hook in}
 ```
 
-### Update index: `~/.claude/agent-memory/wp-mnemon/MEMORY.md`
+### Update index: `<root>/MEMORY.md`
 
-Add or update the plugin entry in the table:
+The table has one row per slug and version. Add a row for this version, or update the
+existing row when the same slug and version is refreshed:
 ```markdown
 | {name} | {slug} | {version} | {date} |
 ```
+Different versions of one plugin are separate rows.
 
 Add a note under Cross-Plugin Patterns if you observe patterns shared with other
 analyzed plugins.
@@ -453,8 +505,11 @@ analyzed plugins.
 ## Phase 12: Confirm to User
 
 Tell the user:
-- What was analyzed
-- Where memory was written (list all files)
+- What was analyzed, or "reused existing analysis for <slug> <version>" when Phase 1b
+  found one
+- Where memory was written, or read from when reused (list all files)
+- The other versions of this plugin on record, if any, and that each version keeps its
+  own analysis because versions can differ in hooks, data, and behavior
 - Key stats: hook count, CPTs, DB tables, REST routes, major flows traced
 - Any gaps: files that couldn't be read, areas that were unclear
 - A brief summary of the plugin's architecture and main flows
