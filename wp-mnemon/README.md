@@ -55,10 +55,13 @@ Open any Claude Code session and ask naturally:
 "Walk me through how this plugin bootstraps and what hooks it fires."
 ```
 
-The skill runs a 13-phase analysis:
+Each plugin version is analyzed once. Before analyzing, the skill checks for an existing analysis of the same slug and version and reuses it. Ask to "re-analyze" or "refresh" to overwrite that version. A different version of the same plugin gets its own analysis, and the other versions stay on record.
+
+The skill runs a 13-phase analysis (plus a memory check after phase 1):
 
 0. Determine source — local path or GitHub URL (with API access for the latter).
 1. Identify the plugin — main file, header metadata, constants, stated purpose.
+   - 1b. Check memory: migrate docs from the earlier unversioned layout, then reuse the existing analysis of this version when there is one.
 2. Map the file structure — directory map, architectural pattern, file count.
 3. Architecture & class map — namespaces, autoloading, class hierarchy, traits, singletons.
 4. Bootstrap & initialization flow — load sequence through the WordPress lifecycle hooks.
@@ -110,7 +113,7 @@ wp-skills/
 
 ## Pairing with the subagent
 
-The [wp-mnemon subagent](https://github.com/s3rgiosan/wp-agents/tree/main/wp-mnemon) (in the companion `wp-agents` repo) consumes this skill and persists results to `~/.claude/agent-memory/wp-mnemon/plugins/{slug}/`. Use the subagent when you want analysis available across future Claude sessions; use the skill directly when you want a one-shot read.
+The [wp-mnemon subagent](https://github.com/s3rgiosan/wp-agents/tree/main/wp-mnemon) (in the companion `wp-agents` repo) consumes this skill and persists results to `<claude config dir>/agent-memory/wp-mnemon/plugins/{slug}/{version}/` (`$CLAUDE_CONFIG_DIR` when set, otherwise `~/.claude`), with one index row per slug and version in `MEMORY.md`. Use the subagent when you want analysis available across future Claude sessions; use the skill directly when you want a one-shot read.
 
 ---
 
