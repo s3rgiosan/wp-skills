@@ -45,6 +45,11 @@
       "description": "Deep architectural analysis of WordPress plugins — what the plugin does, how it works, what triggers what, and how data flows. 13-phase workflow with structured output."
     },
     {
+      "name": "wp-pr-review",
+      "source": "./wp-pr-review",
+      "description": "Context-aware pull request review for WordPress projects: reviews the PR against its target branch, the task it delivers, the project's rules, and a wp-mnemon map of every touched plugin and theme; re-checks every finding with an independent verifier; writes a review doc with per-line comments and quick-fix suggestions. Requires wp-mnemon."
+    },
+    {
       "name": "wp-design-to-block-theme",
       "source": "./wp-design-to-block-theme",
       "description": "Turn any rendered web design (URL, dev server or static HTML) into a WordPress block theme: capture the pages, derive theme.json tokens from what they paint, rebuild sections as patterns, templates, and Interactivity API blocks, and gate parity with the design and between the front end and the block editor."
