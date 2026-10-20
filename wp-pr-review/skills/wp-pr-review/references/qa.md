@@ -23,7 +23,7 @@ Record the starting ref first with `git -C <checkout> rev-parse --abbrev-ref HEA
 
 ## Run
 
-- Drive UI steps with Playwright when available. Take a screenshot per step and save it next to the review doc.
+- Drive UI steps with Playwright when available. Take a screenshot per step and save it in `<doc folder>/<pr|mr>-<n>-qa/<short head sha>/`, so each round keeps its own.
 - Check `debug.log` and the browser console after each step.
 - Record each step as **pass**, **fail** (with the observed result), or **blocked** (with the reason), and its source (QA section, acceptance criterion number, or user).
 

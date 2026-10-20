@@ -23,7 +23,8 @@ Every claim in a finding is checked before it stays. These checks catch the most
 | **External fact** | Check version compatibility, platform behavior, tool config keys, and library APIs against vendored code, lock files, version headers, the tool's schema or docs, or the remote (`git ls-remote`, `gh api`). Never assert a compatibility rule from memory. | Drop, or ask as an open question naming what was checked |
 | **Runtime state** | Whether a plugin is active, an option's value, or production content cannot be read from the repository. | Open question naming the command that settles it, for example `wp plugin list --status=active` on the target environment |
 | **Duplicate** | Two findings share one root cause. | Merge into one comment at the root cause |
-| **Already raised** | An unresolved review thread on the PR makes the same point. | Omit; list under reviewer notes |
+| **Already raised** | An unresolved review thread by someone else makes the same point. | Omit; list under reviewer notes |
+| **Previous round** | An own thread or an earlier review doc of this PR makes the same point. | Track it under Previous findings; a Still open one with an own thread becomes a thread reply, never a new inline comment |
 | **History of the changed lines** | `git log -L <start>,<end>:<path>` or `git blame -L` on the base range; read the commit messages and linked PRs or tickets. | A comment that calls old code a mistake, or treats a removed guard as dead code, is dropped or rewritten when its introducing commit explains it; a PR that reverts a deliberate fix is a finding that cites that commit |
 | **Mechanics** | Check how git merges (identical hunks merge cleanly), how CI triggers (a workflow runs only on its listed events and branches), and how a tool parses its config. | Drop or narrow the claim |
 
