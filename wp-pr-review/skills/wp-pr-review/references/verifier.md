@@ -14,7 +14,7 @@ Component maps: {per component: slug and doc paths or the inline map}.
 Review doc: {doc path}.
 Rules: {absolute path to references/review-rules.md}. Read it first.
 
-1. Read the doc. List every inline comment and every factual claim in the summary comment.
+1. Read the doc. List every inline comment, every thread reply, every Previous findings row, and every factual claim in the summary comment. Check each Previous findings status (Fixed, Still open, Outdated) at the head and its cited commit, and that no Still open finding with an own thread is repeated as a new inline comment.
 2. For each comment, split it into its claims (what the code does, what the base had, what a tool or platform does, what the task intended) and check each one yourself from source. Do not rely on the Evidence line.
    - Code: read the lines at the head and the base. Confirm the line numbers in the heading.
    - Caused by this PR: confirm the problem is absent at the base and on the target branch.

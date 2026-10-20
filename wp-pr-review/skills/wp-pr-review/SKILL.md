@@ -59,7 +59,7 @@ The caller may also set:
 | `extra_criteria` | Items reviewed and reported as listed-not-judged (for example a definition of done) |
 | `qa_steps` | The QA steps for Step 7, chosen by the caller from its own sources in its own order |
 
-With a task context block, skip the ticket fetch in Step 2 and the tracker search in Step 5 and use the block. Everything else runs as written. When the run ends, return to the caller: the verdict, comment counts by severity, acceptance criteria met of total, QA steps passed of run, the doc path, and whether the review was posted.
+With a task context block, skip the ticket fetch in Step 2 and the tracker search in Step 5 and use the block. Everything else runs as written. When the run ends, return to the caller: the verdict, comment counts by severity, previous findings by status (on a later round), the reviewed head sha, acceptance criteria met of total, QA steps passed of run, the doc path, and whether the review was posted.
 
 ## Step 1: Inputs
 
@@ -78,11 +78,11 @@ The PR URL decides the host; otherwise `git remote get-url origin` does. GitHub 
 
 ```bash
 gh pr view <n> --repo <owner/repo> --json number,title,url,body,author,baseRefName,headRefName,headRefOid,baseRefOid,state,isDraft,changedFiles,files,commits,statusCheckRollup
-gh api graphql -f query='query($o:String!,$r:String!,$n:Int!){repository(owner:$o,name:$r){pullRequest(number:$n){reviewThreads(first:100){nodes{isResolved path line comments(first:1){nodes{body}}}}}}}' -F o=<owner> -F r=<repo> -F n=<n>
+gh api graphql -f query='query($o:String!,$r:String!,$n:Int!){repository(owner:$o,name:$r){pullRequest(number:$n){reviewThreads(first:100){nodes{id isResolved isOutdated path line originalLine comments(first:1){nodes{databaseId body author{login}}}}}}}}' -F o=<owner> -F r=<repo> -F n=<n>
 gh api user --jq .login
 ```
 
-Keep the threads with `isResolved: false`.
+Keep every thread. A thread whose first comment's author is the user's login is **own**; the rest are **others'**.
 
 GitLab (`<project>` is the URL-encoded `group/project` path, never the `:id` placeholder):
 
@@ -93,11 +93,11 @@ glab api projects/<project>/merge_requests/<n>/pipelines
 glab api user --jq .username
 ```
 
-The discussions' `resolved` field marks resolved threads.
+The discussions' `resolved` field marks resolved threads; a discussion whose first note's author is the user's username is **own**.
 
 From the GitLab JSON, `diff_refs.head_sha`, `diff_refs.base_sha`, and `diff_refs.start_sha` stand in for the head and base shas, and `target_branch` for the base branch.
 
-Note: QA and Acceptance Criteria sections in the PR body (Step 7 uses them), unresolved review threads (a point already raised is not repeated), failing or pending checks by name, whether the PR references the ticket (a PR that names a different ticket is a finding), and generated or vendored files. For a closed or merged PR, say so and ask whether to continue.
+Note: QA and Acceptance Criteria sections in the PR body (Step 7 uses them), unresolved threads by others (a point already raised is not repeated), own threads (Step 5 tracks them as previous findings), failing or pending checks by name, whether the PR references the ticket (a PR that names a different ticket is a finding), and generated or vendored files. For a closed or merged PR, say so and ask whether to continue.
 
 **Task.** Find the ticket: the one the user named, else a ticket reference in the PR body or branch name, confirmed with the user before use. Read it with whatever reaches that tool:
 
@@ -117,6 +117,8 @@ Read the ticket's comments oldest first. Build the task context block from "Call
 Use the caller's `checkout`, else the current repository when its `origin` matches the PR repository, else ask for the local checkout path. Never clone without asking.
 
 Shell variables do not persist between Bash calls. Resolve the worktree path once (for example `echo "${TMPDIR:-/tmp}/wp-pr-review-<n>"`) and write that literal path into every later command (Step 10 and the payload paths in `references/posting.md`). The blocks below keep the `$WT` notation.
+
+When `$WT/head` or `$WT/base` is left over from an earlier run, remove it first with `git -C <checkout> worktree remove --force`.
 
 ```bash
 WT="${TMPDIR:-/tmp}/wp-pr-review-<n>"
@@ -156,6 +158,10 @@ From the maps and the code, write down for Step 5:
 
 Read `references/review-rules.md`. Then:
 
+0. **Previous round.** Find the latest earlier review doc for this PR at the Step 6 location (the doc itself, or its dated copies). When there is none and the PR has no own threads, skip this step. Otherwise take the last History line's head sha as `<last>` and the doc's Inline comments plus the own threads as the **previous findings**.
+   - **Incremental pass.** When `git -C "$WT/head" cat-file -e <last>^{commit}` and `git -C "$WT/head" merge-base --is-ancestor <last> HEAD` both pass, read `git -C "$WT/head" log --oneline <last>..HEAD` and `git -C "$WT/head" diff <last>..HEAD` before the full pass, so the new changes get first attention. Otherwise (force-push or rebase), note "history rewritten since `<last>`" and run the full pass only.
+   - **Status.** For each previous finding, re-read its code at the head and mark it **Fixed** (the defect is gone; cite the commit from `git log <last>..HEAD -- <path>`), **Still open** (the defect is still there, whether or not its thread is resolved), or **Outdated** (the code it pointed at was removed or rewritten so the comment no longer applies). Each status goes through Claim Validation like a new finding.
+   - A Still open finding that has an own thread is never a new inline comment: it gets a thread reply (`review-doc.md`). One with no thread (the earlier round was not posted) stays in Inline comments.
 1. **History.** For each component or path the PR removes, replaces, renames, or re-versions, run `git -C "$WT/head" log --all --oneline -- <path>`, and search the ticket's tracker for decisions about it (search by component name and slug, including closed items). Note decisions with their source. For every hunk the PR edits or removes, run `git -C "$WT/base" log -L <start>,<end>:<path> --format='%h %ad %s' --date=short -n 5` on the base line range (or `git -C "$WT/base" blame -L <start>,<end> <path>` for a quick view) and read the commits that introduced the old code. Use them to learn why the old code was written that way before a comment calls the change or the old code wrong. Note commits that state intent (for example a fix the PR undoes).
 2. **Read.** Read every changed file in full at the head and compare with the base. Read the callers from Step 4.
 3. **Check.** Apply the checklist in `review-rules.md`, plus each `extra_criteria` item as listed, not judged. Run installed linters and tests on changed files; record the command and result.
@@ -163,9 +169,9 @@ Read `references/review-rules.md`. Then:
 
 ## Step 6: Write the doc
 
-Write the doc in the `references/review-doc.md` format at the caller's `doc_path`, else `<out>/<host>-<repo>-pr-<n>-review.md` for GitHub and `<out>/<host>-<repo>-mr-<n>-review.md` for GitLab, where `<host>` is `github` or `gitlab`. `<out>` is the folder the user named, else `.drafts/` at the repository root. Before writing inside the repository, run `git check-ignore -q <out>/x`; when the folder is not ignored, ask for another folder or for permission to leave an untracked file there.
+Write the doc in the `references/review-doc.md` format at the caller's `doc_path`, else `<out>/<host>-<repo>-pr-<n>-review.md` for GitHub and `<out>/<host>-<repo>-mr-<n>-review.md` for GitLab, where `<host>` is `github` or `gitlab`. `<out>` is the output folder: the folder the user named, else the `WP_PR_REVIEW_DIR` environment variable, else ask the user once in this run, suggesting a folder outside the repository. A relative `<out>` resolves against the main checkout root, `dirname "$(git -C <checkout> rev-parse --path-format=absolute --git-common-dir)"`, so the doc outlives a linked worktree. Before writing inside the repository, run `git -C <main checkout root> check-ignore -q <out>/x`; when the folder is not ignored, ask for another folder or for permission to leave an untracked file there.
 
-When the doc already exists, ask with AskUserQuestion: **Update the existing review doc** (re-review, rewrite Summary comment and Inline comments, keep History and add a line) or **Write a new doc** (append `-<YYYY-MM-DD>` before `.md`).
+When the doc already exists, ask with AskUserQuestion: **Update the existing review doc** (re-review, rewrite Summary comment, Inline comments, Thread replies, and Previous findings from Step 5, keep History and add a line) or **Write a new doc** (append `-<YYYY-MM-DD>` before `.md`; Step 5 still reads the earlier doc as the previous round). Either way, read the earlier doc before writing so its previous findings are not lost.
 
 ## Step 7: Local QA
 
@@ -188,7 +194,7 @@ When it dropped or corrected a comment you believe is right, re-check that comme
 
 ## Step 9: Present and post
 
-Show the verdict, the comment headings with severities, the dropped count, QA results, and the doc path. Then ask:
+Show the verdict, the comment headings with severities, the previous findings by status (on a later round), the thread replies, the dropped count, QA results, and the doc path. Then ask:
 
 "Post this review on PR #<n>?" with the events the verdict allows, plus **Don't post**: Changes requested offers **Post as Request changes** and **Post as Comment**; Passed with comments offers **Post as Comment** and **Post as Approve**; Passed offers **Post as Approve** and **Post as Comment**. On the user's own PR offer only Comment. Tell the user they can edit the doc first.
 
@@ -201,4 +207,4 @@ git -C <checkout> worktree remove --force "$WT/head"
 git -C <checkout> worktree remove --force "$WT/base"
 ```
 
-Reply with the verdict, Blocker and Major comments with `path:line`, acceptance criteria not met, QA steps that failed or could not run, the doc path, and whether the review was posted. When called by another skill, return the result listed under "Called by another skill" instead.
+Reply with the verdict, Blocker and Major comments with `path:line`, previous findings by status (on a later round), acceptance criteria not met, QA steps that failed or could not run, the doc path, and whether the review was posted. When called by another skill, return the result listed under "Called by another skill" instead.

@@ -2,7 +2,7 @@
 
 One file per PR: `<out>/<host>-<repo>-pr-<n>-review.md` for GitHub and `<out>/<host>-<repo>-mr-<n>-review.md` for GitLab, where `<host>` is `github` or `gitlab`. When the file exists, SKILL.md Step 6 says whether to update it or write a new one.
 
-The **Summary comment** and **Inline comments** sections are postable as written. **Reviewer notes** never get posted.
+The **Summary comment**, **Inline comments**, and **Thread replies** sections are postable as written. **Reviewer notes** never get posted.
 
 `````markdown
 # PR #<n> review: <PR title>
@@ -14,7 +14,7 @@ Head: `<short sha>` | Base: `<branch>` | Reviewed: <YYYY-MM-DD>
 
 ## Summary comment
 
-<Two to four sentences: the reason for the verdict and the top blockers. For Passed, one or two sentences on what was checked.>
+<Two to four sentences: the reason for the verdict and the top blockers. For Passed, one or two sentences on what was checked. On a later round, open with one sentence on the previous findings: how many are fixed, still open, and outdated.>
 
 ## Inline comments
 
@@ -38,7 +38,20 @@ Head: `<short sha>` | Base: `<branch>` | Reviewed: <YYYY-MM-DD>
 
 ...
 
+## Thread replies
+
+### `<path>` line <n> (thread `<thread id>`, comment `<first comment id>`)
+
+<Still open: one or two sentences on what still fails at this head. Fixed: "Fixed in `<short sha>`.">
+
 ## Reviewer notes (not for posting)
+
+### Previous findings
+
+| Previous comment | Status | Evidence |
+|---|---|---|
+
+<On a later round only: one row per previous finding (earlier doc comments and own threads) with Fixed, Still open, or Outdated, and the commit or code that shows it. Then "Reviewed since `<last sha>`: incremental" or "history rewritten since `<last sha>`: full pass". Omit on a first round.>
 
 ### Acceptance criteria
 
@@ -92,7 +105,9 @@ Source is the QA section, the acceptance criterion number, or the user. Where is
 
 ### History
 
-- <YYYY-MM-DD>: <reviewed head sha, verdict>
+- <YYYY-MM-DD>: <reviewed head sha, verdict, posted or not; on a later round also fixed, still open, and outdated counts>
 `````
 
-For Passed, the Inline comments section reads "None". Order inline comments by severity, then by path. Use repo-relative paths only.
+History keeps one line per round and the last line's sha is the next round's starting point, so always record the full head sha. QA screenshots go in `<doc folder>/<pr|mr>-<n>-qa/<short head sha>/`, one folder per round.
+
+For Passed, the Inline comments section reads "None". Thread replies reads "None" on a first round or when no own thread needs one. Order inline comments by severity, then by path. Use repo-relative paths only.
