@@ -210,4 +210,11 @@ git -C <checkout> worktree remove --force "$WT/head"
 git -C <checkout> worktree remove --force "$WT/base"
 ```
 
-Reply with the verdict, Blocker and Major comments with `path:line`, previous findings by status (on a later round), acceptance criteria not met, QA steps that failed or could not run, the doc path, the QA screenshot folder (when QA ran), and whether the review was posted. When called by another skill, return the result listed under "Called by another skill" instead.
+Reply with the verdict, Blocker and Major comments with `path:line`, previous findings by status (on a later round), acceptance criteria not met, QA steps that failed or could not run, and whether the review was posted. End the reply with these lines, each holding one complete path:
+
+```text
+Review doc: <absolute doc path>
+QA screenshots: <absolute screenshot folder>
+```
+
+Include the QA screenshots line only when QA ran. When called by another skill, return the result listed under "Called by another skill" instead.

@@ -1,6 +1,6 @@
 {
   "name": "wp-pr-review",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Context-aware pull request review for WordPress projects: reviews the PR against its target branch, the task it delivers, the project's rules, and a wp-mnemon map of every touched plugin and theme; re-checks every finding with an independent verifier; writes a review doc with per-line comments and quick-fix suggestions. Requires wp-mnemon.",
   "author": {
     "name": "Sérgio Santos",
