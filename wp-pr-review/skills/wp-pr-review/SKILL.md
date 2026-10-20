@@ -11,7 +11,9 @@ description: >
   for quick fixes. Posts only after the user approves the exact text.
   Triggers: "review this PR", "code review PR #12", "review this merge
   request", "review <PR URL> against <ticket>", "draft review comments for
-  this PR". Requires wp-mnemon.
+  this PR", and follow-up rounds: "review updates on PR", "re-review this
+  PR", "check the fixes on PR #12", "the author pushed fixes". Requires
+  wp-mnemon.
 ---
 
 # WordPress PR Review
