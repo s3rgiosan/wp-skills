@@ -45,7 +45,8 @@ Usage:
     [--breakpoints 390,768,1280] [--selectors "body,h1,..."] [--timeout 60000] [--behaviors] [--max-triggers 40]
 
   --routes FILE     one path or URL per line (# comments allowed); paths resolve against --base
-                    or the first URL's origin.
+                    or the first URL's origin. A capture-editor.mjs routes file works as it is:
+                    the "=> editor-url" part is ignored.
   --base URL|DIR    origin for route paths, or a folder of local HTML files.
                     A local file's route folder is its name without .html (index.html → home).
   --behaviors       click each visible control and record the state changes it causes.
