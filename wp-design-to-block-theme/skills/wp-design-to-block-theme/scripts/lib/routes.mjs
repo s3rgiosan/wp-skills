@@ -69,9 +69,10 @@ export function resolveRoutes(args) {
       // A file URL has no origin; its route paths resolve against its folder.
       base = urls[0].startsWith('file:') ? new URL('.', urls[0]).href : new URL(urls[0]).origin;
     }
+    // A capture-editor.mjs routes file works as it is: the "=> editor-url" part is ignored.
     const lines = readFileSync(args.routesFile, 'utf8')
       .split('\n')
-      .map((l) => l.replace(/#.*/, '').trim())
+      .map((l) => l.replace(/#.*/, '').split('=>')[0].trim())
       .filter(Boolean);
     for (const line of lines) {
       if (/^(https?|file):/i.test(line)) {
