@@ -124,6 +124,7 @@ store('mytheme', {
 - Context holds `current` index and slide count. `data-wp-bind--hidden` (or a transform-based track) shows the active slide.
 - Prev/next actions mutate `current` with wrap-around.
 - Add `data-wp-on--keydown` for arrow keys and respect `prefers-reduced-motion` before any autoplay.
+- A carousel that page scroll drives (a pinned section) pins only under a class the view script adds. The editor shows the plain carousel, with its controls (`editor-parity.md`, Motion in the editor).
 - If the project already ships a vetted slider block, prefer it over a bespoke build.
 
 ## Header that changes on scroll

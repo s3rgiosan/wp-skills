@@ -2,6 +2,8 @@
 
 Editors work in the block editor, so the editor canvas is a preview of the front end. Every template, template part, pattern and custom block renders in the canvas as it renders on the site. Editing controls appear only where editing happens: on the selected block, in its toolbar, or in the sidebar.
 
+The preview serves editing. A block being edited holds still, and scroll-driven behavior runs on the front end only (Motion in the editor, below).
+
 Build for this from the start (workflow steps 4, 6 and 8), and gate it at step 9 with `scripts/capture-editor.mjs` and `scripts/compare.mjs --editor`.
 
 ## Styles and fonts reach the canvas
@@ -146,7 +148,24 @@ The canvas runs no view scripts, so it shows each widget in its initial server-r
 - **Tabs:** the first tab and its panel show.
 - **Sliders and carousels:** the first slide shows, in place, at its full size.
 - **Reveal-on-scroll:** content is visible. The hidden starting state is added by the view script, never by the saved markup or the shared CSS.
-- **Marquees and other infinite animations** may run in both contexts. Their phase differs between captures, so expect a small pixel difference there.
+- **Marquees and other infinite animations** run while their block is not selected, and stop while it is (Motion in the editor). Their phase differs between captures, so expect a small pixel difference there.
+- **Pinned and scroll-driven sections:** unpinned, at their normal height, in their first state (Motion in the editor).
+
+## Motion in the editor
+
+Editors click into a block to change its content, so content that moves under the cursor cannot be edited. Parity covers how a block looks; motion stops where editing starts.
+
+- **Infinite animations stop on selection.** Marquees, tickers, rotating badges and autoplaying slides run while the block is not selected, as on the front end. While the block or any block inside it is selected, the animation stops and the content returns to its start position. The editor adds `is-selected` to the selected block's wrapper and `has-child-selected` to each of its ancestors. Target both in an editor-only stylesheet: the custom block's `editorStyle`, or a theme stylesheet loaded with `add_editor_style()` alone.
+
+  ```css
+  .marquee:is(.is-selected, .has-child-selected) .marquee__track {
+  	animation: none;
+  }
+  ```
+
+- **Scroll-driven behavior stays on the front end.** Pinned sections that turn page scroll into horizontal travel (scroll hijacking), scroll-linked transforms and parallax, smooth-scroll libraries and page-level scroll snapping all take over the canvas scroll. In the canvas the section renders at rest: unpinned, at its normal height, in its first state, with its regular controls (previous and next buttons, a track that scrolls on its own) so editors reach every item. The view script turns the behavior on with a class it adds on the front end (for example `is-pinned`). Every rule that pins the section, adds its scroll length, hides its controls or runs a CSS scroll-driven animation (`animation-timeline: scroll()` or `view()`) targets that class. A class saved in the block markup, or set from a block attribute, loads in the canvas too: the section then pins in the editor with no script to move it.
+
+The editor-parity gate captures the editor with no block selected, so animations run there as on the front end. A pinned section is taller on the front end than in the canvas: the gate reports it, and the difference is recorded as accepted in `CONVERSION-NOTES.md`.
 
 ## Core editor previews
 

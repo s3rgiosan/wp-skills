@@ -27,7 +27,7 @@ Design markup never ports as-is. Rebuild each element with core blocks styled vi
 | Social / profile links | `core/social-links` | Linked icons; see Icons. |
 | Form fields | A forms plugin the project uses, or a custom block | Core has no form field block. See Form controls. |
 | Inline SVG icon | Inline SVG in the pattern markup, or `core/image` | See Icons. |
-| Infinite marquee (a scrolling strip) | A custom block, or a block that renders terms or a setting | Its items are content: decide their source in the content model. Render the list twice for a seamless loop, mark the copy `aria-hidden`, and stop it under `prefers-reduced-motion`. |
+| Infinite marquee (a scrolling strip) | A custom block, or a block that renders terms or a setting | Its items are content: decide their source in the content model. Render the list twice for a seamless loop, mark the copy `aria-hidden`, and stop it under `prefers-reduced-motion`. In the editor it stops while selected (`editor-parity.md`, Motion in the editor). |
 | Row of key figures or counters | A custom block with repeatable items, or bound meta | Figures change; decide their source in the content model. |
 | Category, type or tag label on an item | `core/post-terms` | The terms come from a taxonomy (`content-model.md`). |
 | Hero / feature / CTA section | `core/cover` or `core/group` + heading/paragraph/buttons | Compose it from core blocks as a **pattern**. |
