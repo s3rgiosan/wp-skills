@@ -102,7 +102,7 @@ wp-design-to-block-theme/
         │   ├── html-to-core-blocks.md    ← design markup → core blocks, layout/form/icon recipes, block styles
         │   ├── section-to-pattern.md     ← route map, segmentation, patterns, images, content, bindings
         │   ├── interactivity-recipes.md  ← Interactivity API widget recipes + directive reference
-        │   ├── editor-parity.md          ← editor canvas = front end: styles, custom block edit, ServerSideRender decision, editor gate
+        │   ├── editor-parity.md          ← editor canvas = front end: styles, custom block edit, ServerSideRender decision, motion, editor gate
         │   └── parity-pitfalls.md        ← parity gates and named failure modes
         └── scripts/
             ├── capture.mjs           ← Playwright capture of the design or the rebuild
