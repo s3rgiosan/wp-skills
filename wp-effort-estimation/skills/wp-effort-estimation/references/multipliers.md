@@ -57,7 +57,7 @@ whose work its condition changes:
 
 | Multiplier | Applies to | Does not apply to |
 |------------|-----------|-------------------|
-| Multi-language / i18n | Templates, patterns, navigation, blocks with user-facing strings, emails, content copied per language | Scaffolding, build tooling, data-only work (for example a block bindings source) |
+| Multi-language / i18n | Templates, patterns, navigation, blocks with user-facing strings, emails, content copied per language | Scaffolding, build tooling, data-only work whose queries the multilingual plugin already scopes (for example a block bindings source) |
 | Accessibility (WCAG AA) | UI work | Tooling, data plumbing |
 | No design provided | The tasks that lack a design | Tasks that have one |
 
@@ -65,6 +65,31 @@ A blanket multiplier across every task overstates setup and data work. The
 competing rule still holds per task: each task takes exactly one
 codebase-quality factor (×1.0 for tasks that work in no existing code), and the
 3× sanity gate is checked per task.
+
+**Scaling multi-language by output.** The +20–35% row prices the build work for
+each language only: translatable strings, per-language setup, and a check in each
+language. Translating the copy is out of scope (see "Baseline Assumptions" in
+`SKILL.md`). Scale the row by what the task's code has to do per language:
+
+| Task's language-dependent output | Multiplier |
+|----------------------------------|------------|
+| Code that handles per-language data itself: content copied per language, IDs mapped across languages, translated slugs in URLs, counts or totals the code computes per language itself | The full row (+20–35%) |
+| Templates, patterns, navigation, emails | The full row (+20–35%): each language needs its own copy set up and checked |
+| Only user-facing strings, including queries the multilingual plugin already scopes to the current language and blocks that read the current post (which inherits its language) | ×1.1 |
+| No strings, and any per-language data comes from queries the multilingual plugin already scopes | None |
+
+When another party handles the per-language data (for example an API another
+team builds, or a plugin that already returns per-language values), a task that
+still outputs user-facing strings takes ×1.1, and a task without strings takes
+none. When that split is still undecided, take the lower factor. In "Risks &
+Unknowns", list the extra hours the full row would add, priced at the
+multi-language factor the estimate uses for its full-row tasks.
+
+The ×1.1 is an assumption: log actuals against it per the Calibration section
+in `SKILL.md`, and test it in the agentic-delivery spike when there is one.
+
+When the request includes translating the copy, state it in "What's Included"
+and list it as its own line, outside the development hours.
 
 ## Total multiplier over 3×
 

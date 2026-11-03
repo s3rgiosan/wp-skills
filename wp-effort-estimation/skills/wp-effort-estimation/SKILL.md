@@ -85,7 +85,7 @@ Positioning rules that come up often:
 
 Position within the range reflects **scope only**. Anything that has its own multiplier — missing design, a11y, tests, legacy codebase, i18n — must not also move the base, or you count it twice. State which row you used and where in it you landed.
 
-**Rounding.** Round the headline only — precision scales with size, because "18.7 hrs" is false precision but "1 hr → 2 hrs" doubles a real task:
+**Rounding.** Round the headline, the range ends and secondary figures quoted in the text (a spike, an out-of-scope total); Breakdown rows keep one decimal. Precision scales with size, because "18.7 hrs" is false precision but "1 hr → 2 hrs" doubles a real task:
 
 | Computed | Round to |
 |----------|----------|
@@ -95,6 +95,10 @@ Position within the range reflects **scope only**. Anything that has its own mul
 | ≥ 16 hrs | convert to days, nearest half-day |
 
 One day = 8 hours throughout this skill, in both directions (table rows quoted in days, and hours converted to days by the row above).
+
+When the reader asks for hours only, totals of 16 hrs or more stay in hours: round the headline, the range ends and secondary figures to the nearest 4 hrs (half a day).
+
+Range ends take the headline's unit, so a range never mixes hours and days. In hours, an end of 16 hrs or more rounds to the nearest 4 hrs; in days, an end under 16 hrs rounds to the nearest half-day.
 
 Intermediate steps keep one decimal (see `references/multipliers.md`); Breakdown rows keep their own values and must sum exactly, so the headline can land slightly above **or below** the Breakdown total depending on which way it rounded. Both are correct — the table shows the arithmetic, the headline is the number being committed to. Never adjust rows to match a rounded headline.
 
@@ -151,6 +155,7 @@ Some reference rows are themselves 3× wide (e.g. "1–3 days"). Quoting such a 
    - Is the total compounded multiplier over 3×? If so, this should be XL with a spike, not a committed number.
    - In a multi-task estimate, does each multiplier apply only to the tasks whose work it changes?
    - Agentic delivery: does every task respect the agentic effort floor, applied after multipliers?
+   - Are the "Not in the Total" rows kept out of the headline and the range?
    - Does the Breakdown table actually add up, and is the headline a correctly-rounded version of its total (never the reverse)?
    - If the hours land well outside what the tier implies, is that explained in one line?
    - Is anything listed under "What's Included" actually a risk, or vice versa?
@@ -163,6 +168,7 @@ Some reference rows are themselves 3× wide (e.g. "1–3 days"). Quoting such a 
 
 - **Developer seniority:** Senior-level dev highly familiar with the stack. Flag if the task needs a migration-specialized senior dev (platform migration, custom DB schema, multisite, headless cutover, Woo subscriptions) — those warrant a separate spike or higher rate.
 - **Scaffold:** Pre-configured project scaffold assumed (build tooling, CI, base theme/plugin shell). Greenfield multiplier stays at ×1.0.
+- **Translation:** Translating the copy is out of scope unless the request includes it. The multi-language multiplier prices only the build work for each language: translatable strings, per-language setup, and a check in each language.
 
 ---
 
@@ -201,6 +207,14 @@ Omit the line entirely for single-discipline work.)*
 - [risk 1 — impact on range]
 - [risk 2 — impact on range]
 
+### Not in the Total
+*(Optional, multi-task estimates. Features that need a decision before they
+are sized into the build: one row each, with the same arithmetic as the tasks,
+kept out of the headline and the range. Rows keep one decimal, like Breakdown
+rows; a sum of them quoted in the text rounds as a secondary figure.)*
+| Feature | Tier | Hours | Decision needed |
+|---------|------|-------|-----------------|
+
 ### Acceptance Criteria
 *(Optional. M/L/XL only, and only when the estimate will double as a ticket
 description — skip for quick sizing questions and S tasks.)*
@@ -230,7 +244,7 @@ For S/M: omit or leave blank if nothing noteworthy.]
 | Tests required (unit/e2e) | +25–40% |
 | Multi-language / i18n | +20–35% |
 
-In an estimate with many tasks, apply each multiplier per task, only where its condition changes that task's work: a blanket multiplier overstates setup and data work (see `references/multipliers.md`).
+In an estimate with many tasks, apply each multiplier per task, only where its condition changes that task's work: a blanket multiplier overstates setup and data work (see `references/multipliers.md`). The same file scales the multi-language row by each task's language-dependent output.
 
 Codebase-quality factor first (exactly one — page-builder debt competes with the legacy row), then stack-specific risk factors from the reference files, then the percentage factors above. The `+%` rows chain multiplicatively (+25% means ×1.25), they don't sum. A condition that has its own multiplier must not also have moved the base within the table range.
 

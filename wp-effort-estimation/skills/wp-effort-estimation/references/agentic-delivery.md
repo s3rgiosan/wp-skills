@@ -48,7 +48,8 @@ The agentic factor describes how the work is delivered, so it stays out of the
 The low end of the Confidence Range uses this split. When S and M tasks pass
 review in one round, half the review share drops: take **a sixth** off their
 hours. L tasks keep both rounds. The agentic effort floor still applies to the
-low end.
+low end. A task coded by hand because its hand-coded figure is below the floor
+has no agent review to halve: it keeps its hours at the low end.
 
 ## Start from the task's row
 
@@ -94,8 +95,10 @@ high end of the range:
   shared card component) — integration work, sized as a small fixed amount per
   task, for example 0.25 h × the number of tasks.
 - **A component that cannot be shared between two rendering paths** (for example
-  server-rendered markup and a client-rendered list) — built twice; add a second
-  instance of that component's row.
+  server-rendered markup and a client-rendered list) — built twice; add about
+  half of the component's agentic hours (after multipliers) a second time. The
+  second build reuses the brief and acceptance criteria, so only review and
+  verification repeat.
 
 ## The spike
 
@@ -115,12 +118,15 @@ Row:   react.md → "Dynamic block pulling CPT / taxonomy data" = 8–16 hrs
 12.0 × 0.5  (agentic)                = 6.0
 6.0  × 1.20 (a11y, +20%)             = 7.2
 7.2  × 1.30 (multi-language, +30%)   = 9.4  → ~10 hrs
+Full multi-language row: the block shows an upcoming-events count that its
+own code computes per language.
 Low end, one review round: 9.4 × 5/6 = 7.8
 
 Task 2 — custom block bindings source (M, data only)
 Row:   react.md → "Register a custom binding source" = 4–8 hrs, midpoint = 6.0
 6.0  × 0.5  (agentic)                = 3.0  → ~3 hrs
-No a11y or multi-language: the task renders no UI and copies no content.
+No a11y: the task renders no UI. No multi-language: it outputs no strings,
+and the multilingual plugin already scopes its query.
 
 Task 3 — block style variation (S, floor case)
 Row:   react.md → "Block style variations" = 1–3 hrs, midpoint = 2.0
