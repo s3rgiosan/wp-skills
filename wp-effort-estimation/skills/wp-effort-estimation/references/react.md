@@ -40,6 +40,9 @@
 | Register a custom binding source (`register_block_bindings_source`) | — | 4–8 hrs | — | — |
 | Editor UI for selecting binding source per block | — | 6–12 hrs | — | — |
 
+> A custom source that reads terms or computed data (a reading time, a count, a
+> formatted date) is the "Register a custom binding source" row.
+
 ### Gutenberg — Block Editor Customisation
 | Task | S | M | L | XL |
 |------|---|---|---|-----|
@@ -60,6 +63,13 @@
 | Interactive block with shared store state (multiple blocks communicating) | — | — | 1–3 days | — |
 | Complex interactive UI (filtered list, cart-like interaction) | — | — | 2–4 days | — |
 | Migrate existing jQuery front-end behaviour to Interactivity API | — | — | 2–4 days | 4–8 days |
+| Router-region navigation (`@wordpress/interactivity-router` — switch a page region between server-rendered URL variants without reload, e.g. tabs or page-number navigation) | — | 6–12 hrs | — | — |
+| Infinite scroll / load more on archives, with a no-JS pagination fallback | — | 4–8 hrs | — | — |
+
+> A header whose interactive parts share state (for example a menu, a search
+> panel and a mobile drawer) is the "Interactive block with shared store state"
+> L row. The S "Add/edit a template or template part" row covers a static
+> header.
 
 ### Block Themes & Full Site Editing (FSE)
 | Task | S | M | L | XL |
@@ -162,6 +172,6 @@ Static blocks, block themes/FSE, patterns, and editor customisation are effectiv
 | Tier | Example tasks |
 |------|--------------|
 | S | Add template part, restrict core blocks, block editor style override, register block style variation, bind core block to post meta, add a route to existing headless site |
-| M | Static block with controls, dynamic block, custom sidebar plugin, settings page, REST-backed dashboard widget, custom `wp-data` store, register custom block bindings source, extend core block via `addFilter` |
-| L | Dynamic block with AJAX, Interactivity API shared store, full admin CRUD UI, full custom store with selectors/resolvers/actions, new CPT in headless with WPGraphQL |
+| M | Static block with controls, dynamic block, Interactivity API router-region navigation, infinite scroll with a no-JS fallback, custom sidebar plugin, settings page, REST-backed dashboard widget, custom `wp-data` store, register custom block bindings source, extend core block via `addFilter` |
+| L | Dynamic block with AJAX, Interactivity API shared store (including a header with several interactive parts sharing state), full admin CRUD UI, full custom store with selectors/resolvers/actions, new CPT in headless with WPGraphQL |
 | XL | Classic → block theme conversion, full headless WP build, auth-gated headless content, Interactivity API migration from jQuery |

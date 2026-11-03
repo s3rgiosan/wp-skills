@@ -34,6 +34,12 @@
 | i18n setup (textdomain + .pot generation) | 1 hr | — | — | — |
 | Privacy exporter / eraser callbacks (GDPR-mandated) | — | 8–16 hrs | — | — |
 
+> Converting stored block content (for example a deprecated custom block to
+> core blocks) is the "WP-CLI script" row: `parse_blocks()` /
+> `serialize_blocks()` and attribute mapping. Add the manual fixes, per page,
+> for content the transform cannot carry. On a multilingual site the row covers
+> every language copy, so the i18n multiplier is not added.
+
 ### WooCommerce
 | Task | S | M | L | XL |
 |------|---|---|---|-----|
@@ -43,6 +49,7 @@
 | Payment gateway integration | — | — | 3–6 days | — |
 | Subscription logic (Woo Subscriptions) | — | — | 4–8 days | 8+ days |
 | Custom product type | — | — | 4–7 days | — |
+| Transactional email template overrides (WooCommerce emails) | 1–3 hrs | — | — | — |
 
 ### ACF & Custom Fields
 
@@ -134,7 +141,7 @@ Most tasks in these tables are single-discipline — keep a single total for CSS
 
 | Tier | Example tasks |
 |------|--------------|
-| S | CSS tweak, shortcode, CPT registration, ACF field group, minor template override |
+| S | CSS tweak, shortcode, CPT registration, ACF field group, minor template override, WooCommerce email template override |
 | M | New page template, dynamic block, custom REST endpoint, checkout field customization |
 | L | Full theme build, WooCommerce integration, CPT with filtering, plugin with admin UI |
 | XL | Headless WP, WC subscription logic, full platform migration, complex multisite setup |
