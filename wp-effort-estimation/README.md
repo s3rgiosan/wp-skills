@@ -98,7 +98,12 @@ Stack-specific reference files with base estimates and risk multipliers:
   data fetching from the WP REST API / WPGraphQL.
 
 General multipliers cover greenfield vs legacy, missing designs, third-party
-integrations, accessibility, tests, and i18n.
+integrations, accessibility, tests, and i18n. In an estimate with many tasks,
+each multiplier applies only to the tasks whose work it changes.
+
+For agentic delivery (coding agents write the code, the estimate counts a lead
+engineer's hours), an agentic factor (default ×0.5) and a 1.5 h agentic
+effort floor apply to each task's hand-coded figure.
 
 ---
 
@@ -119,5 +124,6 @@ wp-skills/
                 ├── wordpress.md         ← WP task taxonomy + risks
                 ├── react.md             ← React-in-WP task taxonomy + risks
                 ├── multipliers.md       ← stacking multipliers formula
-                └── codebase-sizing.md   ← optional repo scan to sharpen estimates
+                ├── codebase-sizing.md   ← optional repo scan to sharpen estimates
+                └── agentic-delivery.md  ← lead-engineer hours when agents write the code
 ```

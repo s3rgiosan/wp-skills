@@ -23,6 +23,11 @@ those values in sequence and what the arithmetic looks like end to end.
 6. **Round once, at the very end**, using the rounding ladder in `SKILL.md`.
    Keep one decimal through every intermediate step.
 
+In an estimate with many tasks, run these steps per task (see "Multi-task
+estimates" below). For agentic delivery, the agentic factor and the agentic
+effort floor from `agentic-delivery.md` apply before the rounding in step 6, and the
+agentic factor stays out of the gate in step 5.
+
 Steps 2–4 are all multiplicative, so the order between them doesn't change the
 result — it's written this way to make the reasoning legible and to make the
 one rule that *does* matter hard to miss: exactly one codebase-quality factor
@@ -43,6 +48,23 @@ Everything else stacks. **Multisite (×1.5) is not a codebase-quality factor** �
 a pristine multisite is still multisite, so it applies on top of whichever
 codebase row you picked. Same for plugin conflicts (+20–50%), classic-editor
 checks, WP-version locks, and the rest of the stack-specific risk lists.
+
+## Multi-task estimates: apply multipliers per task
+
+When one estimate holds many tasks (a backlog, a full build), run the order of
+operations above once per task. Apply each General Multiplier only to the tasks
+whose work its condition changes:
+
+| Multiplier | Applies to | Does not apply to |
+|------------|-----------|-------------------|
+| Multi-language / i18n | Templates, patterns, navigation, blocks with user-facing strings, emails, content copied per language | Scaffolding, build tooling, data-only work (for example a block bindings source) |
+| Accessibility (WCAG AA) | UI work | Tooling, data plumbing |
+| No design provided | The tasks that lack a design | Tasks that have one |
+
+A blanket multiplier across every task overstates setup and data work. The
+competing rule still holds per task: each task takes exactly one
+codebase-quality factor (×1.0 for tasks that work in no existing code), and the
+3× sanity gate is checked per task.
 
 ## Total multiplier over 3×
 

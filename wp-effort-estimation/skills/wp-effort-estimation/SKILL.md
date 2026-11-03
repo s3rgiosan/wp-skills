@@ -8,7 +8,9 @@ description: >
   "estimate", "how complex is this", "can we do this in a day", "is this a big
   task", "how should I scope this", "break this down", sprint planning, ticket
   sizing, story points, t-shirt sizing, project planning for WordPress or
-  React-in-WP work. Do NOT use for generic standalone-React projects with no
+  React-in-WP work, including agentic delivery where coding agents write the
+  code ("estimate with agents", "AI-assisted build"). Do NOT use for generic
+  standalone-React projects with no
   WordPress involvement.
 ---
 
@@ -33,8 +35,9 @@ Before asking anything, silently answer this checklist from what's already in th
 - **Work type** — feature / enhancement / bug fix / refactor / chore
 - **Discipline** — front-end / back-end / both
 - **Deliverable** — what concrete thing exists when the task is done
+- **Delivery** — hand-coded (default), or agentic: coding agents write the code and the estimate counts the lead engineer's hours
 
-Most requests answer all three implicitly — do not re-ask what's already clear, and do not turn this into a mandatory intake. If any item is genuinely unclear, ask up to 2 clarifying questions before estimating. Do not produce a number when the spread would be meaninglessly wide — the threshold is **3× (high ÷ low)**, the same gate applied to the finished Confidence Range.
+Most requests answer all four implicitly — do not re-ask what's already clear, and do not turn this into a mandatory intake. If any item is genuinely unclear, ask up to 2 clarifying questions before estimating. Do not produce a number when the spread would be meaninglessly wide — the threshold is **3× (high ÷ low)**, the same gate applied to the finished Confidence Range.
 
 Good triggers to pause and ask:
 - No clear deliverable ("build a membership system", "improve performance")
@@ -73,6 +76,12 @@ Give a single specific number, e.g. "~6 hours" or "~3 days".
 | Low end | A narrower instance of the row — fewer controls/fields/states than the row assumes. Or strong prior art (see `references/codebase-sizing.md`). |
 | Midpoint | **Default.** The task matches the row's typical scope. |
 | High end | The ambitious edge of the row — many controls, many states, or genuinely net-new with nothing comparable to work from. |
+
+Positioning rules that come up often:
+
+- **Vendor and core blocks are prior art.** When a core or plugin block already owns the data or the client-side store (for example the core Navigation block for a site menu, or a plugin's form block that already handles submission), position at the low end. Put the risk that the vendor block falls short in Risks & Unknowns, and keep the base at the low end.
+- **Count distinct layouts.** A task that names several templates is sized per template (three base templates = 3 × the template row). A template with N distinct layouts (for example an archive with a grid layout and a list layout, N = 2) is N × the row. Variants that reuse a layout add little.
+- **A design system lowers later rows.** Once the same build has a pattern library or component set, later page tasks use the "matching existing design" row, not the "new design" row.
 
 Position within the range reflects **scope only**. Anything that has its own multiplier — missing design, a11y, tests, legacy codebase, i18n — must not also move the base, or you count it twice. State which row you used and where in it you landed.
 
@@ -131,13 +140,17 @@ Some reference rows are themselves 3× wide (e.g. "1–3 days"). Quoting such a 
 
 5. **Apply complexity multipliers** — table below; MUST read `references/multipliers.md` for stacking order and double-counting rules before applying them
 
-6. **Write the estimate** using the template below
+6. **Agentic delivery (when it applies)** — if coding agents write the code and the estimate counts a lead engineer's hours, read `references/agentic-delivery.md`, multiply each task's figure from step 5 by the agentic factor, then apply the agentic effort floor. Hand-coded delivery skips this step.
 
-7. **Self-check before emitting** — Silently re-read the draft against this checklist and fix issues without narrating the check:
+7. **Write the estimate** using the template below
+
+8. **Self-check before emitting** — Silently re-read the draft against this checklist and fix issues without narrating the check:
    - Is the confidence range within 3× (high ÷ low)? If not, stop and ask instead of shipping it.
    - Does every risk driving the high end appear in "Risks & Unknowns", and vice versa?
    - Did anything with its own multiplier also move the base within the table range? (double-count)
    - Is the total compounded multiplier over 3×? If so, this should be XL with a spike, not a committed number.
+   - In a multi-task estimate, does each multiplier apply only to the tasks whose work it changes?
+   - Agentic delivery: does every task respect the agentic effort floor, applied after multipliers?
    - Does the Breakdown table actually add up, and is the headline a correctly-rounded version of its total (never the reverse)?
    - If the hours land well outside what the tier implies, is that explained in one line?
    - Is anything listed under "What's Included" actually a risk, or vice versa?
@@ -160,6 +173,7 @@ Some reference rows are themselves 3× wide (e.g. "1–3 days"). Quoting such a 
 
 **Task:** [one-line description]
 **Stack:** WordPress / React-in-WP / Both
+**Delivery:** Hand-coded / Agentic (factor ×[f], lead-engineer hours)
 
 **Complexity Tier:** [S / M / L / XL]
 **Estimate:** ~[X hours / X days effort] / ~[Y days duration]
@@ -216,6 +230,8 @@ For S/M: omit or leave blank if nothing noteworthy.]
 | Tests required (unit/e2e) | +25–40% |
 | Multi-language / i18n | +20–35% |
 
+In an estimate with many tasks, apply each multiplier per task, only where its condition changes that task's work: a blanket multiplier overstates setup and data work (see `references/multipliers.md`).
+
 Codebase-quality factor first (exactly one — page-builder debt competes with the legacy row), then stack-specific risk factors from the reference files, then the percentage factors above. The `+%` rows chain multiplicatively (+25% means ×1.25), they don't sum. A condition that has its own multiplier must not also have moved the base within the table range.
 
 **If the total compounded multiplier exceeds 3×, it's an XL** — re-tier, recommend a spike, and state the multiplier. Don't cap the number; a genuinely bad legacy multisite may really cost 5×, but a number that large deserves a spike rather than a commitment.
@@ -251,6 +267,7 @@ Log actual hours when closing the ticket. If actual vs estimated variance is >30
 | Treating a wide range as a safe answer | A spread over 3× is not an estimate. Either ask a clarifying question or recommend a spike. |
 | Counting the same condition twice | If you pushed the base to the high end "because there's no design", don't also apply the +25% design multiplier. Pick one. |
 | Sizing a new block as an ACF block because the codebase uses ACF | New blocks are always native (`register_block_type` + `block.json`). The ACF Block row only sizes work on blocks that already exist. For fields: core meta / Gutenberg APIs → Fieldmanager → ACF (only if the client already uses it). |
+| Using a flat allowance per tier for agentic delivery | Start from the task's own row and apply the agentic factor; see `references/agentic-delivery.md`. |
 | Letting prior art imply "almost free" | Reuse lowers cost to the low end of the range, not below it — unless the work is really duplicate-and-adapt, in which case reclassify to a cheaper row rather than discounting this one. See `references/codebase-sizing.md`. |
 
 ## Red Flags — stop and re-read the reference file
