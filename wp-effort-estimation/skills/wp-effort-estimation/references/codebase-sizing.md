@@ -65,6 +65,11 @@ calibrated low end. The table ranges are a floor: the legitimate way to land
 under one is to establish you were reading the wrong row, not to discount the
 right one.
 
+The same holds for any task smaller than a row's low end, with or without prior
+art. A module inside an existing plugin is not a "Custom plugin (admin UI +
+DB)"; break it into the rows that describe its parts (see "Picking the base
+from a table range" in `SKILL.md`).
+
 ## Evidence Stays Internal
 
 File paths, function names, hook names, and class names discovered during the

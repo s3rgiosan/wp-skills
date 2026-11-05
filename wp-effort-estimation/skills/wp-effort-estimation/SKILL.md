@@ -82,6 +82,7 @@ Positioning rules that come up often:
 - **Vendor and core blocks are prior art.** When a core or plugin block already owns the data or the client-side store (for example the core Navigation block for a site menu, or a plugin's form block that already handles submission), position at the low end. Put the risk that the vendor block falls short in Risks & Unknowns, and keep the base at the low end.
 - **Count distinct layouts.** A task that names several templates is sized per template (three base templates = 3 × the template row). A template with N distinct layouts (for example an archive with a grid layout and a list layout, N = 2) is N × the row. A variant that reuses a layout already counted (for example a second landing page built from the same patterns as the first) is sized at the low end of the row: 4 hrs on a 4–8 hrs row.
 - **A design system lowers later rows.** Once the same build has a pattern library or component set, later page tasks use the "New page template (matching existing design)" row in `references/wordpress.md`, not the "new design" row.
+- **Whole-deliverable rows size a whole deliverable.** L and XL rows such as "Custom plugin (admin UI + DB)" or "WooCommerce extension" price a complete product: its data layer, admin UI, hooks and release. When the task is one part of a larger build (a module in an existing plugin, an endpoint, a queue, a processor, a migration), break it into the S and M rows that describe its parts, for example "REST API endpoint (custom)", "Webhook handler", "Cron / Action Scheduler job" or "WP-CLI script", and sum them. Size a part that no row describes bottom-up in hours and say so. Use the whole-deliverable row only as a ceiling: when the parts of one component sum to more than the row's low end, re-check the breakdown.
 
 Position within the range reflects **scope only**. Anything that has its own multiplier — missing design, a11y, tests, legacy codebase, i18n — must not also move the base, or you count it twice. State which row you used and where in it you landed.
 
@@ -154,6 +155,8 @@ Some reference rows are themselves 3× wide (e.g. "1–3 days"). Quoting such a 
    - Did anything with its own multiplier also move the base within the table range? (double-count)
    - Is the total compounded multiplier over 3×? If so, this should be XL with a spike, not a committed number.
    - In a multi-task estimate, does each multiplier apply only to the tasks whose work it changes?
+   - Is any part of a larger build sized from a whole-deliverable L/XL row, or parked at the low end of a row that describes something bigger? Break it into the rows that describe its parts.
+   - Does every risk factor that has a condition (for example plugin conflicts: 20+ active plugins) have that condition stated in the request? When it is assumed, leave the factor out of the headline, list it in "Risks & Unknowns", and carry it into the high end.
    - Agentic delivery: does every task respect the agentic effort floor, applied after multipliers?
    - Are the "Not in the Total" rows kept out of the headline and the range?
    - Does the Breakdown table actually add up, and is the headline a correctly-rounded version of its total (never the reverse)?
@@ -284,12 +287,13 @@ Log actual hours when closing the ticket. If actual vs estimated variance is >30
 | Sizing a new block as an ACF block because the codebase uses ACF | New blocks are always native (`register_block_type` + `block.json`). The ACF Block row only sizes work on blocks that already exist. For fields: core meta / Gutenberg APIs → Fieldmanager → ACF (only if the client already uses it). |
 | Using a flat allowance per tier for agentic delivery | Start from the task's own row and apply the agentic factor; see `references/agentic-delivery.md`. |
 | Letting prior art imply "almost free" | Reuse lowers cost to the low end of the range, not below it — unless the work is really duplicate-and-adapt, in which case reclassify to a cheaper row rather than discounting this one. See `references/codebase-sizing.md`. |
+| Sizing one component from a whole-product row | "WooCommerce extension" or "Custom plugin" for a single processor, module or admin screen counts a whole product. Break the component into the S and M rows that describe its parts; see "Picking the base from a table range". |
 
 ## Red Flags — stop and re-read the reference file
 
 - "I know roughly what a block costs" — you know the shape, not the calibrated number
 - "This is too simple to look up"
-- "The tables won't have this exact task" — pick the nearest row and say which you used
+- "The tables won't have this exact task" — pick the nearest row and say which you used. When the nearest row describes something much bigger than the task, break the task into smaller rows or size it bottom-up instead.
 - "I'll estimate now and check the table after" — the table is the anchor, not the sanity check
 
 ---

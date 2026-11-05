@@ -111,6 +111,11 @@ Before committing, recommend a short spike (a few days) that builds the riskiest
 tasks with agents and logs the lead engineer's hours against their estimates.
 Recalibrate the agentic factor from the result, then commit the full estimate.
 
+When the request already contains the specs, briefs and acceptance criteria
+(for example a PRD with per-sprint briefs and a test catalogue), most of the
+brief-writing share is spent. Keep ×0.5 in the headline, say so in
+Recommendations, and let the spike measure the lower factor.
+
 ## Worked example
 
 Acme Corp, a greenfield block-theme build (codebase factor ×1.0). The site ships
