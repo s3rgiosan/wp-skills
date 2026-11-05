@@ -1,6 +1,6 @@
 {
   "name": "wp-effort-estimation",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Structured development-effort estimates for WordPress tasks (and React surfaces of WordPress — Gutenberg, Interactivity API, headless WP).",
   "author": {
     "name": "Sérgio Santos",
