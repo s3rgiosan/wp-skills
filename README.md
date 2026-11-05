@@ -107,6 +107,14 @@ Turn a Claude design — a Claude Design canvas or an HTML artifact — into a W
 
 **[→ Install wp-claude-design-to-block-theme](./wp-claude-design-to-block-theme/README.md)**
 
+### [wp-user-guide](./wp-user-guide)
+
+Step-by-step guide to the WordPress admin for one audience role (editors, shop managers, administrators), written for people who have not used WordPress. Inventories the content model from the code and WP-CLI, surveys every admin screen as a throwaway user with the audience's own role, and reconciles the two: every step, label and screenshot comes from what that role sees, and fields or screens the role cannot reach go to the developer as findings. The guide covers each content type (title, content, excerpt, featured image, sidebar panels, meta boxes, taxonomies, SEO), images and files, classic or block menus, translation, users (add, change role, reset password, remove), settings screens with warnings on high-impact fields, and plugin screens such as forms and SEO. Ships `survey.mjs` (what a role sees per screen) and `shoot.mjs` (annotated, cropped screenshots from a shot list). Delivers an HTML artifact, a PDF, Markdown with images, or a WordPress plugin that shows the guide in wp-admin to logged-in users.
+
+**Triggers on:** "admin guide", "site manual", "user manual for the site", "guia do utilizador", "editor guide", "content editor guide", "guia do editor", "how do editors add X", "client handover docs", "training guide for the client", "document the admin for the client".
+
+**[→ Install wp-user-guide](./wp-user-guide/README.md)**
+
 ---
 
 ## Install via Claude Code plugin marketplace (recommended)
