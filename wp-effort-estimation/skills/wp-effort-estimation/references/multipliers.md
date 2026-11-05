@@ -66,6 +66,14 @@ competing rule still holds per task: each task takes exactly one
 codebase-quality factor (×1.0 for tasks that work in no existing code), and the
 3× sanity gate is checked per task.
 
+**Desktop-only designs.** When the designs cover desktop only, sections that
+stack into one column in normal flow take no multiplier. Components that cannot
+stack need their own small-screen layout, for example a header with a menu, a
+filter panel, a wide data table or a carousel. If nobody will supply those
+layouts, apply "No design provided" to those tasks only. If the layouts may
+still arrive, leave the multiplier out of the headline: list it in "Risks &
+Unknowns" and carry it into the high end.
+
 **Scaling multi-language by output.** The +20–35% row prices the build work for
 each language only: translatable strings, per-language setup, and a check in each
 language. Translating the copy is out of scope (see "Baseline Assumptions" in
@@ -74,7 +82,7 @@ language. Translating the copy is out of scope (see "Baseline Assumptions" in
 | Task's language-dependent output | Multiplier |
 |----------------------------------|------------|
 | Code that handles per-language data itself: content copied per language, IDs mapped across languages, translated slugs in URLs, counts or totals the code computes per language itself | The full row (+20–35%) |
-| Templates, patterns, navigation, emails | The full row (+20–35%): each language needs its own copy set up and checked |
+| Templates, patterns, navigation, emails | The full row (+20–35%): each language needs its own copy set up and checked, unless another party does that (see below) |
 | Only user-facing strings, including queries the multilingual plugin already scopes to the current language and blocks that read the current post (which inherits its language) | ×1.1 |
 | No strings, and any per-language data comes from queries the multilingual plugin already scopes | None |
 
@@ -84,6 +92,13 @@ still outputs user-facing strings takes ×1.1, and a task without strings takes
 none. When that split is still undecided, take the lower factor. In "Risks &
 Unknowns", list the extra hours the full row would add, priced at the
 multi-language factor the estimate uses for its full-row tasks.
+
+When another party sets up each language's copy of the templates, patterns and
+navigation in the multilingual plugin and checks each language (for example the
+client's content team), those tasks take ×1.1 when they output user-facing
+strings. Tasks whose own code handles per-language data keep the full row; when
+no task's code does, no task takes it. State who sets up and checks each
+language in "What's Included".
 
 The ×1.1 is an assumption: log actuals against it per the Calibration section
 in `SKILL.md`, and test it in the agentic-delivery spike when there is one.

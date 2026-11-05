@@ -80,8 +80,8 @@ Give a single specific number, e.g. "~6 hours" or "~3 days".
 Positioning rules that come up often:
 
 - **Vendor and core blocks are prior art.** When a core or plugin block already owns the data or the client-side store (for example the core Navigation block for a site menu, or a plugin's form block that already handles submission), position at the low end. Put the risk that the vendor block falls short in Risks & Unknowns, and keep the base at the low end.
-- **Count distinct layouts.** A task that names several templates is sized per template (three base templates = 3 × the template row). A template with N distinct layouts (for example an archive with a grid layout and a list layout, N = 2) is N × the row. Variants that reuse a layout add little.
-- **A design system lowers later rows.** Once the same build has a pattern library or component set, later page tasks use the "matching existing design" row, not the "new design" row.
+- **Count distinct layouts.** A task that names several templates is sized per template (three base templates = 3 × the template row). A template with N distinct layouts (for example an archive with a grid layout and a list layout, N = 2) is N × the row. A variant that reuses a layout already counted (for example a second landing page built from the same patterns as the first) is sized at the low end of the row: 4 hrs on a 4–8 hrs row.
+- **A design system lowers later rows.** Once the same build has a pattern library or component set, later page tasks use the "New page template (matching existing design)" row in `references/wordpress.md`, not the "new design" row.
 
 Position within the range reflects **scope only**. Anything that has its own multiplier — missing design, a11y, tests, legacy codebase, i18n — must not also move the base, or you count it twice. State which row you used and where in it you landed.
 
@@ -98,7 +98,7 @@ One day = 8 hours throughout this skill, in both directions (table rows quoted i
 
 When the reader asks for hours only, totals of 16 hrs or more stay in hours: round the headline, the range ends and secondary figures to the nearest 4 hrs (half a day).
 
-Range ends take the headline's unit, so a range never mixes hours and days. In hours, an end of 16 hrs or more rounds to the nearest 4 hrs; in days, an end under 16 hrs rounds to the nearest half-day.
+Range ends take the headline's unit, so a range never mixes hours and days. When the headline is in hours and is 16 hrs or more, every range end rounds to the nearest 4 hrs. Otherwise, in hours, an end of 16 hrs or more rounds to the nearest 4 hrs and an end under 16 hrs follows the ladder; in days, an end under 16 hrs rounds to the nearest half-day.
 
 Intermediate steps keep one decimal (see `references/multipliers.md`); Breakdown rows keep their own values and must sum exactly, so the headline can land slightly above **or below** the Breakdown total depending on which way it rounded. Both are correct — the table shows the arithmetic, the headline is the number being committed to. Never adjust rows to match a rounded headline.
 
@@ -169,6 +169,7 @@ Some reference rows are themselves 3× wide (e.g. "1–3 days"). Quoting such a 
 - **Developer seniority:** Senior-level dev highly familiar with the stack. Flag if the task needs a migration-specialized senior dev (platform migration, custom DB schema, multisite, headless cutover, Woo subscriptions) — those warrant a separate spike or higher rate.
 - **Scaffold:** Pre-configured project scaffold assumed (build tooling, CI, base theme/plugin shell). Greenfield multiplier stays at ×1.0.
 - **Translation:** Translating the copy is out of scope unless the request includes it. The multi-language multiplier prices only the build work for each language: translatable strings, per-language setup, and a check in each language.
+- **Content entry:** Building pages from the theme's patterns and entering their copy and media is editors' work, out of scope unless the request includes it. When it is included, state it in "What's Included" and list it as its own line, outside the development hours.
 
 ---
 

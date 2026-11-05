@@ -72,16 +72,21 @@ comes out close to its hand-coded figure is expected.
 ## Untiered own work
 
 Some tasks are the lead engineer's own work. Size them in hand-coded hours, with
-no agentic factor, and list them outside the tiered tasks:
+no agentic factor, and list them outside the tiered tasks. Untiered own work
+keeps its hours at the low end: it has no agent review to halve.
 
 | Task | Sizing guide |
 |------|--------------|
-| Environment setup: local sites, staging, deploy pipeline | Hand-coded hours for the steps the project needs |
-| Agent-workflow setup: repository instructions for agents, brief and acceptance-criteria templates, capture or parity scripts against the design | About 1–1.5 days on a large build |
-| Launch: cutover, redirects check, post-launch fixes | Hand-coded hours for the steps the project needs |
+| Environment setup: local sites, staging, deploy pipeline | Hand-coded hours for the steps the project needs. A local site from an existing database dump: about 1 hr. |
+| Agent-workflow setup: repository instructions for agents, brief and acceptance-criteria templates, capture or parity scripts against the design | About 1–1.5 days on a large build when the capture or parity scripts are written for this build. When they already exist (a design-to-theme skill or an earlier project ships them), size only what is left in hand-coded hours: the repository instructions, the brief and acceptance-criteria templates, and pointing the scripts at the design's pages. Usually 2–3 hrs. |
+| Launch: cutover, redirects check, post-launch fixes | Hand-coded hours for the steps the project needs. |
 
 Apply a multiplier here only when its condition changes this work, which is rare:
 multi-language and accessibility rarely touch tooling.
+
+Existing tooling removes the work it covers, so the task moves to a smaller
+size: hand-coded hours for what is left. The logic is the same as "When prior
+art is overwhelming, reclassify — don't discount" in `codebase-sizing.md`.
 
 ## Risks specific to agentic delivery
 
