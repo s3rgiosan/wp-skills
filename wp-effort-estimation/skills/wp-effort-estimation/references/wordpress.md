@@ -34,6 +34,11 @@
 | i18n setup (textdomain + .pot generation) | 1 hr | — | — | — |
 | Privacy exporter / eraser callbacks (GDPR-mandated) | — | 8–16 hrs | — | — |
 
+> "Custom plugin (admin UI + DB)" and "WooCommerce extension" size a whole
+> product. A module, processor, queue or endpoint inside a larger build is
+> sized from the S and M rows that describe its parts, with the whole-product
+> row as a ceiling check.
+
 > Converting stored block content (for example a deprecated custom block to
 > core blocks) is the "WP-CLI script" row: `parse_blocks()` /
 > `serialize_blocks()` and attribute mapping. Add the manual fixes, per page,
