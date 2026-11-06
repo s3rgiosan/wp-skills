@@ -103,7 +103,7 @@ The plugin's own interface is English and translatable. The header carries `Text
 
 Translate the plugin's own interface in this order. Keep the files in `<work>/translations/`, outside the build.
 
-1. The first build writes `languages/<slug>.pot` (with `wp i18n make-pot` when `wp` is on the `PATH`; otherwise from the script's own string table, with a warning).
+1. The first build writes `languages/<slug>.pot` (with `wp i18n make-pot` when `wp` is on the `PATH`; otherwise from the script's own string table, with a warning). The fallback POT has the same strings, the plugin headers included, but no file references. When the project's WP-CLI runs through a wrapper (a container shim), regenerate the POT after the build with that wrapper, using paths it can see: `<wp> i18n make-pot <out>/<slug> <out>/<slug>/languages/<slug>.pot --domain=<slug> --exclude=views/shots`.
 2. Create the catalogue for the locale: `msginit --no-translator --locale=<locale> --input=<work>/build/<slug>/languages/<slug>.pot --output-file=<work>/translations/<slug>-<locale>.po`.
 3. Translate the strings in the `.po`. For `pt_PT`, use the `wp-translate-pt-pt` skill.
 4. Compile it: `msgfmt -o <work>/translations/<slug>-<locale>.mo <work>/translations/<slug>-<locale>.po`, or `wp i18n make-mo <work>/translations` (`wp i18n make-mo <source> [<destination>]`).
