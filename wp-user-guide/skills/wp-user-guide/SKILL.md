@@ -37,7 +37,7 @@ Look up each item in the sources before you ask about it. Ask only what the sour
 
 | Decision | Look it up in | Ask when, and a sample question |
 | --- | --- | --- |
-| Admin areas in scope | survey menu (users, settings, forms and other plugin screens the role reaches), the brief | The role reaches screens the brief does not name. "The role also reaches Users, Settings › General and Reading, and the newsletter settings page. Include them? Recommended: yes, as separate sections." |
+| Admin areas in scope | survey menu (users, settings, forms and other plugin screens the role reaches), the brief | The role reaches screens the brief does not name. "The role also reaches Users, Settings › General and Reading, and the newsletter settings page. Include them? Recommended: yes, as separate sections, with each plugin in its own section under Extensions." |
 | Content types in scope | survey menu, post type and taxonomy lists, ticket | A type the role can reach is not named in the request (a shop, forms). "The role also reaches Products. Include it? Recommended: yes." |
 | Menus | survey menu: `nav-menus.php` vs `site-editor.php` (and `customize.php`) | The role reaches neither one, both, or a menu change is in progress. "The role reaches Appearance › Menus. Document the classic menu screen? Recommended: yes." |
 | Site Editor | survey menu: `site-editor.php` listed for the role | The role reaches it and the brief is silent: the guide sends readers there only after an explicit yes. "The role can open the Site Editor. Document it? Recommended: no." |

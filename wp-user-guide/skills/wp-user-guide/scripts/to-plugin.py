@@ -87,6 +87,9 @@ PRE_RE = re.compile(r"(<pre[\s>].*?</pre>)", re.DOTALL)
 RESERVED_SHOT_IDS = {"index"}
 SECTION_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
 SCREEN_KEY_RE = re.compile(r"^[a-z0-9_-]+$")
+# A plugin page registered by its file path keeps the path in its screen id
+# (WP_Screen::get() uses the hook name as the id): toplevel_page_<plugin-dir>/<file>.
+SCREEN_ID_RE = re.compile(r"^[a-z0-9_-]+(?:/[a-z0-9_-]+)*$")
 LANG_RE = re.compile(r"^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$")
 SLUG_RE = re.compile(r"^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$")
 PHP_RESERVED = {
@@ -895,6 +898,16 @@ GUIDE_CSS = """/* @@PLUGIN_HEADER@@ */
 	border-left-color: var(--{slug}-accent);
 }}
 
+/* A group label in the index names the entries that follow it. */
+.{slug}-guide .toc .group {{
+	margin-top: 14px;
+	padding-left: 11px;
+	color: var(--{slug}-muted);
+	font-size: 11px;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+}}
+
 .{slug}-guide main section {{
 	padding-bottom: 24px;
 	border-bottom: 1px solid var(--{slug}-rule);
@@ -1209,7 +1222,10 @@ def load_links(path, section_ids):
         for key, section in entries.items():
             if not isinstance(key, str) or not isinstance(section, str):
                 fail(f"{path}: {group} entries map a name to a section id")
-            if not SCREEN_KEY_RE.fullmatch(key):
+            if group == "screens":
+                if not SCREEN_ID_RE.fullmatch(key):
+                    fail(f"{path}: screens key {key!r} must match [a-z0-9_-]+, with / between path parts")
+            elif not SCREEN_KEY_RE.fullmatch(key):
                 fail(f"{path}: {group} key {key!r} must match [a-z0-9_-]+")
             if section not in section_ids:
                 fail(f"{path}: {group}.{key} points at #{section}, which is not a section of the guide")
