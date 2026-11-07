@@ -11,7 +11,7 @@ A single page published with the Artifact tool. Write the same page to `<work>/g
 `<skill-dir>/scripts/to-markdown.py` reads this structure, so keep to it:
 
 - `header.cover` holds only the `h1` (the guide's title) and a `.lede` paragraph that says what the guide covers. The cover carries no site or brand label above the title.
-- `nav.toc` holds an `h2` (the index title) and one link per section.
+- `nav.toc` holds an `h2` (the index title) and one link per section. A `li.group` item without a link is a group label: it names the entries that follow it, up to the next label (for example **Content**, **Site management**, **Extensions**, **Reference**).
 - `main > section[id]` per guide section. Each section opens with an `h2` and holds `h3`, `p`, `ol`/`ul`, `figure`, `div.note`, `div.check`, `div.table-wrap > table` and `dl.gloss` as direct children.
 - A callout number in the text is `<span class="n">3</span>`. It matches the badge in the screenshot and becomes ③ in Markdown.
 - A checklist is `div.check` with an `h3` and one `label > input[type=checkbox]` per item.
@@ -103,7 +103,7 @@ The plugin's own interface is English and translatable. The header carries `Text
 
 Translate the plugin's own interface in this order. Keep the files in `<work>/translations/`, outside the build.
 
-1. The first build writes `languages/<slug>.pot` (with `wp i18n make-pot` when `wp` is on the `PATH`; otherwise from the script's own string table, with a warning).
+1. The first build writes `languages/<slug>.pot` (with `wp i18n make-pot` when `wp` is on the `PATH`; otherwise from the script's own string table, with a warning). The fallback POT has the same strings, the plugin headers included, but no file references. When the project's WP-CLI runs through a wrapper (a container shim), regenerate the POT after the build with that wrapper, using paths it can see: `<wp> i18n make-pot <out>/<slug> <out>/<slug>/languages/<slug>.pot --domain=<slug> --exclude=views/shots`.
 2. Create the catalogue for the locale: `msginit --no-translator --locale=<locale> --input=<work>/build/<slug>/languages/<slug>.pot --output-file=<work>/translations/<slug>-<locale>.po`.
 3. Translate the strings in the `.po`. For `pt_PT`, use the `wp-translate-pt-pt` skill.
 4. Compile it: `msgfmt -o <work>/translations/<slug>-<locale>.mo <work>/translations/<slug>-<locale>.po`, or `wp i18n make-mo <work>/translations` (`wp i18n make-mo <source> [<destination>]`).
@@ -153,7 +153,7 @@ Maps admin screens to section ids. Write it from the reconcile step: each sectio
 }
 ```
 
-Build `screens` from `survey.json` `screenId` for every screen the guide covers (the dashboard, users, settings screens and plugin screens), not only the content types. Example keys: `nav-menus`, `upload`, `users`, `options-general`, `toplevel_page_<plugin>`. On a classic screen the taxonomy wins, then the post type, then the screen id (`WP_Screen::$id`). Sections no screen links to, such as an introduction or a glossary, stay reachable from the index and the widget.
+Build `screens` from `survey.json` `screenId` for every screen the guide covers (the dashboard, users, settings screens and plugin screens), not only the content types. Example keys: `nav-menus`, `upload`, `users`, `options-general`, `toplevel_page_<plugin>`. A plugin page registered by its file path keeps the path in its screen id, for example `toplevel_page_<plugin-dir>/<file>`: copy `screenId` from `survey.json` as it is. Map every screen of a plugin to that plugin's section in the Extensions group. On a classic screen the taxonomy wins, then the post type, then the screen id (`WP_Screen::$id`). Sections no screen links to, such as an introduction or a glossary, stay reachable from the index and the widget.
 
 ### Rules
 

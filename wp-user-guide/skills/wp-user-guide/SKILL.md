@@ -37,7 +37,7 @@ Look up each item in the sources before you ask about it. Ask only what the sour
 
 | Decision | Look it up in | Ask when, and a sample question |
 | --- | --- | --- |
-| Admin areas in scope | survey menu (users, settings, forms and other plugin screens the role reaches), the brief | The role reaches screens the brief does not name. "The role also reaches Users, Settings › General and Reading, and the newsletter settings page. Include them? Recommended: yes, as separate sections." |
+| Admin areas in scope | survey menu (users, settings, forms and other plugin screens the role reaches), the brief | The role reaches screens the brief does not name. "The role also reaches Users, Settings › General and Reading, and the newsletter settings page. Include them? Recommended: yes, as separate sections, with each plugin in its own section under Extensions." |
 | Content types in scope | survey menu, post type and taxonomy lists, ticket | A type the role can reach is not named in the request (a shop, forms). "The role also reaches Products. Include it? Recommended: yes." |
 | Menus | survey menu: `nav-menus.php` vs `site-editor.php` (and `customize.php`) | The role reaches neither one, both, or a menu change is in progress. "The role reaches Appearance › Menus. Document the classic menu screen? Recommended: yes." |
 | Site Editor | survey menu: `site-editor.php` listed for the role | The role reaches it and the brief is silent: the guide sends readers there only after an explicit yes. "The role can open the Site Editor. Document it? Recommended: no." |
@@ -128,6 +128,8 @@ Playwright lives in the folder where you ran `npm i -D playwright && npx playwri
    - Use structural selectors (ids, classes, element structure) for `wait` steps and callouts. Text selectors break when the UI language or a translation changes.
    - On form-table settings screens (label in a `th`, control in a `td`), call out the row (`tr:has(#field-id)`) so the label shows in the crop.
    - Keep generated secrets out of the image. The Add User screen shows a generated password: shoot that form with the password field outside the crop, or blank.
+   - A plugin admin page that changes its view with the URL hash (`#settings-<service>`) can ignore the hash when the page loads. Open the view as the reader does: add `click` steps on the plugin's own menu entries, then capture.
+   - Find icon-only buttons (duplicate, settings, delete in a table row) by their icon class, never by position: the first button in a row can be "duplicate", which opens an unsaved copy. In the guide, name such a button by its icon and colour, for example "the green cog button".
 6. **Write the guide.** Use the structure and plain-language rules in `references/guide-structure.md`. Write it to `<work>/guide/guide.html`.
 7. **Audit before delivery.** Pair every step and every label with its source: the `survey.json` entry, a screenshot, or a file:line. Cut whatever has no source. Write each label exactly as the screen shows it, even when a plugin shows it in another language, and give the meaning in the guide's language next to it. Compare every label the guide quotes with the current `survey.json`: labels change when plugins or their translations update, so re-run the survey after any update and fix each quote that differs.
 8. **Deliver** in the agreed output (`references/outputs.md`). For the plugin, finish `<work>/sections.json`, which links each post type, taxonomy and screen to its section; the screen keys come from `survey.json` `screenId`.
@@ -165,6 +167,8 @@ Settings screens save options. To show a result after saving, run these commands
 3. Restore it: `<wp> option update <name> "$(cat <work>/backup/<name>.json)" --format=json`.
 4. Check it matches: `<wp> option get <name> --format=json | diff - <work>/backup/<name>.json`.
 
+Some plugin screens save when the reader clicks a switch, with no save button (a module list, a status column). Treat that click as a save: back up the option first, or set the state with `<wp> option` for the walk and restore it in step 9. Find the switch through its own card or row, for example `.card:has(img[src$="/<service>.png"]) .switch`, never as the first or nth switch on the page: that switch can belong to another module.
+
 Add each backed-up option to `<work>/created.txt` as `option <name> <backup path>`. The options behind Settings › General and Settings › Reading are listed in `references/inventory.md`, Users and settings. For a plugin settings page, take the option names from the form's `name=` attributes (in the page source) or from the plugin's `register_setting` calls. Saving a plugin page can call external services, so document it from the screen without saving unless the brief allows a test save.
 
 Real data: before shooting users, forms and submissions screens, check that the local database holds only test users and demo submissions. Never capture the names, emails or form submissions of real people. When real data is present, leave those screens out of the screenshots and describe them in text.
@@ -172,6 +176,15 @@ Real data: before shooting users, forms and submissions screens, check that the 
 Never change a high-impact setting (`references/inventory.md`, Users and settings) on a site others use. Document those from the screen without saving.
 
 Users: a screenshot that needs a saved user uses a sample user created on the role's Add User screen, with an `example.test` email, for example `guide-sample-1@example.test`, and a `[guide]` display name. Name the sample users `guide-sample-<n>` and add each to `<work>/created.txt`.
+
+## External services
+
+Some plugin screens connect the site to an outside service (a newsletter, CRM or payment account) and need a key or a login from that service.
+
+- Steps in the service's own account are not on a WordPress screen. Take each step from the service's help pages: open the page, and link it in the guide next to the steps. Quote the menu names as the help page shows them. When the service can show another language than the guide, give both names, for example **Profile** (Perfil). Add no screenshots of the service's account.
+- A key or token gives access to the account. Put a warning box before the step: the reader pastes the key into the WordPress field and never sends it by email or chat. Use no real key in the walk or in a screenshot.
+- Shoot the WordPress side up to the point where the key is needed: the module switch (see "Saving content" for switches that save on click), the key field, and the message the plugin shows while no key is saved. Readers see that message, so name it in the steps.
+- A screen that opens only with a working key (a feed or a field-mapping form) is out of the walk's reach. When the brief gives no test account, write those steps from the plugin's own labels in the admin language. Get each label with `<wp> eval 'switch_to_locale( "<locale>" ); echo __( "<string>", "<domain>" );'` and pair it with its file:line. Ship no screenshot of that screen, and log a finding to shoot it when the account is connected. This is the only exception to "document the screen, not the code": the role can open the screen once the account exists.
 
 ## Quick reference
 
@@ -216,4 +229,7 @@ Users: a screenshot that needs a saved user uses a sample user created on the ro
 | A badge hiding a menu item or field label | Set `"badge": "left"`, `"right"` or `"top-right"` on that callout |
 | Panels taller than the viewport, so callouts land off-screen | The shot fails with `lies outside the WxH viewport`: raise `--height` (1500 fits most sidebars) or split the panel into several shots |
 | A callout selector that matches nothing, or a panel that is collapsed | The shot fails with `callout <selector> not found`: add an `openPanel` step for the panel, or fix the selector |
+| Clicking a module or status switch to see what it does | The click saves at once: back up the option first, and select the switch through its card or row |
+| Opening a hash-routed plugin view by URL | Click through the plugin's own menu in the shot steps |
+| Screenshots or steps inside a third-party account, or a real API key in the walk | Link the service's help page for those steps; shoot only the WordPress side, with no real key |
 | Deleting the throwaway user with all its content | Delete the walk's drafts, terms, uploads and sample users first (everything in `created.txt`), then delete the user with `--reassign` |

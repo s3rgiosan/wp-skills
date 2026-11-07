@@ -87,6 +87,9 @@ PRE_RE = re.compile(r"(<pre[\s>].*?</pre>)", re.DOTALL)
 RESERVED_SHOT_IDS = {"index"}
 SECTION_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
 SCREEN_KEY_RE = re.compile(r"^[a-z0-9_-]+$")
+# A plugin page registered by its file path keeps the path in its screen id
+# (WP_Screen::get() uses the hook name as the id): toplevel_page_<plugin-dir>/<file>.
+SCREEN_ID_RE = re.compile(r"^[a-z0-9_-]+(?:/[a-z0-9_-]+)*$")
 LANG_RE = re.compile(r"^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$")
 SLUG_RE = re.compile(r"^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$")
 PHP_RESERVED = {
@@ -895,6 +898,16 @@ GUIDE_CSS = """/* @@PLUGIN_HEADER@@ */
 	border-left-color: var(--{slug}-accent);
 }}
 
+/* A group label in the index names the entries that follow it. */
+.{slug}-guide .toc .group {{
+	margin-top: 14px;
+	padding-left: 11px;
+	color: var(--{slug}-muted);
+	font-size: 11px;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+}}
+
 .{slug}-guide main section {{
 	padding-bottom: 24px;
 	border-bottom: 1px solid var(--{slug}-rule);
@@ -1209,7 +1222,10 @@ def load_links(path, section_ids):
         for key, section in entries.items():
             if not isinstance(key, str) or not isinstance(section, str):
                 fail(f"{path}: {group} entries map a name to a section id")
-            if not SCREEN_KEY_RE.fullmatch(key):
+            if group == "screens":
+                if not SCREEN_ID_RE.fullmatch(key):
+                    fail(f"{path}: screens key {key!r} must match [a-z0-9_-]+, with / between path parts")
+            elif not SCREEN_KEY_RE.fullmatch(key):
                 fail(f"{path}: {group} key {key!r} must match [a-z0-9_-]+")
             if section not in section_ids:
                 fail(f"{path}: {group}.{key} points at #{section}, which is not a section of the guide")
@@ -1341,11 +1357,18 @@ def po_quote(text):
     return '"' + text.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n") + '"'
 
 
-def pot_entries(slug, plugin_name):
+def pot_entries(slug, plugin_name, author=None, author_uri=None):
     """Every translatable string the generated plugin holds: (msgid, extracted comment, flags, references)."""
-    return [
+    headers = [
         (plugin_name, "Plugin Name of the plugin", "", [f"{slug}.php"]),
         (DESCRIPTION, "Description of the plugin", "", [f"{slug}.php"]),
+    ]
+    # wp i18n make-pot extracts these headers too, so the fallback POT keeps them.
+    if author:
+        headers.append((author, "Author of the plugin", "", [f"{slug}.php"]))
+    if author_uri:
+        headers.append((author_uri, "Author URI of the plugin", "", [f"{slug}.php"]))
+    return headers + [
         ("User Guide", "", "", ["includes/class-guide.php", "assets/editor-panel.js"]),
         ("Sorry, you are not allowed to access this page.", "", "", ["includes/class-guide.php"]),
         (
@@ -1357,7 +1380,7 @@ def pot_entries(slug, plugin_name):
     ]
 
 
-def pot_fallback(slug, plugin_name, version):
+def pot_fallback(slug, plugin_name, version, author=None, author_uri=None):
     """A POT file written from the script's own string table."""
     stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")
     lines = [
@@ -1375,7 +1398,7 @@ def pot_fallback(slug, plugin_name, version):
         "",
     ]
     merged = {}
-    for msgid, comment, flags, refs in pot_entries(slug, plugin_name):
+    for msgid, comment, flags, refs in pot_entries(slug, plugin_name, author, author_uri):
         entry = merged.setdefault(msgid, {"comments": [], "flags": flags, "refs": []})
         if comment and comment not in entry["comments"]:
             entry["comments"].append(comment)
@@ -1416,7 +1439,7 @@ def copy_translations(source, build, slug):
         warn(f"--translations: no {slug}-<locale> files found in {source}")
 
 
-def write_pot(build, slug, plugin_name, version):
+def write_pot(build, slug, plugin_name, version, author=None, author_uri=None):
     """languages/<slug>.pot from wp i18n make-pot, or from the script's string table when wp is unavailable."""
     build = os.path.abspath(build)
     pot = os.path.join(build, "languages", f"{slug}.pot")
@@ -1439,7 +1462,7 @@ def write_pot(build, slug, plugin_name, version):
         warn(f"wp i18n make-pot failed ({detail}); the POT file is written from the script's own string table")
     else:
         warn("wp is not on PATH: the POT file is written from the script's own string table")
-    write(pot, pot_fallback(slug, plugin_name, version))
+    write(pot, pot_fallback(slug, plugin_name, version, author, author_uri))
 
 
 def inside(inner, outer):
@@ -1643,7 +1666,7 @@ def main():
         for folder in ("", "includes", "views", os.path.join("views", "shots"), "assets", "languages"):
             write(os.path.join(build, folder, "index.php"), INDEX_PHP.format(namespace=namespace))
         write(os.path.join(build, BUILD_MARKER), args.slug + "\n")
-        write_pot(build, args.slug, plugin_name, args.version)
+        write_pot(build, args.slug, plugin_name, args.version, author, args.author_uri)
         copy_translations(args.translations, build, args.slug)
 
         check_php_tags(build, namespace)

@@ -1,6 +1,6 @@
 {
   "name": "wp-user-guide",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Write a step-by-step guide to the WordPress admin for one audience role: the content types, media, taxonomies, menus, users, settings and plugin screens that role reaches. Written for people who have not used WordPress, with annotated screenshots captured on screen as that role.",
   "author": {
     "name": "Sérgio Santos",
