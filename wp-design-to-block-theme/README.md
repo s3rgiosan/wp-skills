@@ -57,6 +57,10 @@ Open a Claude Code session with the design to hand and ask naturally:
 
 The skill runs a ten-step flow: routes + capture → content model → tokens → scaffold → layout → patterns → content → interactivity → verify → handover.
 
+New themes also include a selectable **Blank Page** template that outputs only
+page content. It can host a full-page pattern without adding another header or
+footer; the standard page template and existing pages are not replaced.
+
 ### Scripts
 
 ```bash
