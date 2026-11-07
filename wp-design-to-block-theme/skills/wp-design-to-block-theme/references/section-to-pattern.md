@@ -39,8 +39,25 @@ Start with what the design has; add the rest as needed:
 - `index.html` (fallback, required)
 - `front-page.html` (the design's home page)
 - `page.html`, `single.html`, `archive.html`, `search.html`, `404.html`
+- `blank-page.html` (selectable custom template for pages)
 
-Each template = header part + one or more patterns + footer part.
+The standard templates use the appropriate header part, page content or patterns, and footer part. **Blank Page** is the exception: it outputs only the page's content, so an inserted full-page pattern can supply its own header, `main` and footer without duplicating them.
+
+Create `templates/blank-page.html` with:
+
+```html
+<!-- wp:post-content {"layout":{"type":"default"}} /-->
+```
+
+Register it in `theme.json`, merging it with any existing custom templates:
+
+```json
+"customTemplates": [
+  { "name": "blank-page", "title": "Blank Page", "postTypes": ["page"] }
+]
+```
+
+This is an optional template selected per page, not the default `page.html` and not an automatic change to existing pages. It adds no header, footer, title, `main`, or restrictive wrapper. On an authorized disposable test site, select **Blank Page** for a draft page, insert a full-page pattern if available, save and reload, and confirm the editor and front end render the content without duplicate header, footer, `main` or IDs. If no full-page pattern exists, test with representative content and confirm no theme header or footer is added. Record NOT RUN when the editor or a safe test site is unavailable; include template selection instructions in the handover.
 
 **Header variants.** A home page often has a transparent `fixed` header over the hero, and a solid header elsewhere. Compare `header.atTop` in the `sections-*.json` of each route. Build one header part plus a modifier class (for example `is-overlay`) set by the front-page template. Use a second part (`parts/header-overlay.html`) only when the markup differs. If the header also changes on scroll, see the scroll recipe in `interactivity-recipes.md`. A sticky or fixed header sits below the admin bar for logged-in visitors (`html-to-core-blocks.md`, Sticky and fixed elements).
 
