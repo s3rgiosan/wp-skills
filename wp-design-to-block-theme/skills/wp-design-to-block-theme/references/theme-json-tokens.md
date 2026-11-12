@@ -12,6 +12,8 @@ Use the best source the design has, in this order:
 
 With a token file, still run `css-tokens.mjs` on the capture as a cross-check: a color the pages paint but the file lacks is a hardcoded value to fold into the palette.
 
+A WordPress source prints custom properties that are not the design's: core presets and admin colors (`--wp--preset--color--*`, `--wp-admin-theme-color*`), WooCommerce (`--wc-*`) and Smash Balloon (`--sb-color-*`). `css-tokens.mjs` keeps them out of the palette ranking, and their colors count only where the page paints them. A painted color that matches a core preset takes the preset's slug. The report lists what it left out: `colors.corePresets` maps each core preset color (hex) to its slug, and `colors.vendor` lists the names of the left-out properties. Another plugin can add its own prefix: when the palette holds a color that no element paints, find its custom property in the report (`colors.named`) and add the prefix to `VENDOR_PROPERTIES` in the script.
+
 ## Mapping table
 
 | Design token | theme.json | Notes |
@@ -22,7 +24,7 @@ With a token file, still run `css-tokens.mjs` on the capture as a cross-check: a
 | Spacing | `settings.spacing.spacingSizes[]` → `{ slug, size, name }` | Set `settings.spacing.units` to what the design uses (`rem`, `px`, `%`, `vw`). |
 | Radius | `settings.custom.radius.<name>` | No core radius preset exists; expose as custom, consume as `var(--wp--custom--radius--<name>)`. |
 | Shadow | `settings.shadow.presets[]` → `{ slug, shadow, name }` | Keep only the shadows the design uses. |
-| Container / max width | `settings.layout.contentSize`, `settings.layout.wideSize` | Read from the design's main content column and full-bleed width. |
+| Container / max width | `settings.layout.contentSize`, `settings.layout.wideSize` | Read from the design's main content column and full-bleed width. `css-tokens.mjs` takes the widest repeated max-width as `wideSize`, and a narrower one as `contentSize` only when it is used at least a fifth as often; otherwise both are the widest. |
 
 ## Spacing scale
 
@@ -33,6 +35,7 @@ Derive the preset scale from the design's real spacing:
 - Read the actual desktop spacing from the desktop `styles-*.json` / `computed-*.json`, or from the source's spacing tokens.
 - Cap each preset's `max` at that desktop value; keep a smaller `min` for a gentle mobile taper. Use the `vw` term only for that taper, so no preset grows past the design.
 - Include every step the design uses, down to the small gaps. A coarse scale skips them, and the rebuild rounds them up.
+- Capture at least two widths. `css-tokens.mjs` compares each scale value with the narrower captures' pixel values (within 2%): a fixed spacing step matches, a percentage padding (a slide's 16%) resolves to a different value at each width. It leaves out only the values larger than the largest value that both widths share; when no value is shared, it keeps all of them. It also ends the scale at a step more than 4 times the step below it. It lists the values it leaves out; add one back by hand when it is a desktop-only section padding.
 
 `settings.spacing.spacingSizes[]` has no `fluid` key (unlike `typography.fontSizes[]`) — a `fluid` object on a spacing entry is silently ignored and the preset never tapers. Express a fluid/tapering spacing preset by putting a `clamp()` directly in `size`; cap the clamp's max at the design's real desktop value and use the `vw` term only for a gentle mobile taper:
 
@@ -107,6 +110,8 @@ A first pass lists every size the pages render. Fold near-duplicates (15px and 1
    ```
 
 3. A stack that starts with a variable (`var(--font-sans)`) is set at runtime by the source framework; replace it with the real family name.
+
+4. Give each file its own `fontFace` entry. WordPress keeps one `src` per file format (`WP_Font_Face`, `wp-includes/fonts/class-wp-font-face.php`), so a second `.woff2` in the same entry replaces the first. For a font split into subsets (Google Fonts serves `latin` and `latin-ext` files), write one entry per subset with the subset's `unicodeRange`, as Google Fonts' own CSS does. Otherwise the page loads only the last file, and the text falls back to the next font in the stack. Check it: the page CSS has one `@font-face` per file, and a sample string is as wide as on the design.
 
 ## After the script
 

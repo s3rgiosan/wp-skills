@@ -27,6 +27,17 @@ export async function loadChromium() {
   }
 }
 
+/** True when the URL points at this machine: localhost, a loopback address, or a .test / .localhost name. */
+export function isLocalHost(url) {
+  let host;
+  try {
+    host = new URL(url).hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  } catch {
+    return false;
+  }
+  return host === 'localhost' || host === '127.0.0.1' || host === '::1' || host.endsWith('.test') || host.endsWith('.localhost');
+}
+
 /** Scroll through the page so in-view animations and lazy images fire, then return to the top. */
 export async function scrollThrough(page) {
   await page.evaluate(async () => {

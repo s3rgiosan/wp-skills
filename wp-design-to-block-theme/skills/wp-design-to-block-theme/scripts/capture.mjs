@@ -17,6 +17,10 @@
  * Usage:
  *   node capture.mjs <url|file> [<url|file> ...] [--routes FILE] [--base URL|DIR] [--out DIR]
  *     [--breakpoints 390,768,1280] [--selectors "body,h1,..."] [--timeout 60000] [--behaviors] [--max-triggers 40]
+ *     [--insecure]
+ *
+ * HTTPS certificate errors are ignored only for a local page (localhost, 127.0.0.1, ::1, *.test, *.localhost),
+ * where sites use a local CA; pass --insecure to ignore them for another host.
  *
  * Requires Playwright, installed beside this script or in the current working directory:
  *   npm i -D playwright && npx playwright install chromium
@@ -25,7 +29,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadChromium, PLAYWRIGHT_MISSING, scrollThrough, settle } from './lib/browser.mjs';
+import { isLocalHost, loadChromium, PLAYWRIGHT_MISSING, scrollThrough, settle } from './lib/browser.mjs';
 import {
   CAPTURED_PROPS,
   DEFAULT_SELECTORS,
@@ -42,7 +46,7 @@ const HELP = `capture.mjs — capture pages for block-theme translation and pari
 
 Usage:
   node capture.mjs <url|file> [<url|file> ...] [--routes FILE] [--base URL|DIR] [--out DIR]
-    [--breakpoints 390,768,1280] [--selectors "body,h1,..."] [--timeout 60000] [--behaviors] [--max-triggers 40]
+    [--breakpoints 390,768,1280] [--selectors "body,h1,..."] [--timeout 60000] [--behaviors] [--max-triggers 40] [--insecure]
 
   --routes FILE     one path or URL per line (# comments allowed); paths resolve against --base
                     or the first URL's origin. A capture-editor.mjs routes file works as it is:
@@ -51,6 +55,8 @@ Usage:
                     A local file's route folder is its name without .html (index.html → home).
   --behaviors       click each visible control and record the state changes it causes.
   --max-triggers N  cap on controls clicked per breakpoint (default 40).
+  --insecure        ignore HTTPS certificate errors. Applies by default only to a local page
+                    (localhost, 127.0.0.1, ::1, *.test, *.localhost).
 
 Writes <out>/<route>/{shot,dom,computed,sections,styles,network}-<w>.* per breakpoint (default out ./design-capture).
 Capture the design and the WordPress rebuild with the same routes, then diff them with compare.mjs.
@@ -67,6 +73,7 @@ function parseArgs(argv) {
     timeout: 60000,
     behaviors: false,
     maxTriggers: 40,
+    insecure: false,
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -98,6 +105,9 @@ function parseArgs(argv) {
         args.timeout = Number.isFinite(t) && t > 0 ? t : 60000;
         break;
       }
+      case '--insecure':
+        args.insecure = true;
+        break;
       case '--behaviors':
         args.behaviors = true;
         break;
@@ -136,7 +146,10 @@ async function openPage(context, url, timeout) {
   });
   page.on('pageerror', (err) => network.consoleErrors.push(String(err.message || err)));
 
-  await page.goto(url, { waitUntil: 'networkidle', timeout });
+  await page.goto(url, { waitUntil: 'load', timeout });
+  // Third-party widgets (bot challenges, chat, beacons) can keep a request open for good: wait for the
+  // network to settle, but go on without it.
+  await page.waitForLoadState('networkidle', { timeout: Math.min(timeout, 15000) }).catch(() => {});
   // Smooth scrolling makes scripted scroll positions lag behind; force instant jumps.
   await page.addStyleTag({ content: 'html, body { scroll-behavior: auto !important; }' });
   return { page, network };
@@ -305,7 +318,11 @@ async function captureBehaviors(context, url, args) {
 /* ------------------------------------------------------------------ Main */
 
 async function captureRoute(browser, url, width, dir, args) {
-  const context = await browser.newContext({ viewport: { width, height: 900 }, deviceScaleFactor: 1 });
+  const context = await browser.newContext({
+    viewport: { width, height: 900 },
+    deviceScaleFactor: 1,
+    ignoreHTTPSErrors: args.insecure || isLocalHost(url),
+  });
   const { page, network } = await openPage(context, url, args.timeout);
 
   await scrollThrough(page);

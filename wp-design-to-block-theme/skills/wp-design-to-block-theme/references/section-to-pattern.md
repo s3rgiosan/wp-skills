@@ -80,7 +80,7 @@ Register patterns via PHP file headers in `patterns/`. Auto-registered by the th
 - **Slug** namespaced to the theme (`mytheme/...`).
 - **Categories:** use categories core registers (e.g. `banner`, `call-to-action`, `testimonials`), or register the theme's own with `register_block_pattern_category()` in `functions.php`.
 - **Translatable text.** Wrap every user-facing string: `esc_html_e()` for text, `esc_attr_e()` for attributes such as `alt`. Use `wp_kses_post()` around `__()` only when the string contains inline markup.
-- **Theme URLs.** Build asset URLs with `get_theme_file_uri()`, escaped with `esc_url()`. Never hard-code a domain or `/wp-content/themes/…` path.
+- **Theme URLs.** Build asset URLs with `get_theme_file_uri()`, escaped with `esc_url()`. Never hard-code a domain or `/wp-content/themes/…` path. For images in the front-end CSS, see `html-to-core-blocks.md`, "Theme images in the front-end CSS".
 - **Copy.** Carry the design's exact text. Never invent or rewrite marketing copy. Placeholder text in a dynamic slot is replaced by the block that renders the field; placeholder copy in static text is asked for, or kept as a translated string and listed in the handover notes (`content-model.md`, Placeholders).
 - **Data.** Content that WordPress keeps as data (terms, meta, settings, post fields) is never typed into a pattern unless the user chose that in the content model (`content-model.md`).
 

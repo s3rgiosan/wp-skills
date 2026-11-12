@@ -19,10 +19,12 @@
  *
  * Usage:
  *   node capture-editor.mjs --routes FILE --base URL [--out DIR] [--breakpoints 390,768,1280]
- *     [--user NAME --password PASS] [--allow-placeholder core/xyz ...] [--timeout 60000]
+ *     [--user NAME --password PASS] [--allow-placeholder core/xyz ...] [--timeout 60000] [--insecure]
  *
  * Credentials come from --user/--password or the WP_USER/WP_PASSWORD environment variables. The session
- * lives in memory only: nothing is written to disk but the capture.
+ * lives in memory only: nothing is written to disk but the capture. HTTPS certificate errors are ignored only
+ * for a local --base (localhost, 127.0.0.1, ::1, *.test, *.localhost), where sites use a local CA; pass
+ * --insecure to ignore them for another host.
  *
  * Requires Playwright, installed beside this script or in the current working directory:
  *   npm i -D playwright && npx playwright install chromium
@@ -30,7 +32,7 @@
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { loadChromium, PLAYWRIGHT_MISSING, scrollThrough, settle } from './lib/browser.mjs';
+import { isLocalHost, loadChromium, PLAYWRIGHT_MISSING, scrollThrough, settle } from './lib/browser.mjs';
 import {
   CAPTURED_PROPS,
   DEFAULT_SELECTORS,
@@ -53,12 +55,14 @@ const HELP = `capture-editor.mjs — capture the block editor canvas for editor 
 
 Usage:
   node capture-editor.mjs --routes FILE --base URL [--out DIR] [--breakpoints 390,768,1280]
-    [--user NAME --password PASS] [--allow-placeholder core/xyz ...] [--timeout 60000]
+    [--user NAME --password PASS] [--allow-placeholder core/xyz ...] [--timeout 60000] [--insecure]
 
   --routes FILE   one front-end path per line (# comments allowed). The admin bar's edit link on that
                   page picks the editor. Override it with "path => editor-url", e.g.
                   "/news/ => /wp-admin/site-editor.php?postType=wp_template&postId=acme//home&canvas=edit".
   --base URL      the local site, e.g. http://mysite.test.
+  --insecure      ignore HTTPS certificate errors. Applies by default only to a local --base
+                  (localhost, 127.0.0.1, ::1, *.test, *.localhost).
   --user NAME     an administrator login (or env WP_USER).
   --password PASS its password (or env WP_PASSWORD).
   --allow-placeholder BLOCK
@@ -81,6 +85,7 @@ function parseArgs(argv) {
     user: process.env.WP_USER || null,
     password: process.env.WP_PASSWORD || null,
     allowPlaceholder: [],
+    insecure: false,
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -112,6 +117,9 @@ function parseArgs(argv) {
         break;
       case '--allow-placeholder':
         args.allowPlaceholder.push(argv[++i]);
+        break;
+      case '--insecure':
+        args.insecure = true;
         break;
       case '--timeout': {
         const t = parseInt(argv[++i], 10);
@@ -536,7 +544,11 @@ async function main() {
   const browser = await chromium.launch();
   let problems = 0;
   try {
-    const context = await browser.newContext({ deviceScaleFactor: 1 });
+    // Local sites often serve HTTPS with a local CA that Node does not trust. The login request goes through
+    // the context's request API, which runs in Node, so the context ignores certificate errors. It does so
+    // only for a local host or with --insecure, so the password never goes over an unverified connection.
+    const ignoreHTTPSErrors = args.insecure || isLocalHost(base);
+    const context = await browser.newContext({ deviceScaleFactor: 1, ignoreHTTPSErrors });
     if (!(await logIn(context, base, args.user, args.password))) {
       console.error('Login failed: check the user name and password.');
       process.exit(1);

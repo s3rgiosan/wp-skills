@@ -181,3 +181,14 @@ src/frontend/
 - Version each custom block's stylesheet with a hash of its contents. WordPress versions block styles only from `block.json`'s `version`, never from `index.asset.php`, and a block stylesheet with no version loads with the WordPress version, so caches keep serving the old CSS after a deploy. Add a `block_type_metadata` filter before the block registration loop and remove it after: for blocks under the theme's `build/`, it sets `version` to a hash of the block's `file:` stylesheets (`style`, `editorStyle`, `viewStyle`).
 - Build: add a CSS entry to `webpack.config.js` (`'css/frontend': path.resolve( __dirname, 'src/frontend/index.css' )` next to the default entries). Enqueue `build/css/frontend.css` on the front end, with the version from `build/css/frontend.asset.php`, and load it in the editor with `add_editor_style( 'build/css/frontend.css' )`.
 - Lint `src/**/*.{css,scss}` with `wp-scripts lint-style`.
+
+#### Theme images in the front-end CSS
+Keep theme images in `assets/images/`. In `src/` CSS, point `url()` at them with a path relative to the CSS file. `wp-scripts build` (`@wordpress/scripts` 36) handles the rest:
+
+- An SVG becomes a base64 `data:` URI inside the stylesheet.
+- A PNG, JPEG, GIF, WebP or BMP is copied to `build/images/<name>.<hash>.<ext>`. The hash changes with the file, so caches refresh after a deploy.
+- The editor canvas resolves the built `url()` against the stylesheet's own URL: `add_editor_style()` passes it as `baseURL`, and the editor rebases relative URLs.
+
+Never write a root-relative URL (`/wp-content/themes/…`) in `src/` CSS: the build stops with `Module not found`, and the path breaks on another install.
+
+A background image on a block goes in `theme.json`, not in CSS: `styles.blocks.<block>.background.backgroundImage.url` (or `styles.background` for the site) takes `"file:./assets/images/<file>"`, and WordPress resolves it to the theme's URL. `styles.background` needs WordPress 6.6+ and `styles.blocks.<block>.background` needs 6.7+. The block must support background images (`supports.background.backgroundImage` in its `block.json`), as `core/group`, `core/quote` and `core/pullquote` do.
