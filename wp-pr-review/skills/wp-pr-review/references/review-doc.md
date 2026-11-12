@@ -24,6 +24,8 @@ Head: `<short sha>` | Base: `<branch>` | Reviewed: <YYYY-MM-DD>
 <the commented line, verbatim>
 ```
 
+**<Blocker | Major | Minor | Nit | Question>: <defect or question in one line>**
+
 <Comment text.>
 
 ```suggestion
