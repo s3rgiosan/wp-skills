@@ -6,7 +6,8 @@
  * properties on :root, dark-mode rules. It reads the styles-<w>.json files capture.mjs writes for every route
  * and breakpoint, and ranks what the pages paint:
  *   - colors: backgrounds by painted area, text by text length, borders by count, plus every custom property
- *     that holds a color (its name becomes the palette slug);
+ *     that holds a color (its name becomes the palette slug). Custom properties from WordPress core and
+ *     plugins (--wp-*, --wc-*, --sb-color-*) count only where the page paints their colors;
  *   - font families by text length; font sizes by text length, made fluid when the narrowest breakpoint
  *     renders the same elements smaller;
  *   - spacing (padding, margin, gap), radii, shadows, and the max-widths that suggest contentSize/wideSize.
@@ -37,6 +38,10 @@ Run capture.mjs on the design first; it writes the styles-<w>.json files this sc
 
 const SIZE_NAMES_BELOW = ['small', 'x-small', 'xx-small'];
 const SIZE_NAMES_ABOVE = ['large', 'x-large', 'xx-large', 'xxx-large'];
+// A spacing step more than this many times the step below it ends the scale.
+const SPACING_JUMP = 4;
+// A narrower max-width is the content width when it is used at least this share as often as the widest.
+const CONTENT_SHARE = 0.2;
 const SPACING_NAMES = ['2X-Small', 'X-Small', 'Small', 'Medium', 'Large', 'X-Large', '2X-Large', '3X-Large', '4X-Large', '5X-Large'];
 
 function parseArgs(argv) {
@@ -132,26 +137,52 @@ function loadCapture(dir) {
 
 /* ------------------------------------------------------------------ Colors */
 
-/** Custom properties that hold a color, keyed by hex. The first name seen for a hex wins. */
+/**
+ * Custom properties that WordPress core and plugins print on every page of a WordPress site. They hold the
+ * vendor's colors, not the design's, so they neither name nor rank palette colors.
+ */
+const VENDOR_PROPERTIES = [
+  /^--wp-/, // Core: --wp--preset--*, --wp--style--*, --wp-admin-theme-color*, --wp-block-synced-color.
+  /^--(wc-|woocommerce)/, // WooCommerce.
+  /^--sb-color-/, // Smash Balloon.
+];
+const CORE_PRESET_COLOR = /^--wp--preset--color--(.+)$/;
+
+/**
+ * Custom properties that hold a color, keyed by hex. The first name seen for a hex wins.
+ *   - named: the design's own properties; each one joins the palette and names its color;
+ *   - presets: core palette presets (--wp--preset--color--<slug>); a slug names a color only when the page paints it;
+ *   - vendor: the other names left out, for the report.
+ */
 function colorVars(stats) {
-  const byHex = {};
+  const named = {};
+  const presets = {};
+  const vendor = new Set();
   for (const s of stats) {
     for (const scope of ['root', 'inline']) {
       for (const [name, { value, hex }] of Object.entries(s.customProperties[scope])) {
-        if (hex && /^(#|rgb|hsl|oklch|oklab|lab|lch|color\()/i.test(value) && !byHex[hex]) {
-          byHex[hex] = name.replace(/^--/, '');
+        if (!hex || !/^(#|rgb|hsl|oklch|oklab|lab|lch|color\()/i.test(value)) {
+          continue;
+        }
+        const preset = name.match(CORE_PRESET_COLOR);
+        if (preset) {
+          presets[hex] = presets[hex] || preset[1];
+        } else if (VENDOR_PROPERTIES.some((pattern) => pattern.test(name))) {
+          vendor.add(name);
+        } else if (!named[hex]) {
+          named[hex] = name.replace(/^--/, '');
         }
       }
     }
   }
-  return byHex;
+  return { named, presets, vendor: [...vendor].sort() };
 }
 
 function buildPalette(stats, maxColors) {
   const background = merge(stats.map((s) => s.colors.background));
   const text = merge(stats.map((s) => s.colors.text));
   const border = merge(stats.map((s) => s.colors.border));
-  const named = colorVars(stats);
+  const { named, presets, vendor } = colorVars(stats);
 
   // Rank by best position in any one list, so a border gray is not drowned out by a large background.
   const position = {};
@@ -162,6 +193,13 @@ function buildPalette(stats, maxColors) {
   }
   for (const hex of Object.keys(named)) {
     position[hex] = Math.min(position[hex] ?? Infinity, 0);
+  }
+  if (vendor.length || Object.keys(presets).length) {
+    warn(
+      'Custom properties from WordPress core and plugins left out of the palette ranking ' +
+        `(${Object.keys(presets).length} core presets, ${vendor.length} others; see --report). ` +
+        'Their colors count only where the page paints them.'
+    );
   }
 
   const translucent = Object.keys(position).filter((hex) => hex.length === 9);
@@ -203,6 +241,8 @@ function buildPalette(stats, maxColors) {
       slug = 'base';
     } else if (hex === ink) {
       slug = 'contrast';
+    } else if (presets[hex]) {
+      slug = kebab(presets[hex]);
     } else {
       n += 1;
       slug = `color-${n}`;
@@ -214,7 +254,12 @@ function buildPalette(stats, maxColors) {
     return { slug, color: hex, name: titleCase(slug) };
   });
 
-  return { palette, ground, ink, report: { background: ranked(background), text: ranked(text), border: ranked(border), named } };
+  return {
+    palette,
+    ground,
+    ink,
+    report: { background: ranked(background), text: ranked(text), border: ranked(border), named, corePresets: presets, vendor },
+  };
 }
 
 /**
@@ -399,9 +444,40 @@ function buildSpacing(wide, narrowStats) {
       kept.push(v);
     }
   }
+  // A spacing scale grows in small steps. A value more than SPACING_JUMP times the step below it, and
+  // every value above it, is the size of a slide, a media box or a hero, not spacing.
+  const ascending = [...kept].sort((a, b) => a - b);
+  const jump = ascending.findIndex((v, index) => index > 0 && v > SPACING_JUMP * ascending[index - 1]);
+  const scale = jump === -1 ? ascending : ascending.slice(0, jump);
+  if (jump !== -1) {
+    warn(
+      `Spacing: ${ascending.slice(jump).map((v) => `${v}px`).join(', ')} left out of the scale: more than ` +
+        `${SPACING_JUMP} times the step below. Check them in --report; they are usually component sizes.`
+    );
+  }
+  // A large value found only at the widest breakpoint usually comes from a percentage (a slide's padding
+  // resolved at that width), not from a spacing step. It stays out unless a narrower capture has it too.
+  const narrowValues = narrowStats
+    ? Object.keys(merge(narrowStats.flatMap((s) => [s.spacing.padding, s.spacing.margin, s.spacing.gap])))
+        .filter((value) => /px$/.test(value))
+        .map(px)
+    : null;
+  // A fixed step has the same pixel value at every width; 2% allows for rounding.
+  const isStable = (v) => !narrowValues || narrowValues.some((n) => Math.abs(n - v) / Math.max(n, v) < 0.02);
+  const stable = scale.filter(isStable);
+  const topStable = stable.length ? Math.max(...stable) : Infinity;
+  const widestOnly = scale.filter((v) => v > topStable);
+  if (widestOnly.length) {
+    warn(
+      `Spacing: ${widestOnly.map((v) => `${v}px`).join(', ')} left out of the scale: found only at the widest ` +
+        'breakpoint, larger than every value the narrow capture shares. Add a value back by hand when it is ' +
+        'a desktop-only section padding.'
+    );
+  }
+  const inScale = scale.filter((v) => !widestOnly.includes(v));
   // The most used steps, plus the two largest: section padding is used less often but anchors the scale.
-  const largest = [...kept].sort((a, b) => b - a).slice(0, 2);
-  const common = kept.filter((v) => !largest.includes(v)).slice(0, SPACING_NAMES.length - largest.length);
+  const largest = [...inScale].sort((a, b) => b - a).slice(0, 2);
+  const common = kept.filter((v) => inScale.includes(v) && !largest.includes(v)).slice(0, SPACING_NAMES.length - largest.length);
   const steps = [...common, ...largest].sort((a, b) => a - b);
   if (!steps.length) {
     return [];
@@ -451,8 +527,13 @@ function buildLayout(wide) {
   if (!widths.length) {
     return null;
   }
+  const tally = Object.fromEntries(
+    ranked(merge(wide.map((s) => s.maxWidth))).map(([value, count]) => [px(value), count])
+  );
   const wideSize = Math.max(...widths);
-  const content = widths.filter((w) => w < wideSize);
+  // A narrower width is the content width only when it is used often next to the widest one. A rare
+  // narrower width is a one-off box, and the widest one is then the content width too.
+  const content = widths.filter((w) => w < wideSize && tally[w] >= CONTENT_SHARE * tally[wideSize]);
   warn(
     `Layout: max-width ${wideSize}px is the widest repeated column. If that column has side padding ` +
       '(box-sizing: border-box), subtract it for wideSize and set the padding as root padding.'
