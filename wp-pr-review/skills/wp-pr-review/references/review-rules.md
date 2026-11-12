@@ -68,6 +68,7 @@ The verdict is the review's outcome. The GitHub or GitLab review event is chosen
 
 ## Comment style
 
+- Start every posted comment with a bold first line that names its severity and the defect: `**Blocker: <defect>**`, `**Major: <defect>**`, `**Minor: <defect>**`, or `**Nit: <defect>**`. An open question starts with `**Question: <question>**`. Use exactly these five labels, so the severity can be counted from the posted text.
 - State the defect and its impact in one to three sentences: what is wrong, where, and what breaks.
 - No praise padding, no restating the diff, no fix mechanics in prose ("then run `composer update`").
 - Write affirmatively. Never name where a design or value came from.
