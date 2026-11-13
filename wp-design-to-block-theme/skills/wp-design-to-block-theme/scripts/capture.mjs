@@ -17,7 +17,7 @@
  * Usage:
  *   node capture.mjs <url|file> [<url|file> ...] [--routes FILE] [--base URL|DIR] [--out DIR]
  *     [--breakpoints 390,768,1280] [--selectors "body,h1,..."] [--timeout 60000] [--behaviors] [--max-triggers 40]
- *     [--insecure]
+ *     [--insecure] [--header LIST] [--main LIST]
  *
  * HTTPS certificate errors are ignored only for a local page (localhost, 127.0.0.1, ::1, *.test, *.localhost),
  * where sites use a local CA; pass --insecure to ignore them for another host.
@@ -47,6 +47,7 @@ const HELP = `capture.mjs — capture pages for block-theme translation and pari
 Usage:
   node capture.mjs <url|file> [<url|file> ...] [--routes FILE] [--base URL|DIR] [--out DIR]
     [--breakpoints 390,768,1280] [--selectors "body,h1,..."] [--timeout 60000] [--behaviors] [--max-triggers 40] [--insecure]
+    [--header LIST] [--main LIST]
 
   --routes FILE     one path or URL per line (# comments allowed); paths resolve against --base
                     or the first URL's origin. A capture-editor.mjs routes file works as it is:
@@ -57,6 +58,9 @@ Usage:
   --max-triggers N  cap on controls clicked per breakpoint (default 40).
   --insecure        ignore HTTPS certificate errors. Applies by default only to a local page
                     (localhost, 127.0.0.1, ::1, *.test, *.localhost).
+  --header LIST     elements that form one header section, for a header built from several elements
+                    (e.g. "#top-header, #main-header"). Default: each <header> is a section.
+  --main LIST       elements that hold the content sections, for a page without <main> (e.g. "#main-content").
 
 Writes <out>/<route>/{shot,dom,computed,sections,styles,network}-<w>.* per breakpoint (default out ./design-capture).
 Capture the design and the WordPress rebuild with the same routes, then diff them with compare.mjs.
@@ -74,6 +78,8 @@ function parseArgs(argv) {
     behaviors: false,
     maxTriggers: 40,
     insecure: false,
+    header: '',
+    main: 'main',
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -108,6 +114,17 @@ function parseArgs(argv) {
       case '--insecure':
         args.insecure = true;
         break;
+      case '--header':
+      case '--main': {
+        const value = argv[++i];
+        if (!value || value.startsWith('--')) {
+          args.help = true;
+          args.usageError = `${a} needs a selector.`;
+          break;
+        }
+        args[a.slice(2)] = value;
+        break;
+      }
       case '--behaviors':
         args.behaviors = true;
         break;
@@ -328,10 +345,22 @@ async function captureRoute(browser, url, width, dir, args) {
   await scrollThrough(page);
   await settle(page);
 
-  const headerAtTop = await page.evaluate(collectHeaderState);
+  if (args.header) {
+    const visibleParts = await page.evaluate(
+      (selectors) =>
+        Array.from(document.querySelectorAll(selectors)).filter((el) => el.getBoundingClientRect().height > 0).length,
+      args.header
+    );
+    if (!visibleParts) {
+      console.error(`  ! ${url} @ ${width}px: --header matched no visible element; each <header> is a section.`);
+    }
+  }
+
+  const headerOptions = { header: args.header };
+  const headerAtTop = await page.evaluate(collectHeaderState, headerOptions);
   await page.evaluate(() => window.scrollTo(0, 600));
   await page.waitForTimeout(400);
-  const headerScrolled = await page.evaluate(collectHeaderState);
+  const headerScrolled = await page.evaluate(collectHeaderState, headerOptions);
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.waitForTimeout(300);
 
@@ -341,7 +370,7 @@ async function captureRoute(browser, url, width, dir, args) {
   const computed = await page.evaluate(collectComputed, { selectors: args.selectors, props: CAPTURED_PROPS });
   writeFileSync(`${dir}/computed-${width}.json`, JSON.stringify(computed, null, 2));
 
-  const sections = await page.evaluate(collectSections);
+  const sections = await page.evaluate(collectSections, { header: args.header, main: args.main });
   sections.header = { atTop: headerAtTop, scrolled: headerScrolled };
   writeFileSync(`${dir}/sections-${width}.json`, JSON.stringify(sections, null, 2));
   writeFileSync(`${dir}/styles-${width}.json`, JSON.stringify(await page.evaluate(collectStyleStats), null, 2));
@@ -356,11 +385,34 @@ async function captureRoute(browser, url, width, dir, args) {
   return { failed: network.failed.length, consoleErrors: network.consoleErrors.length };
 }
 
+/** Stop before the first capture when --header or --main is not a valid selector list. */
+async function checkSelectors(browser, args) {
+  const page = await browser.newPage();
+  const selectors = [args.header, `:is(${args.main}) > *`].filter(Boolean);
+  const invalid = await page.evaluate((list) => {
+    for (const selector of list) {
+      try {
+        document.querySelector(selector);
+      } catch {
+        return selector;
+      }
+    }
+    return null;
+  }, selectors);
+  await page.close();
+  if (invalid) {
+    throw new Error(`Invalid selector for --header or --main: ${invalid}`);
+  }
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.help) {
+    if (args.usageError) {
+      console.error(args.usageError);
+    }
     console.log(HELP);
-    process.exit(0);
+    process.exit(args.usageError ? 2 : 0);
   }
   const routes = resolveRoutes(args);
   if (!routes.length) {
@@ -389,6 +441,7 @@ async function main() {
   const manifest = { breakpoints: args.breakpoints, routes: [], capturedAt: new Date().toISOString() };
   const browser = await chromium.launch();
   try {
+    await checkSelectors(browser, args);
     const slugs = uniqueSlugs(routes);
     for (const [n, url] of routes.entries()) {
       const slug = slugs[n];

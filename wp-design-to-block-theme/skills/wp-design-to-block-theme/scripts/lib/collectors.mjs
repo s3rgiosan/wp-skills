@@ -41,9 +41,18 @@ export function collectComputed({ selectors, props }) {
 
 /**
  * Sections are the top-level header / footer / section / main-children bands. For each: geometry, box styles,
- * the content column (first descendant with a max-width), the first multi-item flex/grid row, and headings.
+ * the content column (first rendered descendant with a max-width), the first rendered multi-item flex/grid
+ * row, and headings.
+ *
+ * A page without the usual landmarks names them with options:
+ *   - `header`: a selector list. Its visible elements form one header band, for a header built from
+ *     several elements (a top bar and a main header). An element inside another matched element counts
+ *     once, as part of the outer one. The band covers all of them; it takes its top padding from the first
+ *     element, its bottom padding from the last one, and its other styles from the tallest one. A matched
+ *     element inside another band is measured with that band.
+ *   - `main`: a selector list for the elements that hold the content bands, for a page without <main>.
  */
-export function collectSections() {
+export function collectSections({ header = '', main = 'main' } = {}) {
   const pick = (el, props) => {
     const cs = getComputedStyle(el);
     const out = {};
@@ -61,38 +70,70 @@ export function collectSections() {
       height: Math.round(r.height),
     };
   };
+  const unionRect = (els) => {
+    const rects = els.map(rect);
+    const top = Math.min(...rects.map((r) => r.top));
+    const left = Math.min(...rects.map((r) => r.left));
+    const bottom = Math.max(...rects.map((r) => r.top + r.height));
+    const right = Math.max(...rects.map((r) => r.left + r.width));
+    return { top, left, width: right - left, height: bottom - top };
+  };
   const text = (el) => (el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 80);
   // A heading inside hidden content (a collapsed panel, a paginated-away row) is not part of the page as shown.
   const rendered = (el) => el.getClientRects().length > 0;
+  const visible = (el) => el.getBoundingClientRect().height > 0;
+  const within = (els, sel) => els.flatMap((el) => Array.from(el.querySelectorAll(sel)));
 
-  // A child of <main> that wraps bands of its own (a CMS content wrapper) is not a band itself.
+  const matched = header ? Array.from(document.querySelectorAll(header)).filter(visible) : [];
+  const headerParts = matched.filter((part) => !matched.some((o) => o !== part && o.contains(part)));
+  const inHeader = (el) => headerParts.some((part) => part === el || part.contains(el));
+
+  // A child of the main element that wraps bands of its own (a CMS content wrapper) is not a band itself.
   const candidates = Array.from(
-    document.querySelectorAll('body header, body footer, body section, main > *')
+    document.querySelectorAll(`body header, body footer, body section, :is(${main}) > *`)
   ).filter(
     (el) =>
-      el.getBoundingClientRect().height > 0 &&
-      !(el.parentElement?.tagName === 'MAIN' && el.querySelector('header, footer, section'))
+      visible(el) &&
+      !inHeader(el) &&
+      !(el.parentElement?.matches(main) && el.querySelector('header, footer, section'))
   );
-  const sections = candidates.filter((el) => !candidates.some((o) => o !== el && o.contains(el)));
+  const bands = candidates
+    .filter((el) => !candidates.some((o) => o !== el && o.contains(el)))
+    .map((el) => [el]);
+  // Header parts inside another band are measured with that band.
+  const parts = headerParts.filter((part) => !candidates.some((o) => o.contains(part)));
+  if (parts.length) {
+    bands.push(parts);
+  }
+  const headerBand = parts.length ? parts : null;
+  bands.sort((a, b) => (a[0].compareDocumentPosition(b[0]) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
 
-  const out = sections.map((el, index) => {
-    const heading = Array.from(el.querySelectorAll('h1, h2, h3')).find(rendered);
-    const column = Array.from(el.querySelectorAll('*')).find(
-      (d) => getComputedStyle(d).maxWidth !== 'none'
-    );
-    const row = Array.from(el.querySelectorAll('*')).find((d) => {
+  const out = bands.map((els, index) => {
+    const el = els.reduce((tallest, part) => (rect(part).height > rect(tallest).height ? part : tallest));
+    const merged = els.length > 1;
+    const isHeaderBand = els === headerBand;
+    const heading = within(els, 'h1, h2, h3').find(rendered);
+    // A hidden element (a top bar that collapses on phones) has no box to measure.
+    const descendants = within(els, '*').filter(rendered);
+    const column = descendants.find((d) => getComputedStyle(d).maxWidth !== 'none');
+    const row = descendants.find((d) => {
       const display = getComputedStyle(d).display;
       return /flex|grid/.test(display) && d.children.length >= 2;
     });
+    const styles = pick(el, [
+      'padding-top', 'padding-bottom', 'background-color', 'background-image', 'color', 'position',
+    ]);
+    if (merged) {
+      styles['padding-top'] = getComputedStyle(els[0]).paddingTop;
+      styles['padding-bottom'] = getComputedStyle(els[els.length - 1]).paddingBottom;
+    }
     return {
       index,
-      tag: el.tagName.toLowerCase(),
-      id: el.id || null,
-      label: heading ? text(heading) : text(el).slice(0, 40),
-      rect: rect(el),
-      styles: pick(el, [
-        'padding-top', 'padding-bottom', 'background-color', 'background-image', 'color', 'position',
-      ]),
+      tag: isHeaderBand ? 'header' : el.tagName.toLowerCase(),
+      id: els.map((part) => part.id).filter(Boolean).join(',') || null,
+      label: heading ? text(heading) : els.map(text).join(' ').slice(0, 40),
+      rect: merged ? unionRect(els) : rect(el),
+      styles,
       column: column ? { rect: rect(column), maxWidth: getComputedStyle(column).maxWidth } : null,
       row: row
         ? {
@@ -100,7 +141,7 @@ export function collectSections() {
             ...pick(row, ['display', 'grid-template-columns', 'gap', 'row-gap', 'column-gap', 'flex-wrap']),
           }
         : null,
-      headings: Array.from(el.querySelectorAll('h1, h2, h3, h4'))
+      headings: within(els, 'h1, h2, h3, h4')
         .filter(rendered)
         .slice(0, 4)
         .map((h) => ({
@@ -108,7 +149,7 @@ export function collectSections() {
           text: text(h),
           ...pick(h, ['font-family', 'font-size', 'font-weight', 'line-height', 'letter-spacing']),
         })),
-      controls: Array.from(el.querySelectorAll('input:not([type=hidden]), select, textarea'))
+      controls: within(els, 'input:not([type=hidden]), select, textarea')
         .slice(0, 4)
         .map((c) => ({
           tag: c.tagName.toLowerCase(),
@@ -311,8 +352,17 @@ export function collectStyleStats() {
   return stats;
 }
 
-export function collectHeaderState() {
-  const header = document.querySelector('header');
+/**
+ * The state of the site header. With a `header` selector list (see collectSections), it reads the tallest
+ * visible matched element; otherwise the first <header>.
+ */
+export function collectHeaderState({ header: selectors = '' } = {}) {
+  const parts = selectors
+    ? Array.from(document.querySelectorAll(selectors)).filter((el) => el.getBoundingClientRect().height > 0)
+    : [];
+  const header = parts.length
+    ? parts.reduce((a, b) => (b.getBoundingClientRect().height > a.getBoundingClientRect().height ? b : a))
+    : document.querySelector('header');
   if (!header) {
     return null;
   }
