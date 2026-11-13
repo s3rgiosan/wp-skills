@@ -171,7 +171,10 @@ async function main() {
     for (const width of args.breakpoints) {
       await page.setViewportSize({ width, height: VIEWPORT_HEIGHT });
       for (const url of routes) {
-        await page.goto(url, { waitUntil: 'networkidle', timeout: args.timeout });
+        await page.goto(url, { waitUntil: 'load', timeout: args.timeout });
+        // Third-party widgets (bot challenges, chat, beacons) can keep a request open for good: wait for the
+        // network to settle, but go on without it.
+        await page.waitForLoadState('networkidle', { timeout: Math.min(args.timeout, 15000) }).catch(() => {});
         await settle(page);
         const before = await page.evaluate(collect, PROPS);
         const moved = await page.evaluate(reorder, args.stylesheet);

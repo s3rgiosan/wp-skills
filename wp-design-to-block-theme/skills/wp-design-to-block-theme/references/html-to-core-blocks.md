@@ -183,7 +183,7 @@ src/frontend/
 - Lint `src/**/*.{css,scss}` with `wp-scripts lint-style`.
 
 #### Theme images in the front-end CSS
-Keep theme images in `assets/images/`. In `src/` CSS, point `url()` at them with a path relative to the CSS file. `wp-scripts build` (`@wordpress/scripts` 36) handles the rest:
+Keep theme images in `assets/images/`. In `src/` CSS, point `url()` at them with a path relative to the **entry** stylesheet, the file that the webpack config builds (for example `src/frontend/index.css`). A file that the entry imports (`src/frontend/blocks/group.css`) is inlined first, so its `url()` resolves against the entry too: write `url(../../assets/images/<file>)` in both files. A path relative to the imported file stops the build with `Module not found`. `wp-scripts build` (`@wordpress/scripts` 36) handles the rest:
 
 - An SVG becomes a base64 `data:` URI inside the stylesheet.
 - A PNG, JPEG, GIF, WebP or BMP is copied to `build/images/<name>.<hash>.<ext>`. The hash changes with the file, so caches refresh after a deploy.
