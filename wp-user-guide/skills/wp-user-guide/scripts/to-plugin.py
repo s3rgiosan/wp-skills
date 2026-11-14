@@ -6,7 +6,9 @@ optional sections.json, and writes a plugin folder:
   <slug>/<slug>.php                main file (header, loader)
   <slug>/includes/class-guide.php  menu page, dashboard widget, Help tabs, editor panel, screenshot endpoint
   <slug>/includes/data.php         section index, screenshot list, screen-to-section links
-  <slug>/views/guide.php           the guide as admin markup
+  <slug>/views/guide.php           the guide as admin markup (a guide without chapters)
+  <slug>/views/chapters/<id>.php   one admin page per chapter (a guide with section.chapter markers)
+  <slug>/includes/search.php       search index of every chapter (a guide with chapters)
   <slug>/views/shots/<id>.php      one screenshot per file, base64 behind an ABSPATH guard
   <slug>/assets/                   stylesheet, index and checklist script, block editor panel script
   <slug>/languages/<slug>.pot      translatable strings of the plugin (no guide content)
@@ -34,6 +36,10 @@ Usage:
       --name "User Guide" --capability edit_posts --version 1.0.0 --force
   python3 to-plugin.py --help
 
+Chapters: a `main > section.chapter[id]` opens a chapter, and the sections after it, up to the next chapter, belong
+to it. A guide with chapters gets one admin page per chapter under the guide menu, an index of every chapter and
+section, and a search field across chapters. A guide without section.chapter builds one admin page.
+
 sections.json maps admin screens to guide section ids (each id must be a section of the page):
   {
     "post_types": { "post": "posts", "page": "pages", "acme_event": "events" },
@@ -45,6 +51,7 @@ Requires Beautiful Soup 4: pip install beautifulsoup4
 """
 import argparse
 import base64
+import copy
 import datetime
 import html
 import json
@@ -55,6 +62,7 @@ import shutil
 import stat
 import subprocess
 import sys
+import unicodedata
 
 from bs4 import BeautifulSoup, NavigableString, Tag
 
@@ -86,6 +94,10 @@ SCHEME_RE = re.compile(r"(https?|mailto):", re.IGNORECASE)
 PRE_RE = re.compile(r"(<pre[\s>].*?</pre>)", re.DOTALL)
 RESERVED_SHOT_IDS = {"index"}
 SECTION_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
+# A chapter id becomes part of its admin page slug, so it keeps to what sanitize_key() leaves unchanged.
+CHAPTER_ID_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+CHAPTER_CLASS = "chapter"
+SEARCH_TEXT_LIMIT = 4000
 SCREEN_KEY_RE = re.compile(r"^[a-z0-9_-]+$")
 # A plugin page registered by its file path keeps the path in its screen id
 # (WP_Screen::get() uses the hook name as the id): toplevel_page_<plugin-dir>/<file>.
@@ -137,6 +149,11 @@ def reject_php_tags(label, text):
     """Exit 2 when text holds a PHP open or close tag."""
     if "<?" in text or "?>" in text:
         fail(f"{label} contains a PHP tag (<? or ?>): {text[:60]!r}")
+
+
+def break_php_tags(text):
+    """Plain text with a space inside any PHP open or close tag, so a data file holds no stray tag."""
+    return text.replace("<?", "< ?").replace("?>", "? >")
 
 
 def php_string(value):
@@ -242,7 +259,7 @@ def load_shots(shots_dir):
     return shots
 
 
-def sanitise(node, shots, used_shots, section_ids):
+def sanitise(node, shots, used_shots, known_ids):
     """Keep the contract's tags and attributes; point screenshot links and images at the shot endpoint."""
     for child in list(node.children):
         if not isinstance(child, Tag):
@@ -254,7 +271,7 @@ def sanitise(node, shots, used_shots, section_ids):
         if child.name in DROPPED_TAGS:
             child.decompose()
             continue
-        sanitise(child, shots, used_shots, section_ids)
+        sanitise(child, shots, used_shots, known_ids)
         if child.name not in ALLOWED_TAGS:
             warn(f"unwrapped <{child.name}>")
             child.unwrap()
@@ -292,8 +309,8 @@ def sanitise(node, shots, used_shots, section_ids):
                 child["rel"] = "noopener"
             elif href.startswith("#"):
                 child["href"] = href
-                if href[1:] not in section_ids and href[1:]:
-                    warn(f"link to #{href[1:]}, which is not a section id; kept as is")
+                if href[1:] not in known_ids and href[1:]:
+                    warn(f"link to #{href[1:]}, which is not an id in the guide; kept as is")
             elif scheme:
                 child["href"] = scheme.group(0).lower() + href[scheme.end():]
                 if scheme.group(1).lower() in ("http", "https"):
@@ -331,12 +348,91 @@ def prefix_ids(node, slug):
             element["id"] = f"{slug}-{element['id']}"
 
 
-def prefix_links(node, slug):
-    """Point internal #links at the prefixed ids."""
+def prefix_links(node, slug, id_pages=None, page=None):
+    """Point internal #links at the prefixed ids; a link to an id on another chapter's page names that page."""
     for link in node.find_all("a", href=True):
         href = link["href"]
         if href.startswith("#") and len(href) > 1:
-            link["href"] = f"#{slug}-{href[1:]}"
+            target = (id_pages or {}).get(href[1:], page)
+            if target != page:
+                link["href"] = f"{chapter_href(target)}#{slug}-{href[1:]}"
+            else:
+                link["href"] = f"#{slug}-{href[1:]}"
+
+
+def chapter_href(page):
+    """Relative URL of a chapter page: the guide pages are all served by wp-admin/admin.php."""
+    return f"admin.php?page={page}"
+
+
+def slugify(text):
+    """An id fragment from heading text: ASCII letters and digits joined by hyphens."""
+    ascii_text = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode("ascii")
+    return re.sub(r"[^a-z0-9]+", "-", ascii_text.lower()).strip("-") or "part"
+
+
+def split_chapters(sections):
+    """Group sections into chapters at each section.chapter; an empty list when the guide has no chapter."""
+    if not any(CHAPTER_CLASS in (section.get("class") or []) for section in sections):
+        return []
+    chapters = []
+    for section in sections:
+        if CHAPTER_CLASS in (section.get("class") or []):
+            if not CHAPTER_ID_RE.fullmatch(section["id"]):
+                fail(f"chapter id {section['id']!r} must match [a-z0-9]+ with single hyphens (it is part of an admin page slug)")
+            chapters.append({"id": section["id"], "sections": [section]})
+        elif not chapters:
+            fail(f"section #{section['id']} comes before the first section.chapter: start the guide with a chapter")
+        else:
+            chapters[-1]["sections"].append(section)
+    return chapters
+
+
+def add_subsection_ids(sections, taken):
+    """Give each h3 that is a direct child of a section an id, so search results can link to it."""
+    for section in sections:
+        for heading in section.find_all("h3", recursive=False):
+            if heading.get("id"):
+                continue
+            base = f"{section['id']}-{slugify(heading.get_text())}"
+            candidate = base
+            number = 2
+            while candidate in taken:
+                candidate = f"{base}-{number}"
+                number += 1
+            heading["id"] = candidate
+            taken.add(candidate)
+
+
+def search_entries(chapter, page, chapter_title):
+    """Search index rows of one chapter: one per section, and one per h3 with an id inside it."""
+    rows = []
+    for section in chapter["sections"]:
+        heading = section.find("h2")
+        section_title = clean(heading.get_text()) if heading else section["id"]
+        current = {"anchor": section["id"], "title": section_title, "parts": []}
+        groups = [current]
+        for child in section.children:
+            if isinstance(child, Tag) and child.name == "h2" and child is heading:
+                continue
+            if isinstance(child, Tag) and child.name == "h3" and child.get("id"):
+                current = {"anchor": child["id"], "title": f"{section_title} › {clean(child.get_text())}", "parts": []}
+                groups.append(current)
+                continue
+            text = child.get_text(" ") if isinstance(child, Tag) else str(child)
+            current["parts"].append(text)
+        for group in groups:
+            # Inline elements were joined with spaces; punctuation goes back against the word before it.
+            text = re.sub(r"\s+([.,;:!?)\u00bb])", r"\1", clean(" ".join(group["parts"])))
+            text = re.sub(r"([(\u00ab])\s+", r"\1", text)
+            rows.append({
+                "page": page,
+                "anchor": group["anchor"],
+                "title": break_php_tags(group["title"]),
+                "chapter": break_php_tags(chapter_title),
+                "text": break_php_tags(truncate(text, SEARCH_TEXT_LIMIT)),
+            })
+    return rows
 
 
 def shot_echo(namespace, key):
@@ -357,7 +453,72 @@ def render_view(cover, toc, sections, lang, namespace, slug):
     parts.append("</main>")
     parts.append("</div>")
     parts.append("</div>")
-    markup = "\n".join(parts)
+    return view_file("\n".join(parts), namespace, "The guide, printed on the guide's admin page.")
+
+
+def render_chapter_view(cover, chapters, chapter, lang, namespace, slug, labels):
+    """One chapter page: the cover, the search box, an index of every chapter and section, the chapter, a pager."""
+    position = next(number for number, other in enumerate(chapters) if other is chapter)
+    parts = [f'<div class="{slug}-guide__content" lang="{html.escape(lang, quote=True)}">']
+    if cover is not None:
+        head = copy.copy(cover)
+        if position > 0:
+            for lede in head.select(".lede"):
+                lede.decompose()
+        parts.append(str(head))
+        parts.append('<hr class="wp-header-end">')
+    parts.append(f'<div class="{slug}-guide__shell">')
+    parts.append(f'<div class="{slug}-guide__sidebar">')
+    parts.append(f'<div class="{slug}-guide__search" hidden></div>')
+    parts.append(f'<nav class="toc">')
+    if labels["index"]:
+        parts.append(f"<h2>{html.escape(labels['index'])}</h2>")
+    parts.append(f'<ol class="{slug}-guide__chapters">')
+    for other in chapters:
+        here = other is chapter
+        base = "" if here else chapter_href(other["page"])
+        # Section ids from before the build prefixed them with the slug.
+        first, *rest = other["ids"]
+        current = ' class="is-current"' if here else ""
+        parts.append(
+            f'<li{current}><a href="{base}#{slug}-{first}">{html.escape(labels["sections"][first])}</a>'
+        )
+        if rest:
+            parts.append("<ol>")
+            parts.extend(
+                f'<li><a href="{base}#{slug}-{section_id}">{html.escape(labels["sections"][section_id])}</a></li>'
+                for section_id in rest
+            )
+            parts.append("</ol>")
+        parts.append("</li>")
+    parts.append("</ol>")
+    parts.append("</nav>")
+    parts.append("</div>")
+    parts.append("<main>")
+    parts.extend(str(section) for section in chapter["sections"])
+    pager = []
+    if position > 0:
+        previous = chapters[position - 1]
+        pager.append(
+            f'<a class="{slug}-guide__previous" href="{chapter_href(previous["page"])}">'
+            f'<span aria-hidden="true">\u2190</span> {html.escape(previous["title"])}</a>'
+        )
+    if position < len(chapters) - 1:
+        following = chapters[position + 1]
+        pager.append(
+            f'<a class="{slug}-guide__next" href="{chapter_href(following["page"])}">'
+            f'{html.escape(following["title"])} <span aria-hidden="true">\u2192</span></a>'
+        )
+    if pager:
+        parts.append(f'<div class="{slug}-guide__pager">' + "".join(pager) + "</div>")
+    parts.append("</main>")
+    parts.append("</div>")
+    parts.append("</div>")
+    return view_file("\n".join(parts), namespace, f"Chapter \"{chapter['id']}\" of the guide, printed on its admin page.")
+
+
+def view_file(markup, namespace, summary):
+    """A view: the guarded PHP header, then the markup with one PHP echo per screenshot URL."""
     # Indentation after a newline carries no meaning outside <pre>; drop it so the file is tab-clean. A <pre> line's first
     # leading space becomes &#32; so the file holds no space-indented line and the text renders unchanged.
     pieces = PRE_RE.split(markup)
@@ -369,7 +530,7 @@ def render_view(cover, toc, sections, lang, namespace, slug):
     header = (
         "<?php\n"
         "/**\n"
-        " * The guide, printed on the guide's admin page.\n"
+        f" * {summary}\n"
         " *\n"
         f" * {GENERATED_MARK}. Regenerate the plugin to change this file.\n"
         " *\n"
@@ -396,8 +557,11 @@ def render_shot(namespace, key, path):
     )
 
 
-def render_data(namespace, sections, shots, links):
+def render_data(namespace, sections, shots, links, chapters=None, pages=None):
     data = {"sections": sections, "shots": shots, "links": links}
+    if chapters:
+        data["chapters"] = chapters
+        data["pages"] = pages
     return (
         "<?php\n"
         "/**\n"
@@ -409,6 +573,21 @@ def render_data(namespace, sections, shots, links):
         " */\n\n"
         "defined( 'ABSPATH' ) || exit;\n\n"
         f"return {php_array(data)};\n"
+    )
+
+
+def render_search(namespace, rows):
+    return (
+        "<?php\n"
+        "/**\n"
+        " * Search index of the guide: one row per section and subsection, with its page, anchor and text.\n"
+        " *\n"
+        f" * {GENERATED_MARK}. Regenerate the plugin to change this file.\n"
+        " *\n"
+        f" * @package {namespace}\n"
+        " */\n\n"
+        "defined( 'ABSPATH' ) || exit;\n\n"
+        f"return {php_array(rows)};\n"
     )
 
 
@@ -497,7 +676,14 @@ class Guide {{
 	 *
 	 * @var array<string, mixed>|null
 	 */
-	private ?array $data = null;
+	private static ?array $data = null;
+
+	/**
+	 * Admin page hook suffixes of the guide, mapped to their chapter id (an empty string for a guide without chapters).
+	 *
+	 * @var array<string, string>
+	 */
+	private array $pages = array();
 
 	/**
 	 * Set up the guide.
@@ -575,25 +761,54 @@ class Guide {{
 	 */
 	public static function page_url( string $section = '' ): string {{
 
-		$url = admin_url( 'admin.php?page=' . self::SLUG );
+		$page = self::data()['pages'][ $section ] ?? self::SLUG;
 
-		if ( '' === $section ) {{
-			return $url;
-		}}
-
-		return $url . '#' . self::SLUG . '-' . $section;
+		return self::anchor_url( $page, $section );
 	}}
 
 	/**
-	 * Add the guide's top-level admin menu entry.
+	 * URL of a guide page, optionally at an element id of the guide.
+	 *
+	 * @param string $page   Admin page slug of the guide or of one of its chapters.
+	 * @param string $anchor Element id in the guide, without the slug prefix.
+	 * @return string
+	 */
+	public static function anchor_url( string $page, string $anchor = '' ): string {{
+
+		$url = admin_url( 'admin.php?page=' . $page );
+
+		if ( '' === $anchor ) {{
+			return $url;
+		}}
+
+		return $url . '#' . self::SLUG . '-' . $anchor;
+	}}
+
+	/**
+	 * Add the guide's top-level admin menu entry, and one submenu entry per chapter.
 	 *
 	 * @return void
 	 */
 	public function add_page(): void {{
 
-		$title = esc_html__( 'User Guide', '{slug}' );
+		$title    = esc_html__( 'User Guide', '{slug}' );
+		$hook     = add_menu_page( $title, $title, self::capability(), self::SLUG, array( $this, 'render_page' ), 'dashicons-book-alt' );
+		$chapters = self::chapters();
 
-		add_menu_page( $title, $title, self::capability(), self::SLUG, array( $this, 'render_page' ), 'dashicons-book-alt' );
+		if ( empty( $chapters ) ) {{
+			$this->pages[ $hook ] = '';
+			return;
+		}}
+
+		// The first chapter takes the top-level page's own slug, so the menu entry opens it.
+		foreach ( $chapters as $chapter => $details ) {{
+			$label   = esc_html( $details['title'] );
+			$subhook = add_submenu_page( self::SLUG, $label, $label, self::capability(), $details['page'], array( $this, 'render_page' ) );
+
+			if ( is_string( $subhook ) ) {{
+				$this->pages[ $subhook ] = $chapter;
+			}}
+		}}
 	}}
 
 	/**
@@ -621,8 +836,17 @@ class Guide {{
 	 */
 	public function render_page(): void {{
 
+		$chapters = self::chapters();
+		$chapter  = $this->pages[ current_action() ] ?? '';
+
+		if ( '' === $chapter && ! empty( $chapters ) ) {{
+			$chapter = (string) array_key_first( $chapters );
+		}}
+
+		$view = '' === $chapter ? 'guide' : 'chapters/' . $chapter;
+
 		echo '<div class="wrap ' . esc_attr( self::SLUG ) . '-guide">';
-		require dirname( $this->file ) . '/views/guide.php';
+		require dirname( $this->file ) . '/views/' . $view . '.php';
 		echo '</div>';
 	}}
 
@@ -634,13 +858,27 @@ class Guide {{
 	 */
 	public function enqueue_page_assets( string $hook_suffix ): void {{
 
-		if ( 'toplevel_page_' . self::SLUG !== $hook_suffix ) {{
+		if ( ! isset( $this->pages[ $hook_suffix ] ) ) {{
 			return;
+		}}
+
+		$settings = array( 'storagePrefix' => self::SLUG . ':' . get_current_user_id() . ':' );
+
+		if ( ! empty( self::chapters() ) ) {{
+			$settings['search'] = array(
+				'selector' => '.' . self::SLUG . '-guide__search',
+				'inputId'  => self::SLUG . '-search',
+				'label'    => __( 'Search the guide', '{slug}' ),
+				/* translators: %d: number of guide sections that match the search. */
+				'results'  => __( 'Results: %d', '{slug}' ),
+				'none'     => __( 'No matching sections.', '{slug}' ),
+				'entries'  => $this->search_entries(),
+			);
 		}}
 
 		wp_enqueue_style( self::SLUG, plugins_url( 'assets/guide.css', $this->file ), array(), self::VERSION );
 		wp_enqueue_script( self::SLUG, plugins_url( 'assets/guide.js', $this->file ), array(), self::VERSION, true );
-		wp_add_inline_script( self::SLUG, 'window.{js_global} = ' . wp_json_encode( array( 'storagePrefix' => self::SLUG . ':' . get_current_user_id() . ':' ), JSON_HEX_TAG | JSON_HEX_AMP ) . ';', 'before' );
+		wp_add_inline_script( self::SLUG, 'window.{js_global} = ' . wp_json_encode( $settings, JSON_HEX_TAG | JSON_HEX_AMP ) . ';', 'before' );
 	}}
 
 	/**
@@ -657,7 +895,7 @@ class Guide {{
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only image request.
 		$shot = isset( $_GET['shot'] ) ? sanitize_key( wp_unslash( $_GET['shot'] ) ) : '';
 
-		if ( ! in_array( $shot, $this->data()['shots'], true ) ) {{
+		if ( ! in_array( $shot, self::data()['shots'], true ) ) {{
 			status_header( 404 );
 			exit;
 		}}
@@ -703,10 +941,18 @@ class Guide {{
 	 */
 	public function render_widget(): void {{
 
+		$chapters = self::chapters();
+
 		echo '<ul>';
 
-		foreach ( $this->data()['sections'] as $section => $title ) {{
-			printf( '<li><a href="%s">%s</a></li>', esc_url( self::page_url( $section ) ), esc_html( $title ) );
+		if ( ! empty( $chapters ) ) {{
+			foreach ( $chapters as $details ) {{
+				printf( '<li><a href="%s">%s</a></li>', esc_url( self::anchor_url( $details['page'] ) ), esc_html( $details['title'] ) );
+			}}
+		}} else {{
+			foreach ( self::data()['sections'] as $section => $title ) {{
+				printf( '<li><a href="%s">%s</a></li>', esc_url( self::page_url( $section ) ), esc_html( $title ) );
+			}}
 		}}
 
 		echo '</ul>';
@@ -733,7 +979,7 @@ class Guide {{
 		$link = sprintf(
 			'<a href="%s">%s</a>',
 			esc_url( self::page_url( $section ) ),
-			esc_html( $this->data()['sections'][ $section ] )
+			esc_html( self::data()['sections'][ $section ] )
 		);
 
 		$screen->add_help_tab(
@@ -765,7 +1011,7 @@ class Guide {{
 
 		$screen    = get_current_screen();
 		$post_type = $screen instanceof WP_Screen ? $screen->post_type : '';
-		$section   = $this->data()['links']['post_types'][ $post_type ] ?? '';
+		$section   = self::data()['links']['post_types'][ $post_type ] ?? '';
 
 		if ( '' === $section ) {{
 			return;
@@ -785,7 +1031,7 @@ class Guide {{
 
 		$settings = array(
 			'name'  => self::SLUG . '-help',
-			'label' => $this->data()['sections'][ $section ],
+			'label' => self::data()['sections'][ $section ],
 			'url'   => self::page_url( $section ),
 		);
 
@@ -800,7 +1046,7 @@ class Guide {{
 	 */
 	private function section_for_screen( WP_Screen $screen ): string {{
 
-		$links = $this->data()['links'];
+		$links = self::data()['links'];
 
 		if ( '' !== $screen->taxonomy && isset( $links['taxonomies'][ $screen->taxonomy ] ) ) {{
 			return $links['taxonomies'][ $screen->taxonomy ];
@@ -814,17 +1060,48 @@ class Guide {{
 	}}
 
 	/**
+	 * Search index rows for the guide script: title, chapter, URL and text of each section and subsection.
+	 *
+	 * @return array<int, array<string, string>>
+	 */
+	private function search_entries(): array {{
+
+		$rows    = require dirname( $this->file ) . '/includes/search.php';
+		$entries = array();
+
+		foreach ( $rows as $row ) {{
+			$entries[] = array(
+				'title'   => $row['title'],
+				'chapter' => $row['chapter'],
+				'url'     => self::anchor_url( $row['page'], $row['anchor'] ),
+				'text'    => $row['text'],
+			);
+		}}
+
+		return $entries;
+	}}
+
+	/**
+	 * Chapters of the guide in reading order, each with its title and admin page slug; empty for a guide without chapters.
+	 *
+	 * @return array<string, array<string, string>>
+	 */
+	private static function chapters(): array {{
+		return self::data()['chapters'] ?? array();
+	}}
+
+	/**
 	 * Guide data, loaded once.
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function data(): array {{
+	private static function data(): array {{
 
-		if ( null === $this->data ) {{
-			$this->data = require dirname( $this->file ) . '/includes/data.php';
+		if ( null === self::$data ) {{
+			self::$data = require __DIR__ . '/data.php';
 		}}
 
-		return $this->data;
+		return self::$data;
 	}}
 }}
 """
@@ -1046,6 +1323,82 @@ GUIDE_CSS = """/* @@PLUGIN_HEADER@@ */
 	}}
 }}
 
+/* A guide with chapters: the search box and the index of every chapter share the column beside the text. */
+.{slug}-guide__sidebar .toc {{
+	position: static;
+	max-height: none;
+	overflow: visible;
+}}
+
+.{slug}-guide__chapters > li {{
+	margin-bottom: 6px;
+}}
+
+.{slug}-guide__chapters > li > a {{
+	font-weight: 600;
+}}
+
+.{slug}-guide__chapters ol a {{
+	padding-left: 20px;
+}}
+
+.{slug}-guide__chapters > li.is-current > a {{
+	color: var(--{slug}-accent-darker);
+}}
+
+.{slug}-guide__search {{
+	margin-bottom: 16px;
+}}
+
+.{slug}-guide__search label {{
+	display: block;
+	margin-bottom: 4px;
+	font-weight: 600;
+}}
+
+.{slug}-guide__search .results {{
+	list-style: none;
+	margin: 8px 0 0;
+	padding: 0;
+}}
+
+.{slug}-guide__search .results li {{
+	margin-bottom: 12px;
+}}
+
+.{slug}-guide__search .results a {{
+	display: block;
+	font-weight: 600;
+}}
+
+.{slug}-guide__search .chapter,
+.{slug}-guide__search .excerpt {{
+	display: block;
+	color: var(--{slug}-muted);
+}}
+
+.{slug}-guide__pager {{
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	gap: 16px;
+	margin-top: 24px;
+}}
+
+.{slug}-guide__next {{
+	margin-left: auto;
+}}
+
+@media (min-width: 961px) {{
+	.{slug}-guide__sidebar {{
+		position: sticky;
+		top: 44px;
+		max-height: calc(100vh - 56px);
+		overflow-y: auto;
+		padding: 4px;
+	}}
+}}
+
 @media (prefers-reduced-motion: no-preference) {{
 	:root:has(.{slug}-guide) {{
 		scroll-behavior: smooth;
@@ -1059,12 +1412,114 @@ GUIDE_CSS = """/* @@PLUGIN_HEADER@@ */
 }}
 """
 
-GUIDE_JS = """/* @@PLUGIN_HEADER@@ */
+GUIDE_JS = r"""/* @@PLUGIN_HEADER@@ */
 /**
- * Guide page: marks the index entry of the section being read and remembers checklist ticks.
+ * Guide page: marks the index entry of the section being read, remembers checklist ticks and, in a guide with
+ * chapters, searches every chapter.
  */
 ( function ( settings ) {
 	const prefix = ( settings && settings.storagePrefix ) || '';
+
+	// Search: every query word must appear in the entry; matches in the title rank first.
+	const search = settings && settings.search;
+	const searchBox = search ? document.querySelector( search.selector ) : null;
+
+	if ( searchBox && Array.isArray( search.entries ) ) {
+		const fold = ( text ) =>
+			String( text ).normalize( 'NFD' ).replace( /[\u0300-\u036f]/g, '' ).toLowerCase();
+		const entries = search.entries.map( ( entry, order ) => ( {
+			entry,
+			order,
+			title: fold( entry.title ),
+			body: fold( entry.title + ' ' + entry.text ),
+		} ) );
+
+		const label = document.createElement( 'label' );
+		const input = document.createElement( 'input' );
+		const status = document.createElement( 'p' );
+		const list = document.createElement( 'ol' );
+
+		label.htmlFor = search.inputId;
+		label.textContent = search.label;
+		input.type = 'search';
+		input.id = search.inputId;
+		input.className = 'widefat';
+		input.autocomplete = 'off';
+		status.className = 'description';
+		status.setAttribute( 'aria-live', 'polite' );
+		list.className = 'results';
+		searchBox.append( label, input, status, list );
+		searchBox.hidden = false;
+
+		// A short passage of the text around the first query word, taken from the unfolded text.
+		const excerpt = ( text, word ) => {
+			let folded = '';
+			const map = [];
+
+			Array.from( text ).forEach( ( character, index ) => {
+				const part = fold( character );
+
+				folded += part;
+
+				for ( let step = 0; step < part.length; step++ ) {
+					map.push( index );
+				}
+			} );
+
+			const characters = Array.from( text );
+			const at = folded.indexOf( word );
+			const start = at < 0 ? 0 : Math.max( 0, map[ at ] - 40 );
+			const end = Math.min( characters.length, start + 140 );
+
+			return ( start > 0 ? '\u2026' : '' ) + characters.slice( start, end ).join( '' ) + ( end < characters.length ? '\u2026' : '' );
+		};
+
+		const run = () => {
+			const words = fold( input.value ).split( /\s+/ ).filter( Boolean );
+
+			list.textContent = '';
+
+			if ( ! words.length || fold( input.value ).trim().length < 2 ) {
+				status.textContent = '';
+				return;
+			}
+
+			const found = entries
+				.filter( ( item ) => words.every( ( word ) => item.body.includes( word ) ) )
+				.map( ( item ) => ( {
+					item,
+					score: words.reduce( ( total, word ) => total + ( item.title.includes( word ) ? 10 : 0 ) + Math.min( 5, item.body.split( word ).length - 1 ), 0 ),
+				} ) )
+				.sort( ( a, b ) => b.score - a.score || a.item.order - b.item.order )
+				.slice( 0, 20 );
+
+			status.textContent = found.length ? search.results.replace( '%d', String( found.length ) ) : search.none;
+
+			found.forEach( ( { item } ) => {
+				const row = document.createElement( 'li' );
+				const link = document.createElement( 'a' );
+				const where = document.createElement( 'span' );
+				const passage = document.createElement( 'span' );
+
+				link.href = item.entry.url;
+				link.textContent = item.entry.title;
+				where.className = 'chapter';
+				where.textContent = item.entry.chapter;
+				passage.className = 'excerpt';
+				passage.textContent = excerpt( item.entry.text, words[ 0 ] );
+				row.append( link, where, passage );
+				list.append( row );
+			} );
+		};
+
+		input.addEventListener( 'input', run );
+		input.addEventListener( 'keydown', ( event ) => {
+			if ( 'Escape' === event.key ) {
+				input.value = '';
+				run();
+			}
+		} );
+	}
 
 	// Checklist ticks are kept in this browser only.
 	document.querySelectorAll( '.check input[type="checkbox"]' ).forEach( ( box ) => {
@@ -1271,8 +1726,12 @@ def build_dir_name(out_dir, slug):
     return os.path.join(out_dir, f".{slug}.build-{secrets.token_hex(4)}")
 
 
-def make_build_dir(build):
-    for folder in ("", "includes", "views", os.path.join("views", "shots"), "assets", "languages"):
+BUILD_FOLDERS = ("", "includes", "views", os.path.join("views", "shots"), "assets", "languages")
+CHAPTER_FOLDER = os.path.join("views", "chapters")
+
+
+def make_build_dir(build, folders):
+    for folder in folders:
         os.makedirs(os.path.join(build, folder), exist_ok=True)
 
 
@@ -1306,7 +1765,7 @@ def check_php_tags(target, namespace):
     """Fail the build when a generated PHP file holds a PHP tag the generator did not write.
 
     Every file opens with one literal `<?php` line. The only other tag the generator writes is the screenshot
-    echo in views/guide.php, matched exactly (fixed namespace, screenshot id from [a-z0-9_-]) and removed before the
+    echo in views/guide.php and views/chapters/<id>.php, matched exactly (fixed namespace, screenshot id from [a-z0-9_-]) and removed before the
     scan, as is the single `?>` that closes the file's header. Whatever `<?` or `?>` is left is guide- or
     CLI-derived and fails the build.
     """
@@ -1323,7 +1782,9 @@ def check_php_tags(target, namespace):
                 problems.append(f"{path}: does not start with the generator's <?php line")
                 continue
             body = text[len("<?php\n"):]
-            if os.path.relpath(path, target) == os.path.join("views", "guide.php"):
+            relative = os.path.relpath(path, target)
+            is_chapter = os.path.dirname(relative) == os.path.join("views", "chapters") and name != "index.php"
+            if relative == os.path.join("views", "guide.php") or is_chapter:
                 body = echo_re.sub("", body)
                 head, sep, rest = body.partition("\n?>\n")
                 if not sep:
@@ -1377,6 +1838,14 @@ def pot_entries(slug, plugin_name, author=None, author_uri=None):
             "php-format",
             ["includes/class-guide.php"],
         ),
+        ("Search the guide", "", "", ["includes/class-guide.php"]),
+        (
+            "Results: %d",
+            "translators: %d: number of guide sections that match the search.",
+            "php-format",
+            ["includes/class-guide.php"],
+        ),
+        ("No matching sections.", "", "", ["includes/class-guide.php"]),
     ]
 
 
@@ -1573,10 +2042,30 @@ def main():
         warn(f"lang {lang!r} is not a language tag; using en")
         lang = "en"
 
+    # A guide with chapters gets its index from the chapters; the source index gives the index title and link texts.
+    chapters = split_chapters(sections)
+    labels = {"index": "", "sections": dict(titles)}
+    if chapters:
+        if toc is not None:
+            index_heading = toc.find("h2")
+            labels["index"] = clean(index_heading.get_text()) if index_heading else ""
+            for link in toc.select('a[href^="#"]'):
+                target_id = link["href"][1:]
+                text = clean(link.get_text())
+                if target_id in labels["sections"] and text:
+                    labels["sections"][target_id] = text
+            toc = None
+        add_subsection_ids(sections, {element["id"] for element in soup.find_all(id=True)})
+        for position, chapter in enumerate(chapters):
+            chapter["ids"] = [section["id"] for section in chapter["sections"]]
+            chapter["page"] = args.slug if position == 0 else f"{args.slug}-{chapter['id']}"
+            chapter["title"] = titles[chapter["id"]]
+    known_ids = {element["id"] for element in soup.find_all(id=True)}
+
     used_shots = set()
     processed = [node for node in [cover, toc] + sections if node is not None]
     for node in processed:
-        sanitise(node, shots, used_shots, set(section_ids))
+        sanitise(node, shots, used_shots, known_ids)
         for attr in list(node.attrs):
             if attr not in ALLOWED_ATTRIBUTES:
                 del node[attr]
@@ -1591,9 +2080,18 @@ def main():
                 seen_ids.add(element_id)
     if repeated:
         fail(f"duplicate element ids in the guide: {', '.join(sorted(repeated))}")
+    id_pages = {}
+    section_pages = {}
+    search_rows = []
+    for chapter in chapters:
+        for section in chapter["sections"]:
+            section_pages[section["id"]] = chapter["page"]
+            for element in [section] + section.find_all(id=True):
+                id_pages[element["id"]] = chapter["page"]
+        search_rows.extend(search_entries(chapter, chapter["page"], chapter["title"]))
     for node in processed:
         add_core_classes(node)
-        prefix_links(node, args.slug)
+        prefix_links(node, args.slug, id_pages, section_pages.get(node.get("id")) if node in sections else None)
         prefix_ids(node, args.slug)
 
     unused = sorted(set(shots) - used_shots)
@@ -1638,16 +2136,26 @@ def main():
     if len(header_block.encode("utf-8")) > MAX_HEADER_BYTES:
         fail(f"the plugin header is {len(header_block.encode('utf-8'))} bytes, over the {MAX_HEADER_BYTES} byte limit")
 
+    folders = BUILD_FOLDERS + ((CHAPTER_FOLDER,) if chapters else ())
+    chapter_data = {chapter["id"]: {"title": chapter["title"], "page": chapter["page"]} for chapter in chapters}
     build = build_dir_name(args.out, args.slug)
     try:
-        make_build_dir(build)
+        make_build_dir(build, folders)
         write(os.path.join(build, f"{args.slug}.php"), main_file)
         write(os.path.join(build, "includes", "class-guide.php"), CLASS_FILE.format(**replacements))
         write(
             os.path.join(build, "includes", "data.php"),
-            render_data(namespace, titles, sorted(used_shots), links),
+            render_data(namespace, titles, sorted(used_shots), links, chapter_data, section_pages),
         )
-        write(os.path.join(build, "views", "guide.php"), render_view(cover, toc, sections, lang, namespace, args.slug))
+        if chapters:
+            for chapter in chapters:
+                write(
+                    os.path.join(build, CHAPTER_FOLDER, f"{chapter['id']}.php"),
+                    render_chapter_view(cover, chapters, chapter, lang, namespace, args.slug, labels),
+                )
+            write(os.path.join(build, "includes", "search.php"), render_search(namespace, search_rows))
+        else:
+            write(os.path.join(build, "views", "guide.php"), render_view(cover, toc, sections, lang, namespace, args.slug))
         for key in sorted(used_shots):
             write(os.path.join(build, "views", "shots", f"{key}.php"), render_shot(namespace, key, shots[key]))
         css = GUIDE_CSS.format(slug=args.slug).replace("@@PLUGIN_HEADER@@", plugin_header)
@@ -1663,7 +2171,7 @@ def main():
         write(os.path.join(build, "assets", "guide.css"), css)
         write(os.path.join(build, "assets", "guide.js"), guide_js)
         write(os.path.join(build, "assets", "editor-panel.js"), panel_js)
-        for folder in ("", "includes", "views", os.path.join("views", "shots"), "assets", "languages"):
+        for folder in folders:
             write(os.path.join(build, folder, "index.php"), INDEX_PHP.format(namespace=namespace))
         write(os.path.join(build, BUILD_MARKER), args.slug + "\n")
         write_pot(build, args.slug, plugin_name, args.version, author, args.author_uri)
@@ -1678,7 +2186,8 @@ def main():
         fail(f"build failed: {type(error).__name__}: {error}")
     finally:
         shutil.rmtree(build, ignore_errors=True)
-    print(f"wrote {target}: {len(sections)} sections, {len(used_shots)} screenshots")
+    chapter_note = f"{len(chapters)} chapters, " if chapters else ""
+    print(f"wrote {target}: {chapter_note}{len(sections)} sections, {len(used_shots)} screenshots")
 
 
 if __name__ == "__main__":

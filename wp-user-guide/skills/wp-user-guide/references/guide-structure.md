@@ -23,6 +23,14 @@ The audience shapes how the guide is written; the guide never states it. Open wi
 13. **Extensions**: one section per plugin whose screens the role reaches (forms, SEO, site search, translation, newsletter), grouped under an **Extensions** label in the index (`li.group`, see `outputs.md`). Name each section after the task and the plugin, for example "Forms (Fluent Forms)". Inside it, one `h3` subsection per task the reader does there: the plugin's lists, its settings, and connecting an outside service (see SKILL.md, "External services"). A plugin the reader only consults gets a short section: what it does, that it is configured, and a warning box on the settings that must not change. The parts a plugin adds to the editor (SEO fields, translating one item, search options on an item) stay in their own sections (SEO, Translation, the content types); the plugin's section links to them.
 14. **Glossary**: the WordPress terms used in the guide (block, slug, excerpt, featured image, taxonomy, draft…), with a one-line meaning each.
 
+## Chapters
+
+A guide with more sections than a reader scans on one page (as a rule of thumb, more than about 20, or several content types with long subsections) is split into chapters: `section.chapter` markers in the HTML page (`outputs.md`, Markup contract). The plugin then shows one admin page per chapter, with an index and a search field. Group the sections by what the reader does, for example **Getting started** (log in, the editor, saving and publishing, lists, images), one chapter per group of content types, **Menus and site-wide parts**, **Settings** and **Extensions**. Keep a section's id when it moves into a chapter: `sections.json` and the links between sections keep working.
+
+Open the guide with a short **How to** chapter when readers ask the same task questions: one question per common task, a one- or two-sentence answer, and a link to the section with the steps. Write the questions in the reader's words ("How do I change a heading level?").
+
+Generic block editor tasks (heading levels, the list view, moving and removing blocks, captions, the settings sidebar, autosaves) get a short answer and a link to the official WordPress documentation on wordpress.org, in the guide's language when a translation exists. Open each link before you add it. Write out only what this site does differently: its own blocks, panels, patterns and where its values come from.
+
 ## Warning boxes
 
 Every action that is hard to undo gets a warning box before the step: deleting a user or content, changing the site address or WordPress address, permalinks, the homepage or posts page. The box says what happens and how to undo it, if it can be undone.
