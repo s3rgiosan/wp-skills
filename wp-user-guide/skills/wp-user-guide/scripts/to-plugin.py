@@ -380,6 +380,8 @@ def split_chapters(sections):
         if CHAPTER_CLASS in (section.get("class") or []):
             if not CHAPTER_ID_RE.fullmatch(section["id"]):
                 fail(f"chapter id {section['id']!r} must match [a-z0-9]+ with single hyphens (it is part of an admin page slug)")
+            if section["id"] in RESERVED_SHOT_IDS:
+                fail(f"chapter id {section['id']!r} is reserved: the build writes views/chapters/index.php as a guard file; use another id")
             chapters.append({"id": section["id"], "sections": [section]})
         elif not chapters:
             fail(f"section #{section['id']} comes before the first section.chapter: start the guide with a chapter")
@@ -480,8 +482,9 @@ def render_chapter_view(cover, chapters, chapter, lang, namespace, slug, labels)
         # Section ids from before the build prefixed them with the slug.
         first, *rest = other["ids"]
         current = ' class="is-current"' if here else ""
+        page_mark = ' aria-current="page"' if here else ""
         parts.append(
-            f'<li{current}><a href="{base}#{slug}-{first}">{html.escape(labels["sections"][first])}</a>'
+            f'<li{current}><a{page_mark} href="{base}#{slug}-{first}">{html.escape(labels["sections"][first])}</a>'
         )
         if rest:
             parts.append("<ol>")
@@ -1546,6 +1549,7 @@ GUIDE_JS = r"""/* @@PLUGIN_HEADER@@ */
 
 	// The topmost section with at least 60px on screen, or the last section once it is fully shown.
 	const links = Array.from( document.querySelectorAll( '.toc a[href^="#"]' ) );
+	const resting = links.map( ( link ) => link.getAttribute( 'aria-current' ) );
 	const sections = links.map( ( link ) => document.getElementById( link.getAttribute( 'href' ).slice( 1 ) ) );
 	const seen = sections.map( () => null );
 
@@ -1581,6 +1585,8 @@ GUIDE_JS = r"""/* @@PLUGIN_HEADER@@ */
 		links.forEach( ( link, index ) => {
 			if ( index === current ) {
 				link.setAttribute( 'aria-current', 'location' );
+			} else if ( resting[ index ] ) {
+				link.setAttribute( 'aria-current', resting[ index ] );
 			} else {
 				link.removeAttribute( 'aria-current' );
 			}
