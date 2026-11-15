@@ -130,7 +130,7 @@ Playwright lives in the folder where you ran `npm i -D playwright && npx playwri
    - Keep generated secrets out of the image. The Add User screen shows a generated password: shoot that form with the password field outside the crop, or blank.
    - A plugin admin page that changes its view with the URL hash (`#settings-<service>`) can ignore the hash when the page loads. Open the view as the reader does: add `click` steps on the plugin's own menu entries, then capture.
    - Find icon-only buttons (duplicate, settings, delete in a table row) by their icon class, never by position: the first button in a row can be "duplicate", which opens an unsaved copy. In the guide, name such a button by its icon and colour, for example "the green cog button".
-6. **Write the guide.** Use the structure and plain-language rules in `references/guide-structure.md`. Write it to `<work>/guide/guide.html`.
+6. **Write the guide.** Use the structure and plain-language rules in `references/guide-structure.md`. Write it to `<work>/guide/guide.html`. A long guide is split into chapters with `section.chapter` markers (`references/guide-structure.md`, Chapters); the plugin then shows one admin page per chapter, with an index and a search field.
 7. **Audit before delivery.** Pair every step and every label with its source: the `survey.json` entry, a screenshot, or a file:line. Cut whatever has no source. Write each label exactly as the screen shows it, even when a plugin shows it in another language, and give the meaning in the guide's language next to it. Compare every label the guide quotes with the current `survey.json`: labels change when plugins or their translations update, so re-run the survey after any update and fix each quote that differs.
 8. **Deliver** in the agreed output (`references/outputs.md`). For the plugin, finish `<work>/sections.json`, which links each post type, taxonomy and screen to its section; the screen keys come from `survey.json` `screenId`.
 9. **Clean up.** Read `<work>/created.txt` and run every command with the throwaway user still in place; delete it last.
@@ -208,6 +208,7 @@ Some plugin screens connect the site to an outside service (a newsletter, CRM or
 | Settings fields and the options behind them | `survey.json` → `formFields` of the settings screens; `references/inventory.md`, Users and settings |
 | High-impact settings | `references/inventory.md`, Users and settings |
 | Classic menu screen, part by part | `references/guide-structure.md`, Menus |
+| Splitting a long guide into chapter pages, a How to chapter, links to the WordPress documentation | `references/guide-structure.md`, Chapters; `references/outputs.md`, Markup contract |
 
 ## Common mistakes
 

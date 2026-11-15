@@ -13,6 +13,7 @@ A single page published with the Artifact tool. Write the same page to `<work>/g
 - `header.cover` holds only the `h1` (the guide's title) and a `.lede` paragraph that says what the guide covers. The cover carries no site or brand label above the title.
 - `nav.toc` holds an `h2` (the index title) and one link per section. A `li.group` item without a link is a group label: it names the entries that follow it, up to the next label (for example **Content**, **Site management**, **Extensions**, **Reference**).
 - `main > section[id]` per guide section. Each section opens with an `h2` and holds `h3`, `p`, `ol`/`ul`, `figure`, `div.note`, `div.check`, `div.table-wrap > table` and `dl.gloss` as direct children.
+- Chapters (optional): `main > section.chapter[id]` opens a chapter. Its `h2` is the chapter title, and a short paragraph under it says what the chapter covers. The sections that follow it, up to the next `section.chapter`, belong to that chapter. When the guide has one chapter marker, the first section must be a chapter. A chapter id is lowercase letters and digits with single hyphens (`[a-z0-9]+(-[a-z0-9]+)*`); `index` is reserved. A guide without `section.chapter` is one page, as before. The sections stay flat in `main`, so the HTML page, the PDF and the Markdown show a chapter as a section that opens the sections after it; style `section.chapter` as a part title in the HTML page.
 - A callout number in the text is `<span class="n">3</span>`. It matches the badge in the screenshot and becomes ③ in Markdown.
 - A checklist is `div.check` with an `h3` and one `label > input[type=checkbox]` per item.
 
@@ -88,8 +89,10 @@ The plugin header's Description is the fixed sentence `Shows the user guide insi
 The plugin adds:
 
 - A top-level admin menu entry (`User Guide`) that prints the guide with its index. Guide ids and internal links carry a `<slug>-` prefix in the plugin view, so `admin.php?page=<slug>#<slug>-<section>` opens a section.
-- A dashboard widget with one link per section.
-- A link to the matching section where the editor works: a document panel in the block editor, and a Help tab on classic screens (list tables, taxonomy screens, Menus, Media).
+- In a guide with chapters, one admin page per chapter, as submenu entries named after the chapters. The first chapter opens at `admin.php?page=<slug>`, the others at `admin.php?page=<slug>-<chapter-id>`. Each page shows the guide title (and the `.lede` on the first page only), a search field, an index of every chapter and section with the current chapter marked (`aria-current="page"`), the chapter's sections, and links to the previous and next chapter. A link to an id in another chapter points at that chapter's page. The index title and the link texts come from `nav.toc` (its `h2` and the text of each `a[href="#<section>"]`); the plugin writes the index itself, so `li.group` labels are not used.
+- The search field (a guide with chapters) searches every chapter in the browser: each section, and each `h3` of a section, is one result, with its chapter name and a short passage. Every query word must appear; matches in a title rank first; accents and case are ignored. An `h3` without an id gets one, `<section-id>-<heading-text>`, so a result can open it. The search needs JavaScript; without it the field does not show.
+- A dashboard widget with one link per section, or one link per chapter in a guide with chapters.
+- A link to the matching section where the editor works: a document panel in the block editor, and a Help tab on classic screens (list tables, taxonomy screens, Menus, Media). In a guide with chapters, the link opens the chapter page that holds the section, at the section.
 
 The guide text and the screenshots are served only through wp-admin, to users who hold the capability. Every PHP file starts with an `ABSPATH` guard, so a direct request returns an empty page. The screenshots ship as base64 inside guarded PHP files and reach the page through an `admin-post.php` handler that checks the capability and serves only names from the generated list. The CSS and JS files under `assets/` are static files that the web server serves to anyone; they hold no guide content. Checklist ticks are stored in the reader's browser, keyed by user. The inline data is encoded with `JSON_HEX_TAG | JSON_HEX_AMP`. The generated PHP passes PHPCS with WordPress-Extra and WordPress-Docs. The JS globals are `wpUserGuide_<camelSlug>` and `wpUserGuide_<camelSlug>Panel`, and each asset starts with `/* v<version> */`. The plugin has no build step, loads no external fonts or scripts, and sets `Update URI: false`. The script runs `php -l` on every PHP file it writes when PHP is on the `PATH`, and scans the output for stray PHP tags.
 
@@ -99,7 +102,7 @@ The plugin page uses core admin markup (`wrap`, `notice notice-info inline` for 
 
 ### Translations
 
-The plugin's own interface is English and translatable. The header carries `Text Domain: <slug>` and `Domain Path: /languages`, and the plugin loads its text domain on `init` with `load_plugin_textdomain()`. Translatable: the Plugin Name and Description, the menu, page and widget label, the Help tab title and sentence, the editor panel title, and the access-denied message of the screenshot endpoint. The block editor script uses `wp.i18n` and is registered with `wp_set_script_translations()`. The guide's own text, section titles and `h1` are content: they stay in the guide's language and are not in the POT.
+The plugin's own interface is English and translatable. The header carries `Text Domain: <slug>` and `Domain Path: /languages`, and the plugin loads its text domain on `init` with `load_plugin_textdomain()`. Translatable: the Plugin Name and Description, the menu, page and widget label, the Help tab title and sentence, the editor panel title, the search field's label, result count (`Results: %d`) and empty message, and the access-denied message of the screenshot endpoint. The block editor script uses `wp.i18n` and is registered with `wp_set_script_translations()`. The guide's own text, section and chapter titles and `h1` are content: they stay in the guide's language and are not in the POT. A rebuild after a skill update can add strings: regenerate the POT, merge it into the `.po` (`msgmerge --update <work>/translations/<slug>-<locale>.po <out>/<slug>/languages/<slug>.pot`), translate the new strings and compile again.
 
 Translate the plugin's own interface in this order. Keep the files in `<work>/translations/`, outside the build.
 
@@ -122,6 +125,7 @@ Exit 2:
 - `--translations` that is not a folder, or an `--author-uri` that is not an http(s) URL.
 - A screenshot id `index` or an empty id, or two files that reduce to the same id.
 - A duplicate section id, or a section id outside `[A-Za-z0-9][A-Za-z0-9_-]*`.
+- A chapter id outside `[a-z0-9]+(-[a-z0-9]+)*`, the reserved chapter id `index`, or a section before the first `section.chapter` in a guide with chapters.
 - A failed stray-tag scan or `php -l`. The temporary build folder is removed and the previous plugin stays.
 - `--shots` that is not a folder, or a guide that references `shots/…` when no `.png` files are found.
 - A screenshot that is not a PNG, is a symlink or other non-regular file, or is over 5 MB.
@@ -138,12 +142,13 @@ Warnings on stderr:
 - `sections no admin screen links to (reachable from the index and the widget): …`, printed on every build with `--sections`, and `no --sections: …` without it.
 - `header.cover` or `nav.toc` nested inside a section or inside each other: it prints with its parent only.
 - `dropped an image that is not in shots/: <src>`, and a warning for screenshots the guide does not use.
+- `link to #<id>, which is not an id in the guide; kept as is`.
 - `--translations: skipped <name> (expected <slug>-<locale>.po, .mo or .json)`, `--translations: skipped <name>: .l10n.php files are not shipped; WordPress reads the .mo`, and `--translations: no <slug>-<locale> files found in <folder>`.
 - `wp i18n make-pot failed (<detail>); the POT file is written from the script's own string table`, and `wp is not on PATH: the POT file is written from the script's own string table`.
 
 ### sections.json
 
-Maps admin screens to section ids. Write it from the reconcile step: each section already documents one post type, taxonomy or screen. Every id must be a `section[id]` of the page; the script refuses unknown ids.
+Maps admin screens to section ids. Write it from the reconcile step: each section already documents one post type, taxonomy or screen. Every id must be a `section[id]` of the page; the script refuses unknown ids. In a guide with chapters, the same section ids keep working: the plugin finds the chapter that holds each section.
 
 ```json
 {
@@ -161,4 +166,4 @@ Build `screens` from `survey.json` `screenId` for every screen the guide covers 
 - Keep the guide's sources (`guide.html`, `shots/`, the shot lists, `sections.json`, `translations/`) in the project repository, in a folder the deployment excludes, with a short README that holds the rebuild command. The plugin can then be rebuilt later; raise `--version` on each rebuild.
 - Regenerate the plugin when the guide changes. Never edit the generated files: the next build replaces them.
 - The plugin shows real screenshots of the client's admin. Keep it in the client's repository, never in a public one.
-- Check the plugin as the audience role before delivery: the menu entry, the page with every image, a deep link, the editor panel, one Help tab, and that a role without the capability gets a 403.
+- Check the plugin as the audience role before delivery: the menu entry, the page with every image, a deep link, the editor panel, one Help tab, and that a role without the capability gets a 403. In a guide with chapters, also open every chapter page, a link between chapters and one search.
