@@ -24,6 +24,7 @@ A single page published with the Artifact tool. Write the same page to `<work>/g
 - Screenshots: publish the PNGs as supporting files (`files`: `shots/<id>.png`) and reference them relatively. Each one is a `<figure>` with alt text, an optional caption, `width` and `height` from the shot's entry in `shots.json`, and a link that opens it at full size. Those values are CSS pixels; the PNG has `scale` times as many (`shots.json` has a top-level `scale`, 2 by default). Never upscale a screenshot past its CSS size.
 - Checklist ticks are kept in the reader's browser only (`localStorage`, wrapped in try/catch).
 - Set `lang` on the outer wrapper element: the publish skeleton owns `<html>`.
+- Start the page with `<meta charset="utf-8">`. The publish skeleton adds its own, but `guide.html` opened from disk (in a browser, or by `to-pdf.mjs`) has no other charset, so the browser can decode its UTF-8 text in a legacy encoding and show accents as mojibake (`Ã§` for `ç`).
 
 ### Print stylesheet
 
