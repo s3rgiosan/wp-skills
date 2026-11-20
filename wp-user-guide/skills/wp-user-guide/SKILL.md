@@ -1,6 +1,7 @@
 ---
 name: wp-user-guide
-description: Use when asked to write, update or extend a user guide, admin guide, editor guide, site manual, handover or training document that teaches one audience role (editors, shop managers, administrators) to use the WordPress admin: content types, media, taxonomies, menus, users, settings and plugin screens, with screenshots. Triggers: "editor guide", "content editor guide", "guia do editor", "how do editors add X", "client handover docs", "training guide for the client", "document the admin for the client", "admin guide", "site manual", "user manual for the site", "user guide", "guia do utilizador", "add a section to the guide".
+description: >-
+  Use when asked to write, update or extend a user guide, admin guide, editor guide, site manual, handover or training document that teaches one audience role (editors, shop managers, administrators) to use the WordPress admin: content types, media, taxonomies, menus, users, settings and plugin screens, with screenshots. Triggers: "editor guide", "content editor guide", "guia do editor", "how do editors add X", "client handover docs", "training guide for the client", "document the admin for the client", "admin guide", "site manual", "user manual for the site", "user guide", "guia do utilizador", "add a section to the guide".
 ---
 
 # WordPress user guide
