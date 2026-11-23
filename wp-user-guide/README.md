@@ -6,6 +6,12 @@ A Claude Code skill that writes a step-by-step **user guide** for one audience r
 
 The skill grounds every step in what the audience's own role sees on screen. It inventories the content model from the code and WP-CLI. It then surveys each admin screen as a throwaway user with that role, and reconciles the two. A field that exists in the code but that the role cannot reach is reported to the developer and never written up as a guide step.
 
+### Demo
+
+A guide the skill wrote for the Editor role on a fresh WordPress install (Twenty Twenty-Five, no active plugins, one sample image added). It covers the editor, publishing, media, posts, pages, lists, categories and tags, comments and the profile, with 29 annotated screenshots. Click the preview to open the full video.
+
+<a href="assets/guide-demo.mp4"><img src="assets/guide-demo.gif" alt="Scrolling through a generated user guide: a sticky index on the left, and sections with numbered steps and annotated admin screenshots on the right" width="720"></a>
+
 ---
 
 ## Installation
