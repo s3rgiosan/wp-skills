@@ -4,13 +4,13 @@ Reads the guide page written to the HTML output contract (see references/outputs
 optional sections.json, and writes a plugin folder:
 
   <slug>/<slug>.php                main file (header, loader)
-  <slug>/includes/class-guide.php  menu page, dashboard widget, Help tabs, editor panel, screenshot endpoint
+  <slug>/includes/class-guide.php  menu page, dashboard widget, Help tabs, editor menu item, screenshot endpoint
   <slug>/includes/data.php         section index, screenshot list, screen-to-section links
   <slug>/views/guide.php           the guide as admin markup (a guide without chapters)
   <slug>/views/chapters/<id>.php   one admin page per chapter (a guide with section.chapter markers)
   <slug>/includes/search.php       search index of every chapter (a guide with chapters)
   <slug>/views/shots/<id>.php      one screenshot per file, base64 behind an ABSPATH guard
-  <slug>/assets/                   stylesheet, index and checklist script, block editor panel script
+  <slug>/assets/                   stylesheet, index and checklist script, block editor menu item script
   <slug>/languages/<slug>.pot      translatable strings of the plugin (no guide content)
   <slug>/.wp-user-guide-build    build marker holding the slug
 
@@ -25,7 +25,7 @@ assets/ holds the stylesheet and scripts as static public files; they carry no g
 temporary folder beside the target and is swapped in after the checks pass.
 
 The plugin's own interface is English and translatable (text domain = the slug, Domain Path /languages): menu,
-page and widget label, Help tab, editor panel title, error text, Plugin Name and Description. The POT comes from
+page and widget label, Help tab, editor menu item label, error text, Plugin Name and Description. The POT comes from
 `wp i18n make-pot` when wp is on the PATH, otherwise from this script's own string table. The guide's text, section
 titles and h1 are content and stay in the guide's language. --name sets the Plugin Name; write it in English, since
 it is translatable.
@@ -712,7 +712,7 @@ class Guide {{
 		add_action( 'admin_post_' . self::SHOT_ACTION, array( $this, 'serve_shot' ) );
 		add_action( 'wp_dashboard_setup', array( $this, 'add_dashboard_widget' ) );
 		add_action( 'current_screen', array( $this, 'add_help_tab' ) );
-		add_action( 'enqueue_block_editor_assets', array( $this, 'enqueue_editor_panel' ) );
+		add_action( 'enqueue_block_editor_assets', array( $this, 'enqueue_editor_link' ) );
 	}}
 
 	/**
@@ -1002,11 +1002,11 @@ class Guide {{
 	}}
 
 	/**
-	 * Load the block editor panel that links to the guide section for the post type being edited.
+	 * Load the block editor Options menu item that links to the guide section for the post type being edited.
 	 *
 	 * @return void
 	 */
-	public function enqueue_editor_panel(): void {{
+	public function enqueue_editor_link(): void {{
 
 		if ( ! current_user_can( self::capability() ) ) {{
 			return;
@@ -1024,8 +1024,8 @@ class Guide {{
 
 		wp_enqueue_script(
 			$handle,
-			plugins_url( 'assets/editor-panel.js', $this->file ),
-			array( 'wp-components', 'wp-editor', 'wp-element', 'wp-i18n', 'wp-plugins' ),
+			plugins_url( 'assets/editor-link.js', $this->file ),
+			array( 'wp-editor', 'wp-element', 'wp-i18n', 'wp-plugins' ),
 			self::VERSION,
 			true
 		);
@@ -1038,7 +1038,7 @@ class Guide {{
 			'url'   => self::page_url( $section ),
 		);
 
-		wp_add_inline_script( $handle, 'window.{js_global}Panel = ' . wp_json_encode( $settings, JSON_HEX_TAG | JSON_HEX_AMP ) . ';', 'before' );
+		wp_add_inline_script( $handle, 'window.{js_global}Link = ' . wp_json_encode( $settings, JSON_HEX_TAG | JSON_HEX_AMP ) . ';', 'before' );
 	}}
 
 	/**
@@ -1631,27 +1631,28 @@ GUIDE_JS = r"""/* @@PLUGIN_HEADER@@ */
 } )( window.{js_global} );
 """
 
-EDITOR_PANEL_JS = """/* @@PLUGIN_HEADER@@ */
+EDITOR_LINK_JS = """/* @@PLUGIN_HEADER@@ */
 /**
- * Block editor: a document panel that links to the guide section for the post type being edited.
+ * Block editor: an item in the Options menu that opens the guide section for the post type being edited.
  */
 ( function ( wp, settings ) {
-	if ( ! wp || ! wp.i18n || ! wp.plugins || ! wp.editor || ! wp.editor.PluginDocumentSettingPanel || ! settings ) {
+	if ( ! wp || ! wp.i18n || ! wp.plugins || ! wp.editor || ! wp.editor.PluginMoreMenuItem || ! settings ) {
 		return;
 	}
 
-	const { __ } = wp.i18n;
+	const { __, sprintf } = wp.i18n;
 	const el = wp.element.createElement;
 
 	wp.plugins.registerPlugin( settings.name, {
 		render: () =>
 			el(
-				wp.editor.PluginDocumentSettingPanel,
-				{ name: settings.name, title: __( 'User Guide', '@@SLUG@@' ) },
-				el( wp.components.ExternalLink, { href: settings.url }, settings.label )
+				wp.editor.PluginMoreMenuItem,
+				{ href: settings.url, target: '_blank', rel: 'noopener', icon: 'external' },
+				/* translators: %s: title of the guide section. */
+				sprintf( __( 'User Guide: %s', '@@SLUG@@' ), settings.label )
 			),
 	} );
-} )( window.wp, window.{js_global}Panel );
+} )( window.wp, window.{js_global}Link );
 """
 
 INDEX_PHP = """<?php
@@ -1836,7 +1837,13 @@ def pot_entries(slug, plugin_name, author=None, author_uri=None):
     if author_uri:
         headers.append((author_uri, "Author URI of the plugin", "", [f"{slug}.php"]))
     return headers + [
-        ("User Guide", "", "", ["includes/class-guide.php", "assets/editor-panel.js"]),
+        ("User Guide", "", "", ["includes/class-guide.php"]),
+        (
+            "User Guide: %s",
+            "translators: %s: title of the guide section.",
+            "js-format",
+            ["assets/editor-link.js"],
+        ),
         ("Sorry, you are not allowed to access this page.", "", "", ["includes/class-guide.php"]),
         (
             "Guide section for this screen: %s",
@@ -2169,14 +2176,14 @@ def main():
             GUIDE_JS.replace("{js_global}", js_global)
             .replace("@@PLUGIN_HEADER@@", plugin_header)
         )
-        panel_js = (
-            EDITOR_PANEL_JS.replace("{js_global}", js_global)
+        link_js = (
+            EDITOR_LINK_JS.replace("{js_global}", js_global)
             .replace("@@SLUG@@", args.slug)
             .replace("@@PLUGIN_HEADER@@", plugin_header)
         )
         write(os.path.join(build, "assets", "guide.css"), css)
         write(os.path.join(build, "assets", "guide.js"), guide_js)
-        write(os.path.join(build, "assets", "editor-panel.js"), panel_js)
+        write(os.path.join(build, "assets", "editor-link.js"), link_js)
         for folder in folders:
             write(os.path.join(build, folder, "index.php"), INDEX_PHP.format(namespace=namespace))
         write(os.path.join(build, BUILD_MARKER), args.slug + "\n")
